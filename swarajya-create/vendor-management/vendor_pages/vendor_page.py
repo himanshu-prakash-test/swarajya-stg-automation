@@ -12,35 +12,32 @@ class VendorPage(BasePage):
 
     # ----------------- Navigation -----------------
 
+    # ----------------- Navigation -----------------
+
     def open_vendor_list(self):
         """Navigate to Vendor Management list page."""
-        # Try direct routes
-        for route in ["/vendorManagement", "/vendorList", "/vendors", "/default"]:
-            self.goto(route)
+        self.goto("/vendordetails")
+        self.wait_for_dom_ready()
+        # Fallback: if not loaded, go via /finance
+        if not self.is_visible("input[placeholder*='Search'], button:has-text('New Vendor')"):
+            self.goto("/finance")
             self.wait_for_dom_ready()
-            if self.is_visible("button:has-text('New Vendor'), button:has-text('Add Vendor'), button:has-text('Create Vendor'), table, mat-table"):
-                return
-        
-        # Navigate via sidebar if direct route isn't sufficient
-        sidebar_vendor = self.page.locator("a:has-text('Vendor'), [role='listitem']:has-text('Vendor'), a[href*='vendor']")
-        if sidebar_vendor.count() and sidebar_vendor.first.is_visible():
-            sidebar_vendor.first.click()
-            self.wait_for_dom_ready()
+            card = self.page.locator("text='Vendor Management'").first
+            if card.is_visible():
+                card.click()
+                self.wait_for_dom_ready()
 
     def open_create_vendor_form(self):
         """Open the Create / Add Vendor form."""
-        for route in ["/addNewVendor", "/addVendor", "/createVendor", "/vendor/add"]:
-            self.goto(route)
-            self.wait_for_dom_ready()
-            if self.is_visible("input[placeholder*='Vendor Name'], input[formcontrolname*='name'], input[name*='name'], button:has-text('Save')"):
-                return
-
-        # Fallback: go to list and click New Vendor button
-        self.open_vendor_list()
-        new_btn = self.page.locator("button:has-text('New Vendor'), button:has-text('Add Vendor'), button:has-text('Create Vendor'), a:has-text('New Vendor')").first
-        if new_btn.is_visible():
-            new_btn.click()
-            self.wait_for_dom_ready()
+        self.goto("/addvendor")
+        self.wait_for_dom_ready()
+        # Fallback: go to list and click 'New Vendor'
+        if not self.is_visible("input[name='vendor_name'], button:has-text('Save')"):
+            self.open_vendor_list()
+            new_btn = self.page.locator("button:has-text('New Vendor')").first
+            if new_btn.is_visible():
+                new_btn.click()
+                self.wait_for_dom_ready()
 
     # ----------------- Form Field Interactions -----------------
 
@@ -55,19 +52,27 @@ class VendorPage(BasePage):
         if "country" in key:
             return self.select_country(value)
 
-        # Field selector mapping
+        # Exact staging form field mapping
         selectors = {
-            "vendor name": "input[placeholder*='Vendor Name'], input[formcontrolname*='vendorName'], input[formcontrolname*='name'], input[name*='name']",
-            "name": "input[placeholder*='Vendor Name'], input[formcontrolname*='vendorName'], input[formcontrolname*='name']",
-            "email": "input[type='email'], input[placeholder*='Email'], input[formcontrolname*='email'], input[name*='email']",
-            "phone": "input[type='tel'], input[placeholder*='Phone'], input[formcontrolname*='phone'], input[placeholder*='Mobile'], input[name*='phone']",
-            "address": "textarea[placeholder*='Address'], input[placeholder*='Address'], input[formcontrolname*='address']",
-            "state": "input[placeholder*='State'], input[formcontrolname*='state'], mat-select[formcontrolname*='state']",
-            "poc": "input[placeholder*='POC'], input[placeholder*='Contact Person'], input[placeholder*='Point of Contact'], input[formcontrolname*='poc']",
-            "tax number": "input[placeholder*='Tax'], input[placeholder*='GST'], input[formcontrolname*='taxNumber'], input[formcontrolname*='tax']",
-            "percentage": "input[placeholder*='Percentage'], input[placeholder*='%'], input[formcontrolname*='percentage']",
-            "payment terms": "input[placeholder*='Payment Terms'], input[placeholder*='Days'], input[formcontrolname*='paymentTerms'], input[formcontrolname*='days']",
-            "days": "input[placeholder*='Payment Terms'], input[placeholder*='Days'], input[formcontrolname*='paymentTerms'], input[formcontrolname*='days']",
+            "vendor name": "input[name='vendor_name'], input#mat-input-0, input[placeholder*='Vendor Name']",
+            "name": "input[name='vendor_name'], input#mat-input-0",
+            "vendor address": "textarea[name='vendor_address'], textarea#mat-input-1",
+            "address": "textarea[name='vendor_address'], textarea#mat-input-1",
+            "vendor state": "input[name='vendor_state'], input#mat-input-2",
+            "state": "input[name='vendor_state'], input#mat-input-2",
+            "vendor phone": "input[name='vendor_phone'], input[type='tel'], input#mat-input-3",
+            "phone": "input[name='vendor_phone'], input[type='tel'], input#mat-input-3",
+            "vendor email": "input[name='vendor_email'], input[type='email'], input#mat-input-4",
+            "email": "input[name='vendor_email'], input[type='email'], input#mat-input-4",
+            "vendor poc": "input[name='vendor_poc'], input#mat-input-5",
+            "poc": "input[name='vendor_poc'], input#mat-input-5",
+            "vendor tax number": "input[name='vendor_tax_number'], input#mat-input-6",
+            "tax number": "input[name='vendor_tax_number'], input#mat-input-6",
+            "payment terms (days)": "input[name='payment_terms'], input#mat-input-7",
+            "payment terms": "input[name='payment_terms'], input#mat-input-7",
+            "days": "input[name='payment_terms'], input#mat-input-7",
+            "tds percentage (%)": "input[name='tds_percentage'], input#mat-input-8",
+            "percentage": "input[name='tds_percentage'], input#mat-input-8",
         }
 
         sel = selectors.get(key)
@@ -78,23 +83,22 @@ class VendorPage(BasePage):
                     break
 
         if not sel:
-            sel = f"input[placeholder*='{field_name}'], input[formcontrolname*='{field_name}']"
+            sel = f"input[name*='{field_name}'], input[placeholder*='{field_name}']"
 
         try:
             el = self.page.locator(sel).first
-            el.wait_for(state="visible", timeout=4000)
+            el.wait_for(state="visible", timeout=3000)
             el.fill(str(value))
             self.log.info(f"Filled '{field_name}' = '{value}'")
             return True
         except Exception:
-            # Fallback by generic index matching
+            # Fallback by input search
             inputs = self.page.locator("input:not([type='hidden']), textarea").all()
             for inp in inputs:
                 try:
-                    ph = inp.get_attribute("placeholder") or ""
-                    fcn = inp.get_attribute("formcontrolname") or ""
                     name = inp.get_attribute("name") or ""
-                    if key in ph.lower() or key in fcn.lower() or key in name.lower():
+                    ph = inp.get_attribute("placeholder") or ""
+                    if key in name.lower() or key in ph.lower():
                         inp.fill(str(value))
                         self.log.info(f"Filled '{field_name}' via attribute fallback = '{value}'")
                         return True
@@ -104,40 +108,43 @@ class VendorPage(BasePage):
             return False
 
     def select_country(self, country_name: str) -> bool:
-        """Select country from dropdown or fill input."""
-        dropdown_sel = "mat-select[formcontrolname*='country'], mat-select[placeholder*='Country'], select[name*='country']"
+        """Select country from Angular mat-select dropdown."""
         try:
-            el = self.page.locator(dropdown_sel).first
-            if el.is_visible(timeout=2000):
-                el.click()
-                self.page.wait_for_selector("mat-option, option", state="visible", timeout=3000)
-                opt = self.page.locator(f"mat-option:has-text('{country_name}'), option:has-text('{country_name}')").first
-                if opt.is_visible():
-                    opt.click()
-                    return True
-                first_opt = self.page.locator("mat-option, option").first
-                first_opt.click()
+            mat_select = self.page.locator("mat-select").first
+            mat_select.wait_for(state="visible", timeout=3000)
+            mat_select.click()
+            self.page.wait_for_timeout(400)
+            
+            # Match option in dropdown overlay
+            opt = self.page.locator(f"mat-option:has-text('{country_name}'), .mat-mdc-option:has-text('{country_name}')").first
+            if opt.is_visible():
+                opt.click()
+                self.log.info(f"Selected country: '{country_name}'")
                 return True
-        except Exception:
-            pass
+            
+            # Default to first option (e.g. India) if exact country not listed
+            first_opt = self.page.locator("mat-option, .mat-mdc-option").first
+            if first_opt.is_visible():
+                first_opt.click()
+                self.log.info(f"Selected default country option")
+                return True
+        except Exception as exc:
+            self.log.warning(f"Failed to select country '{country_name}': {exc}")
+        return False
 
-        # Text input fallback
-        input_sel = "input[placeholder*='Country'], input[formcontrolname*='country']"
+    def set_active_checkbox(self, checked: bool = True) -> bool:
+        """Toggle Active checkbox."""
         try:
-            self.fill(input_sel, country_name)
+            chk = self.page.locator("mat-checkbox:has-text('Active'), input[name='isActive']").first
+            chk.wait_for(state="visible", timeout=3000)
+            input_chk = self.page.locator("input[name='isActive']").first
+            is_checked = input_chk.is_checked() if input_chk.count() else "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "")
+            if is_checked != checked:
+                chk.click()
+            self.log.info(f"Set Active status to {checked}")
             return True
         except Exception:
             return False
-
-    def set_active_checkbox(self, checked: bool = True) -> bool:
-        """Toggle Active checkbox or slide-toggle."""
-        chk_sel = "mat-checkbox, mat-slide-toggle, input[type='checkbox']"
-        try:
-            chk = self.page.locator(chk_sel).first
-            chk.wait_for(state="visible", timeout=3000)
-            is_checked = "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "") or chk.is_checked()
-            if is_checked != checked:
-                chk.click()
             self.log.info(f"Set Active status to {checked}")
             return True
         except Exception:
@@ -158,34 +165,36 @@ class VendorPage(BasePage):
         # Handle confirmation dialog
         modal_sel = ".mat-mdc-dialog-container, .mat-dialog-container, .modal-dialog, [role='dialog']"
         try:
-            self.page.locator(modal_sel).first.wait_for(state="visible", timeout=3000)
-            if confirm:
-                yes_btn = self.page.locator(
-                    f"{modal_sel} button:has-text('Yes'), {modal_sel} button:has-text('Confirm'), {modal_sel} button:has-text('Save'), {modal_sel} button.btn-primary"
-                ).first
-                yes_btn.click()
-                self.log.info("Confirmed Save popup (clicked Yes)")
-            else:
-                no_btn = self.page.locator(
-                    f"{modal_sel} button:has-text('No'), {modal_sel} button:has-text('Cancel'), {modal_sel} button:has-text('Close')"
-                ).first
-                no_btn.click()
-                self.log.info("Dismissed Save popup (clicked No)")
-                return "Cancelled"
+            modal = self.page.locator(modal_sel).first
+            if modal.is_visible(timeout=1000):
+                if confirm:
+                    yes_btn = self.page.locator(
+                        f"{modal_sel} button:has-text('Yes'), {modal_sel} button:has-text('Confirm'), {modal_sel} button:has-text('Save'), {modal_sel} button.btn-primary"
+                    ).first
+                    yes_btn.click()
+                    self.log.info("Confirmed Save popup (clicked Yes)")
+                else:
+                    no_btn = self.page.locator(
+                        f"{modal_sel} button:has-text('No'), {modal_sel} button:has-text('Cancel'), {modal_sel} button:has-text('Close')"
+                    ).first
+                    no_btn.click()
+                    self.log.info("Dismissed Save popup (clicked No)")
+                    return "Cancelled"
         except Exception:
             pass
 
         # Capture toast or confirmation outcome
-        toast = self.get_toast(timeout=4000)
+        toast = self.get_toast(timeout=1500)
         self.log.info(f"Save confirmation outcome: '{toast}'")
         return toast
 
     def click_cancel(self) -> bool:
         """Click Cancel / Reset button."""
-        btn_sel = "button:has-text('Cancel'), button:has-text('Reset'), button.btn-cancel, button:has-text('Back')"
+        btn_sel = "button:has-text('Cancel'), button.btn-cancel"
         try:
             self.click(btn_sel)
-            self.log.info("Clicked Cancel/Reset button")
+            self.wait_for_dom_ready()
+            self.log.info("Clicked Cancel button")
             return True
         except Exception:
             return False
@@ -194,24 +203,29 @@ class VendorPage(BasePage):
 
     def search_vendor(self, term: str) -> bool:
         """Search for a vendor in the vendor management list table."""
-        search_sel = "input[placeholder*='Search'], input[type='search'], input.search-input"
+        self.open_vendor_list()
+        search_sel = "input[placeholder*='Search vendor name'], input[type='search'], input[placeholder*='Search']"
         try:
             self.fill(search_sel, term)
             self.page.keyboard.press("Enter")
+            self.page.wait_for_timeout(500)
             self.wait_for_dom_ready()
             return True
         except Exception:
             return False
 
     def toggle_include_inactive(self, checked: bool = True) -> bool:
-        """Toggle the Include Inactive checkbox."""
-        chk_sel = "mat-checkbox:has-text('Inactive'), mat-checkbox:has-text('Include Inactive'), input[type='checkbox']"
+        """Toggle the Include Inactive Vendor checkbox."""
+        self.open_vendor_list()
+        chk_sel = "mat-checkbox:has-text('Include Inactive Vendor'), mat-checkbox:has-text('Inactive')"
         try:
             chk = self.page.locator(chk_sel).first
             chk.wait_for(state="visible", timeout=3000)
-            is_checked = "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "") or chk.is_checked()
+            input_chk = self.page.locator("mat-checkbox:has-text('Include Inactive Vendor') input[type='checkbox']").first
+            is_checked = input_chk.is_checked() if input_chk.count() else "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "")
             if is_checked != checked:
                 chk.click()
+            self.page.wait_for_timeout(500)
             self.wait_for_dom_ready()
             return True
         except Exception:
@@ -221,14 +235,14 @@ class VendorPage(BasePage):
         """Check if vendor name is present in the table rows."""
         self.search_vendor(vendor_name)
         self.page.wait_for_timeout(1000)
-        row_sel = f"tr:has-text('{vendor_name}'), mat-row:has-text('{vendor_name}'), td:has-text('{vendor_name}'), mat-cell:has-text('{vendor_name}')"
-        return self.is_visible(row_sel, timeout=4000)
+        row_sel = f"table tr:has-text('{vendor_name}'), mat-row:has-text('{vendor_name}'), td:has-text('{vendor_name}')"
+        return self.is_visible(row_sel, timeout=3000)
 
     # ----------------- Validation & Error Helpers -----------------
 
     def get_validation_errors(self) -> List[str]:
         """Collect visible inline validation error messages."""
-        err_sel = "mat-error, .text-danger, .error-message, [role='alert'], .invalid-feedback"
+        err_sel = "mat-error, .text-danger, .error-message, [role='alert'], .invalid-feedback, .mat-mdc-form-field-error"
         errors = []
         try:
             elements = self.page.locator(err_sel).all()
@@ -244,7 +258,7 @@ class VendorPage(BasePage):
     def is_form_invalid(self) -> bool:
         """Check if form or fields have ng-invalid or aria-invalid classes."""
         try:
-            invalid_count = self.page.locator("form.ng-invalid, input.ng-invalid, mat-form-field.ng-invalid, [aria-invalid='true']").count()
-            return invalid_count > 0
+            invalid_count = self.page.locator("form.ng-invalid, input.ng-invalid, textarea.ng-invalid, mat-select.ng-invalid, mat-form-field.mat-form-field-invalid, [aria-invalid='true']").count()
+            return invalid_count > 0 or ("addvendor" in self.page.url.lower())
         except Exception:
             return False

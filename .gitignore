@@ -21,12 +21,15 @@ env/
 *.env
 test_data/credentials.xlsx
 ~$*.xlsx
+**/test_data/auth_state.json
+auth_state.json
 
 # ── Generated at Runtime ──
 reports/
 screenshots/
 playwright-report/
 test-results/
+scratch/
 
 # ── OS files ──
 .DS_Store
