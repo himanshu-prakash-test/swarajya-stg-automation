@@ -36,11 +36,16 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Create-test-cases (6).xlsx
 │   │   └── tests/                      # Positive & Negative Employee Test Suites
 │   │
-│   └── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
-│       ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
-│       ├── vendor_utils/               # Excel Reader, Logger, Popup
-│       ├── test_data/                  # Create-Vendor-Management.xlsx
-│       └── tests/                      # Positive & Negative Vendor Test Suites
+│   ├── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
+│   │   ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
+│   │   ├── vendor_utils/               # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Create-Vendor-Management.xlsx
+│   │   └── tests/                      # Positive & Negative Vendor Test Suites
+│   │
+│   └── consultant-management/          # 💼 Create Consultant Module
+│       ├── consultant_pages/           # BasePage, ConsultantPage, FormExecutor
+│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
+│       └── tests/                      # Positive & Negative Consultant Creation Tests
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
@@ -50,7 +55,7 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
 │   │   └── tests/                      # test_employee_updates.py
 │   │
-│   └── consultant-management/          # 💼 Consultant Management Module
+│   └── consultant-management/          # 💼 Update Consultant Module
 │       ├── consultant_pages/           # Consultant Profile & Contract Updaters
 │       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
 │       └── tests/                      # test_consultant_management.py
@@ -70,8 +75,9 @@ swarajya-stg-automation/
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
+| **Create Operations** | Consultant Management | Partner / Team | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
-| **Consultant Mgmt** | Consultant Management | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
+| **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 
 ---
 

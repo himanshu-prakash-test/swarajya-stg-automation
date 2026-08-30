@@ -27,6 +27,11 @@ swarajya-create/
 │   ├── pytest.ini                       # Module execution settings
 │   └── README.md                        # Vendor Management Manual
 │
+├── consultant-management/               # 💼 Consultant Management Module
+│   ├── consultant_pages/                # POM (base_page, consultant_page, form_executor)
+│   ├── test_data/                       # Swarajya-Consultant-test-cases.xlsx
+│   └── tests/                           # Positive & Negative Consultant Creation Tests
+│
 ├── pytest.ini                           # Root Create operations pytest configuration
 └── README.md                            # Create Operations Overview
 ```
@@ -39,6 +44,7 @@ swarajya-create/
 | :--- | :--- | :---: | :--- |
 | [**Employee Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/employee-management/README.md) | Automates employee onboarding, multi-tab forms, role assignments, and validation checks. | **30 Tests** (10 Pos / 20 Neg) | Datepicker handling, Excel synchronization, storage state caching |
 | [**Vendor Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/vendor-management/README.md) | Automates vendor creation, mandatory fields, 10-digit phone regex, and confirmation modals. | **24 Tests** (9 Pos / 15 Neg) | Modal confirmation handling, strict positive assertions, search grid validation |
+| **Consultant Management** | Automates consultant profile creation, contract period assignment, and rate configuration. | **Automated** | Rate validations, contract dates, consultant profile creation |
 
 ---
 
