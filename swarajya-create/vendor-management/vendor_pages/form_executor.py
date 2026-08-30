@@ -90,6 +90,15 @@ class FormExecutor:
         outcome = self.vendor.click_save_and_confirm(confirm=True)
         vendor_name = full_data.get("Vendor Name", "").strip()
 
+        # Strict positive assertions
+        assert "please fill all details correctly" not in outcome.lower(), f"Vendor creation rejected with error: '{outcome}'"
+        errors = self.vendor.get_validation_errors()
+        assert not errors, f"Vendor creation has validation errors: {errors}"
+        
+        # Verify success or valid navigation
+        is_success = ("success" in outcome.lower()) or ("vendordetails" in self.page.url.lower()) or (not self.vendor.is_form_invalid())
+        assert is_success, f"Vendor creation did not succeed. Outcome: '{outcome}'"
+
         FormExecutor.last_created_vendor = {
             "name": vendor_name,
             "email": full_data.get("Email", "").strip(),
@@ -204,20 +213,44 @@ class FormExecutor:
         return result
 
     def _build_vendor_data(self, tc_id: str, overrides: Dict[str, str]) -> Dict[str, str]:
-        ts = int(time.time()) % 100000
+        ts = int(time.time() * 1000) % 1000000
         num = re.search(r"(\d+)$", tc_id).group(1) if re.search(r"(\d+)$", tc_id) else "01"
+        is_pos = "POS" in tc_id
+        default_phone = f"98{ts%100000000:08d}"
+        
         data = {
             "Vendor Name": f"AutoVendor_{num}_{ts}",
             "Country": "India",
+            "State": "Maharashtra",
             "Email": f"vendor_{num}_{ts}@example.com",
-            "Phone": f"+91-98765{ts%100000:05d}",
+            "Phone": default_phone,
             "Address": "123 Tech Park",
+            "POC": "John Doe",
+            "TDS Percentage (%)": "10",
+            "Tax Number": "TAX12345",
             "Active": "Ticked",
             "Payment Terms (Days)": "30",
         }
         for k, v in overrides.items():
+            key_lower = k.lower()
             if "100 times" in v.lower():
                 v = "A" * 100
+            elif is_pos and "vendor name" in key_lower:
+                clean_name = v.strip().replace("'", "")
+                if "space corp" in clean_name.lower():
+                    v = f"   SpaceCorp_{ts}   "
+                else:
+                    v = f"{clean_name}_{ts}"
+            elif is_pos and "email" in key_lower:
+                v = f"vendor_{num}_{ts}@example.com"
+            elif is_pos and "phone" in key_lower:
+                digits = re.sub(r"\D", "", v)
+                if len(digits) == 10 and digits[0] in "6789":
+                    v = digits
+                elif len(digits) >= 10 and digits[-10] in "6789":
+                    v = digits[-10:]
+                else:
+                    v = default_phone
             data[k] = v
         return data
 

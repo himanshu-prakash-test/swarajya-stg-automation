@@ -163,28 +163,26 @@ class VendorPage(BasePage):
         self.click_save()
 
         # Handle confirmation dialog
-        modal_sel = ".mat-mdc-dialog-container, .mat-dialog-container, .modal-dialog, [role='dialog']"
         try:
-            modal = self.page.locator(modal_sel).first
-            if modal.is_visible(timeout=1000):
-                if confirm:
-                    yes_btn = self.page.locator(
-                        f"{modal_sel} button:has-text('Yes'), {modal_sel} button:has-text('Confirm'), {modal_sel} button:has-text('Save'), {modal_sel} button.btn-primary"
-                    ).first
-                    yes_btn.click()
-                    self.log.info("Confirmed Save popup (clicked Yes)")
-                else:
-                    no_btn = self.page.locator(
-                        f"{modal_sel} button:has-text('No'), {modal_sel} button:has-text('Cancel'), {modal_sel} button:has-text('Close')"
-                    ).first
-                    no_btn.click()
-                    self.log.info("Dismissed Save popup (clicked No)")
-                    return "Cancelled"
+            if confirm:
+                yes_btn = self.page.locator("button:has-text('Yes'), button:has-text('Confirm')").first
+                yes_btn.wait_for(state="visible", timeout=3000)
+                yes_btn.click()
+                self.log.info("Confirmed Save popup (clicked Yes)")
+                self.page.wait_for_timeout(1000)
+                self.wait_for_dom_ready()
+            else:
+                no_btn = self.page.locator("button:has-text('No')").first
+                no_btn.wait_for(state="visible", timeout=3000)
+                no_btn.click()
+                self.log.info("Dismissed Save popup (clicked No)")
+                self.page.wait_for_timeout(500)
+                return "Cancelled"
         except Exception:
             pass
 
         # Capture toast or confirmation outcome
-        toast = self.get_toast(timeout=1500)
+        toast = self.get_toast(timeout=2000)
         self.log.info(f"Save confirmation outcome: '{toast}'")
         return toast
 
