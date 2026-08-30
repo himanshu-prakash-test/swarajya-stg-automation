@@ -8,8 +8,8 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 
 | Contributor / Scope | Modules Covered | Branches | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
-| **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module | `create/employee-mgmt`<br>`features/himanshu` | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• Dynamic Waits, Network Offline Mocks |
-| **Partner (Mrugank)** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Consultant Management** Module | `update_emp_mgmt`<br>`features/mrugank` | • `test_hr_admin.py`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
+| **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module | `swarajya-create`<br>`login/emp-manager` | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• Dynamic Waits, Modal Handlers, Network Offline Mocks |
+| **Partner (Mrugank)** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Consultant Management** Module | `update_emp_mgmt`<br>`features/mrugank` | • `test_hr_admin.py`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• `Swarajya-Consultant-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
 
 ---
 
@@ -30,17 +30,22 @@ swarajya-stg-automation/
 │
 ├── swarajya-create/                    # 📋 Master Create Operations Suite
 │   │
-│   ├── employee-management/            # 👤 Create Employee Module (27 Tests)
+│   ├── employee-management/            # 👤 Create Employee Module (30 Tests)
 │   │   ├── emp_pages/                  # BasePage, LoginPage, EmployeePage, FormExecutor
 │   │   ├── emp_utils/                  # Excel Reader, Logger, Popup
 │   │   ├── test_data/                  # Swarajya-Create-test-cases (6).xlsx
-│   │   └── tests/                      # test_emp_positive_flows.py, test_emp_negative_flows.py
+│   │   └── tests/                      # Positive & Negative Employee Test Suites
 │   │
-│   └── vendor-management/              # 🏢 Create Vendor Module (25 Tests)
-│       ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
-│       ├── vendor_utils/               # Excel Reader, Logger, Popup
-│       ├── test_data/                  # Create-Vendor-Management.xlsx
-│       └── tests/                      # test_vendor_positive_flows.py, test_vendor_negative_flows.py
+│   ├── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
+│   │   ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
+│   │   ├── vendor_utils/               # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Create-Vendor-Management.xlsx
+│   │   └── tests/                      # Positive & Negative Vendor Test Suites
+│   │
+│   └── consultant-management/          # 💼 Create Consultant Module
+│       ├── consultant_pages/           # BasePage, ConsultantPage, FormExecutor
+│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
+│       └── tests/                      # Positive & Negative Consultant Creation Tests
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
@@ -50,12 +55,12 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
 │   │   └── tests/                      # test_employee_updates.py
 │   │
-│   └── consultant-management/          # 💼 Consultant Management Module
+│   └── consultant-management/          # 💼 Update Consultant Module
 │       ├── consultant_pages/           # Consultant Profile & Contract Updaters
 │       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
 │       └── tests/                      # test_consultant_management.py
 │
-├── .gitignore                          # Excludes caches, temp media, screenshots & session tokens
+├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers
 └── README.md                           # Master Architecture Documentation
 ```
@@ -70,8 +75,9 @@ swarajya-stg-automation/
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
+| **Create Operations** | Consultant Management | Partner / Team | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
-| **Consultant Mgmt** | Consultant Management | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
+| **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 
 ---
 
@@ -83,7 +89,7 @@ swarajya-stg-automation/
    - Reads inputs dynamically from Excel and writes back real-time execution results (`PASS` / `FAIL`), `AUT_*` IDs, and timestamps.
 3. **1-to-1 Screenshot Audit & Auto-Retention**:
    - Captures exactly 1 screenshot per test case (`{STATUS}_{TC_ID}__{TIMESTAMP}.png`).
-   - Automatically purges screenshots older than 24 hours and caps folder size (max 60 files).
+   - Automatically purges screenshots older than 24 hours and caps folder size.
 4. **Desktop Summary Dialogs**:
    - Instant Tkinter popup summary displaying execution metrics (Total, Passed, Failed, Duration) at the end of each session.
 5. **Network Mocking & Security Payloads**:
@@ -92,43 +98,28 @@ swarajya-stg-automation/
 
 ---
 
-## 🚀 Execution Commands
+## 🚀 Quick Execution Commands
 
-### 1. Create Operations (Employee & Vendor)
+### 1. Run Vendor Management
 ```powershell
-# Run Vendor Management
 cd swarajya-create\vendor-management
 pytest
+```
 
-# Run Employee Management
+### 2. Run Employee Management
+```powershell
 cd swarajya-create\employee-management
 pytest
 ```
 
-### 2. Update Operations (Employee & Consultant)
+### 3. Run Login Authentication Suite
 ```powershell
-# Run Employee Update Suite
-cd update\emp_mgmt
-pytest tests/test_employee_updates.py
-
-# Run Consultant Management Suite
-cd update\consultant-management
-pytest
-```
-
-### 3. Login Suites (Role-Based)
-```powershell
-# General & Employee/Manager Login
 cd swarajya-login\swarajya-automation
 pytest
-
-# HR & Admin Login
-pytest tests/test_hr_admin.py
 ```
 
----
-
-## 🛡️ Git & Merge Conflict Prevention
-* **Ignored Runtime Artifacts**: `.pytest_cache/`, `__pycache__/`, `screenshots/*.png`, and `auth_state.json` are strictly excluded in `.gitignore`.
-* **Namespaced Packages**: `emp_pages/`, `vendor_pages/`, and `pages/` ensure zero module name collisions across branches.
-* **Rebase Strategy**: Always run `git fetch origin` and `git rebase origin/main` before merging pull requests to guarantee a clean, linear commit graph.
+### 4. Run Update Employee Suite (Partner Module)
+```powershell
+cd update\emp_mgmt
+pytest
+```
