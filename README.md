@@ -54,11 +54,7 @@ swarajya-stg-automation/
 │   │   ├── employee_workbook.py        # Excel Synchronizer for Update Scenarios
 │   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
 │   │   └── tests/                      # test_employee_updates.py
-│   │
-│   └── consultant-management/          # 💼 Update Consultant Module
-│       ├── consultant_pages/           # Consultant Profile & Contract Updaters
-│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
-│       └── tests/                      # test_consultant_management.py
+│ 
 │
 ├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers
