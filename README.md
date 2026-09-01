@@ -73,8 +73,6 @@ swarajya-stg-automation/
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
 | **Create Operations** | Consultant Management | Partner / Team | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
-| **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
-
 ---
 
 ## ⚡ Core Engineering & Quality Standards
