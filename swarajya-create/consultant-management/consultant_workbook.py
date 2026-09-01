@@ -5,7 +5,9 @@ import openpyxl
 class ConsultantWorkbook:
     """Parser for Create-Consultant-Management.xlsx workbook."""
 
-    def __init__(self, file_path="create/consultant_mgmt/test_data/Create-Consultant-Management.xlsx"):
+    def __init__(self, file_path=None):
+        if file_path is None:
+            file_path = os.path.join(os.path.dirname(__file__), "test_data", "Create-Consultant-Management.xlsx")
         self.file_path = file_path
 
     def _parse_field_data(self, raw_text):

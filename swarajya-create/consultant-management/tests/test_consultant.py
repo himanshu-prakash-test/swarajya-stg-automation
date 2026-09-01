@@ -1,19 +1,24 @@
-import logging
-import os
-import time
-import pytest
+import sys
 
-from create.consultant_mgmt.consultant_workbook import ConsultantWorkbook
-from create.consultant_mgmt.pages.consultant_page import ConsultantPage
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if MODULE_DIR not in sys.path:
+    sys.path.insert(0, MODULE_DIR)
+ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from consultant_workbook import ConsultantWorkbook
+from pages.consultant_page import ConsultantPage
 
 log = logging.getLogger(__name__)
 
 # Initialize workbook and retrieve test cases
-workbook = ConsultantWorkbook("create/consultant_mgmt/test_data/Create-Consultant-Management.xlsx")
+WORKBOOK_PATH = os.path.join(MODULE_DIR, "test_data", "Create-Consultant-Management.xlsx")
+workbook = ConsultantWorkbook(WORKBOOK_PATH)
 pos_test_cases = workbook.get_positive_test_cases()
 neg_test_cases = workbook.get_negative_test_cases()
 
-SCREENSHOT_DIR = os.path.join(os.getcwd(), "create", "consultant_mgmt", "screenshots")
+SCREENSHOT_DIR = os.path.join(MODULE_DIR, "screenshots")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
 
