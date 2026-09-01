@@ -1,6 +1,0 @@
-pytest
-playwright
-pytest-playwright
-openpyxl
-pytest-html
-pytest-metadata
