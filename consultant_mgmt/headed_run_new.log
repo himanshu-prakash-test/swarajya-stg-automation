@@ -1,0 +1,884 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.3.5, pluggy-1.6.0 -- /Users/mrugankkapse/Documents/swarajya_update_automation/.venv/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.6', 'Platform': 'macOS-26.6.2-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '8.3.5', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'metadata': '3.1.1'}}
+rootdir: /Users/mrugankkapse/Documents/swarajya_update_automation
+configfile: pytest.ini
+plugins: html-4.1.1, metadata-3.1.1
+collecting ... collected 15 items
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_01] 20:54:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:54:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:54:33 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:54:33 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:54:33 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:54:33 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:54:34 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_01: Verify navigation to Consultant Dashboard
+-------------------------------- live log call ---------------------------------
+20:54:34 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_01: Verify navigation to Consultant Dashboard
+20:54:50 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_01 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:54:50 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_01 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:54:50 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_01_20260830_205450.png
+
+------------------------------ live log teardown -------------------------------
+20:54:50 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_01_20260830_205450.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_02] 20:54:50 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:54:50 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:54:51 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:54:51 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:54:51 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:54:51 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:54:52 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_02: Create new consultant with mandatory fields
+-------------------------------- live log call ---------------------------------
+20:54:52 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_02: Create new consultant with mandatory fields
+20:55:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_02 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:55:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_02 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:55:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_02_20260830_205507.png
+
+------------------------------ live log teardown -------------------------------
+20:55:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_02_20260830_205507.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_03] 20:55:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:55:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:55:08 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:08 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:08 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:08 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:09 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_03: Verify consultant creation save and confirmation popup
+-------------------------------- live log call ---------------------------------
+20:55:09 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_03: Verify consultant creation save and confirmation popup
+20:55:25 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_03 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:55:25 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_03 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:55:25 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_03_20260830_205525.png
+
+------------------------------ live log teardown -------------------------------
+20:55:25 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_03_20260830_205525.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_04] 20:55:25 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:55:25 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:55:25 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:25 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:25 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:25 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:27 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_04: Validate new consultant is listed in Consultant Dashboard via search
+-------------------------------- live log call ---------------------------------
+20:55:27 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_04: Validate new consultant is listed in Consultant Dashboard via search
+20:55:42 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_04 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:55:42 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_04 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:55:42 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_04_20260830_205542.png
+
+------------------------------ live log teardown -------------------------------
+20:55:42 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_04_20260830_205542.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_05] 20:55:42 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:55:42 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:55:43 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:43 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:55:43 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:43 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:55:44 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_05: Verify successful consultant creation with optional Middle Name, Address and Bank Branch filled
+-------------------------------- live log call ---------------------------------
+20:55:44 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_05: Verify successful consultant creation with optional Middle Name, Address and Bank Branch filled
+20:55:59 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_05 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:55:59 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_05 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:55:59 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_05_20260830_205559.png
+
+------------------------------ live log teardown -------------------------------
+20:55:59 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_05_20260830_205559.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_06] 20:56:00 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:56:00 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:56:00 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:00 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:00 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:00 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:01 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_06: Verify Cancel button functionality during consultant creation
+-------------------------------- live log call ---------------------------------
+20:56:01 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_06: Verify Cancel button functionality during consultant creation
+20:56:17 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_06 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:56:17 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_06 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:56:17 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_06_20260830_205617.png
+
+------------------------------ live log teardown -------------------------------
+20:56:17 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_06_20260830_205617.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_07] 20:56:17 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:56:17 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:56:24 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_07: Verify successful consultant creation with 'Active' unticked and optional fields left blank
+-------------------------------- live log call ---------------------------------
+20:56:24 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_07: Verify successful consultant creation with 'Active' unticked and optional fields left blank
+20:56:39 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_07 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:56:39 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_07 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:56:39 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_07_20260830_205639.png
+
+------------------------------ live log teardown -------------------------------
+20:56:39 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_07_20260830_205639.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_08] 20:56:39 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:56:39 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:56:40 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:40 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:40 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:40 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:41 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_08: Verify selecting 'No' on confirmation pop-up returns to Add Consultant page
+-------------------------------- live log call ---------------------------------
+20:56:41 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_08: Verify selecting 'No' on confirmation pop-up returns to Add Consultant page
+20:56:56 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_08 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:56:56 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_08 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:56:57 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_08_20260830_205657.png
+
+------------------------------ live log teardown -------------------------------
+20:56:57 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_08_20260830_205657.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_09] 20:56:57 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:56:57 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:56:57 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:57 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:56:57 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:57 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:56:59 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_09: Verify new inactive consultant is listed on Consultant Dashboard by searching with 'Include Inactive Consultant' ticked
+-------------------------------- live log call ---------------------------------
+20:56:59 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_09: Verify new inactive consultant is listed on Consultant Dashboard by searching with 'Include Inactive Consultant' ticked
+20:57:14 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_09 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:57:14 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_09 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:57:14 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_09_20260830_205714.png
+
+------------------------------ live log teardown -------------------------------
+20:57:14 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_09_20260830_205714.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_10] 20:57:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:57:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:57:15 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:15 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:15 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:15 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:16 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_10: Verify creation with exactly maximum allowed characters in all text fields
+-------------------------------- live log call ---------------------------------
+20:57:16 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_10: Verify creation with exactly maximum allowed characters in all text fields
+20:57:31 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_10 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:57:31 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_10 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:57:32 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_10_20260830_205731.png
+
+------------------------------ live log teardown -------------------------------
+20:57:32 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_10_20260830_205731.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_11] 20:57:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:57:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:57:32 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:32 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:32 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:32 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:33 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_11: Verify leading and trailing whitespaces are trimmed from input fields upon saving
+-------------------------------- live log call ---------------------------------
+20:57:33 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_11: Verify leading and trailing whitespaces are trimmed from input fields upon saving
+20:57:49 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_11 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:57:49 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_11 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:57:49 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_11_20260830_205749.png
+
+------------------------------ live log teardown -------------------------------
+20:57:49 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_11_20260830_205749.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_12] 20:57:49 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:57:49 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:57:57 | WARNING | pages.login_page | Staging 503 detected; reloading (attempt 1)...
+20:57:57 | WARNING | pages.login_page | Staging 503 detected; reloading (attempt 1)...
+20:57:58 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:58 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:57:58 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:58 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:57:59 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_12: Verify existing consultant details can be edited via the Actions edit icon
+-------------------------------- live log call ---------------------------------
+20:57:59 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_12: Verify existing consultant details can be edited via the Actions edit icon
+20:58:14 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_12 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:58:14 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_12 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:58:15 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_12_20260830_205814.png
+
+------------------------------ live log teardown -------------------------------
+20:58:15 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_12_20260830_205814.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_13] 20:58:15 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:58:15 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:58:15 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:15 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:15 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:15 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:16 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_13: Verify Account Number is masked on Consultant Dashboard
+-------------------------------- live log call ---------------------------------
+20:58:16 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_13: Verify Account Number is masked on Consultant Dashboard
+20:58:32 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_13 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:58:32 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_13 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:58:32 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_13_20260830_205832.png
+
+------------------------------ live log teardown -------------------------------
+20:58:32 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_13_20260830_205832.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_14] 20:58:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:58:32 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:58:33 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:33 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:33 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:33 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:34 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_14: Verify Status toggle changes consultant from Active to Inactive
+-------------------------------- live log call ---------------------------------
+20:58:34 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_14: Verify Status toggle changes consultant from Active to Inactive
+20:58:49 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_14 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:58:49 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_14 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:58:50 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_14_20260830_205850.png
+
+------------------------------ live log teardown -------------------------------
+20:58:50 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_14_20260830_205850.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_15] 20:58:50 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:58:50 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:58:50 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:50 | INFO    | pages.tfa_page | Entering 2FA auth code (masked)
+20:58:50 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:50 | INFO    | pages.tfa_page | Clicking 2FA Submit
+20:58:51 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_15: Verify pagination works correctly on Consultant Dashboard
+-------------------------------- live log call ---------------------------------
+20:58:51 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_15: Verify pagination works correctly on Consultant Dashboard
+20:59:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_15 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:59:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_15 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:59:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_15_20260830_205907.png
+
+------------------------------ live log teardown -------------------------------
+20:59:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_15_20260830_205907.png
+
+============================================
+  CONSULTANT MANAGEMENT AUTOMATION — 15 FAILED
+============================================
+  Total: 15  |  Passed: 0  |  Failed: 15  |  Skipped: 0
+  Duration: 0:04:36
+  Failed:
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_01]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_02]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_03]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_04]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_05]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_06]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_07]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_08]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_09]
+    - consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_10]
+============================================
+
+
+
+=================================== FAILURES ===================================
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_01] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_01: Verify navigation to Consultant Dashboard
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_01 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_01_20260830_205450.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_02] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_02: Create new consultant with mandatory fields
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_02 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_02_20260830_205507.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_03] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_03: Verify consultant creation save and confirmation popup
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_03 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_03_20260830_205525.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_04] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_04: Validate new consultant is listed in Consultant Dashboard via search
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_04 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_04_20260830_205542.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_05] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_05: Verify successful consultant creation with optional Middle Name, Address and Bank Branch filled
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_05 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_05_20260830_205559.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_06] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_06: Verify Cancel button functionality during consultant creation
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_06 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_06_20260830_205617.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_07] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_07: Verify successful consultant creation with 'Active' unticked and optional fields left blank
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_07 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_07_20260830_205639.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_08] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_08: Verify selecting 'No' on confirmation pop-up returns to Add Consultant page
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_08 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_08_20260830_205657.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_09] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_09: Verify new inactive consultant is listed on Consultant Dashboard by searching with 'Include Inactive Consultant' ticked
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_09 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_09_20260830_205714.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_10] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_10: Verify creation with exactly maximum allowed characters in all text fields
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_10 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_10_20260830_205731.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_11] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_11: Verify leading and trailing whitespaces are trimmed from input fields upon saving
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_11 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_11_20260830_205749.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_12] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+WARNING  pages.login_page:login_page.py:58 Staging 503 detected; reloading (attempt 1)...
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_12: Verify existing consultant details can be edited via the Actions edit icon
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_12 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_12_20260830_205814.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_13] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_13: Verify Account Number is masked on Consultant Dashboard
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_13 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_13_20260830_205832.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_14] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_14: Verify Status toggle changes consultant from Active to Inactive
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_14 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_14_20260830_205850.png
+___ TestConsultantManagement.test_consultant_workflow[TC_CONSULTANT_POS_15] ____
+consultant_mgmt/tests/test_consultant.py:76: in test_consultant_workflow
+    consultant_page.navigate_to_list()
+consultant_mgmt/pages/consultant_page.py:37: in navigate_to_list
+    self.page.locator("button:has-text('New Consultant'), tbody tr").first.wait_for(state="visible", timeout=15_000)
+.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:17920: in wait_for
+    self._sync(self._impl_obj.wait_for(timeout=timeout, state=state))
+.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:685: in wait_for
+    await self._frame.wait_for_selector(
+.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:528: in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E   playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+E   Call log:
+E     - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+------------------------------ Captured log setup ------------------------------
+INFO     pages.login_page:login_page.py:43 Opening https://swarajya-stg.corecotechnologies.com/
+INFO     pages.tfa_page:tfa_page.py:60 Entering 2FA auth code (masked)
+INFO     pages.tfa_page:tfa_page.py:65 Clicking 2FA Submit
+------------------------------ Captured log call -------------------------------
+INFO     test_consultant:test_consultant.py:66 Executing TC_CONSULTANT_POS_15: Verify pagination works correctly on Consultant Dashboard
+ERROR    test_consultant:test_consultant.py:122 Test TC_CONSULTANT_POS_15 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+---------------------------- Captured log teardown -----------------------------
+INFO     conftest:conftest.py:274 Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_15_20260830_205907.png
+=========================== short test summary info ============================
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_01] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_02] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_03] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_04] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_05] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_06] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_07] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_08] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_09] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_10] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_11] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_12] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_13] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_14] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+FAILED consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_15] - playwright._impl._errors.TimeoutError: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+======================= 15 failed in 3734.07s (1:02:14) ========================

@@ -1,0 +1,379 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-8.3.5, pluggy-1.6.0 -- /Users/mrugankkapse/Documents/swarajya_update_automation/.venv/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.6', 'Platform': 'macOS-26.6.2-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '8.3.5', 'pluggy': '1.6.0'}, 'Plugins': {'html': '4.1.1', 'metadata': '3.1.1'}}
+rootdir: /Users/mrugankkapse/Documents/swarajya_update_automation
+configfile: pytest.ini
+plugins: html-4.1.1, metadata-3.1.1
+collecting ... collected 15 items
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_01] 20:48:45 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:48:45 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:48:51 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_01: Verify navigation to Consultant Dashboard
+-------------------------------- live log call ---------------------------------
+20:48:51 | INFO    | test_consultant | Executing TC_CONSULTANT_POS_01: Verify navigation to Consultant Dashboard
+20:49:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_01 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+20:49:07 | ERROR   | test_consultant | Test TC_CONSULTANT_POS_01 failed: Locator.wait_for: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("button:has-text('New Consultant'), tbody tr").first to be visible
+. Failure screenshot saved.
+FAILED20:49:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_01_20260830_204907.png
+
+------------------------------ live log teardown -------------------------------
+20:49:07 | INFO    | conftest | Screenshot saved: /Users/mrugankkapse/Documents/swarajya_update_automation/screenshots/test_consultant_workflow_TC_CONSULTANT_POS_01_20260830_204907.png
+
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_02] 20:49:07 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:07 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:07 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:07 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_03] 20:49:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:08 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:08 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_04] 20:49:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:08 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:09 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:09 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_05] 20:49:09 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:09 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:09 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:09 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_06] 20:49:09 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:09 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:10 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:10 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_07] 20:49:10 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:10 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:10 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:10 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_08] 20:49:10 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:10 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:11 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:11 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_09] 20:49:11 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:11 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:11 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:11 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_10] 20:49:11 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:11 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:12 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:12 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_11] 20:49:12 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:12 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:13 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:13 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_12] 20:49:13 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:13 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:13 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:13 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_13] 20:49:13 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:13 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:14 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:14 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_14] 20:49:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:14 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:14 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
+consultant_mgmt/tests/test_consultant.py::TestConsultantManagement::test_consultant_workflow[TC_CONSULTANT_POS_15] 20:49:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+
+-------------------------------- live log setup --------------------------------
+20:49:14 | INFO    | pages.login_page | Opening https://swarajya-stg.corecotechnologies.com/
+20:49:16 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+20:49:16 | ERROR   | test_consultant | Error in hr_login fixture: Non-base32 digit found
+Traceback (most recent call last):
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/consultant_mgmt/tests/test_consultant.py", line 50, in hr_login
+    tfa_page.submit_auth_code(totp.now())
+                              ~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/totp.py", line 64, in now
+    return self.generate_otp(self.timecode(datetime.datetime.now()))
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 35, in generate_otp
+    hasher = hmac.new(self.byte_secret(), self.int_to_bytestring(input), self.digest)
+                      ~~~~~~~~~~~~~~~~^^
+  File "/Users/mrugankkapse/Documents/swarajya_update_automation/.venv/lib/python3.14/site-packages/pyotp/otp.py", line 52, in byte_secret
+    return base64.b32decode(secret, casefold=True)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 249, in b32decode
+    return _b32decode(_b32alphabet, s, casefold, map01)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/base64.py", line 231, in _b32decode
+    raise binascii.Error('Non-base32 digit found') from None
+binascii.Error: Non-base32 digit found
+ERROR
