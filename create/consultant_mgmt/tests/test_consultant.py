@@ -3,17 +3,17 @@ import os
 import time
 import pytest
 
-from create_consultant_mgmt.consultant_workbook import ConsultantWorkbook
-from create_consultant_mgmt.pages.consultant_page import ConsultantPage
+from create.consultant_mgmt.consultant_workbook import ConsultantWorkbook
+from create.consultant_mgmt.pages.consultant_page import ConsultantPage
 
 log = logging.getLogger(__name__)
 
 # Initialize workbook and retrieve test cases
-workbook = ConsultantWorkbook("create_consultant_mgmt/test_data/Create-Consultant-Management.xlsx")
+workbook = ConsultantWorkbook("create/consultant_mgmt/test_data/Create-Consultant-Management.xlsx")
 pos_test_cases = workbook.get_positive_test_cases()
 neg_test_cases = workbook.get_negative_test_cases()
 
-SCREENSHOT_DIR = os.path.join(os.getcwd(), "create_consultant_mgmt", "screenshots")
+SCREENSHOT_DIR = os.path.join(os.getcwd(), "create", "consultant_mgmt", "screenshots")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
 
