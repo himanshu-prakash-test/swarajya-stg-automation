@@ -5,7 +5,16 @@ This file intentionally validates all workbook entries relevant to the current
 login flow instead of skipping General cases.
 """
 
+import os
+import sys
 import time
+
+# Ensure project root and login module dir are in sys.path
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
+for path_dir in (MODULE_DIR, ROOT_DIR):
+    if path_dir not in sys.path:
+        sys.path.insert(0, path_dir)
 
 import pyotp
 import pytest
@@ -397,3 +406,15 @@ def test_general_login_cases(page, base_url, tc_id):
         return
 
     pytest.fail(f"Unhandled general login case: {tc_id}")
+
+
+if __name__ == "__main__":
+    os.environ.setdefault("SWARAJYA_POPUP_TITLE", "HR & Admin Login - Results")
+    os.environ.setdefault("SWARAJYA_POPUP_HEADER", "SWARAJYA HR & ADMIN LOGIN")
+    config_file = os.path.join(ROOT_DIR, "pytest.ini")
+    extra_args = sys.argv[1:]
+    pytest_args = [__file__, "-c", config_file, "-o", f"rootdir={ROOT_DIR}", "-v", "-s"]
+    if not any(arg in extra_args for arg in ("--headed", "--headless")):
+        pytest_args.append("--headed")
+    pytest_args.extend(extra_args)
+    sys.exit(pytest.main(pytest_args))

@@ -4,7 +4,16 @@ Login page tests for Swarajya staging.
 Covers Employee and Manager roles. Credentials come from
 test_data/credentials.xlsx — never hardcoded.
 """
+import os
+import sys
 import logging
+
+# Ensure project root and login module dir are in sys.path
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
+for path_dir in (MODULE_DIR, ROOT_DIR):
+    if path_dir not in sys.path:
+        sys.path.insert(0, path_dir)
 
 import pytest
 
@@ -529,3 +538,14 @@ class TestEdgeCases:
 
         lp2 = LoginPage(page, base_url)
         assert lp2.is_employee_id_field_visible() or "/default" not in page.url
+
+
+if __name__ == "__main__":
+    os.environ.setdefault("SWARAJYA_POPUP_TITLE", "Login Automation - Results")
+    os.environ.setdefault("SWARAJYA_POPUP_HEADER", "SWARAJYA LOGIN AUTOMATION")
+    extra_args = sys.argv[1:]
+    pytest_args = [__file__, "-v", "-s"]
+    if not any(arg in extra_args for arg in ("--headed", "--headless")):
+        pytest_args.append("--headed")
+    pytest_args.extend(extra_args)
+    sys.exit(pytest.main(pytest_args))
