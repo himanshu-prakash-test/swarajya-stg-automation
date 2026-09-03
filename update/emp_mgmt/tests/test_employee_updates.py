@@ -1,15 +1,31 @@
-"""Workbook-driven Employee Management update tests with automated screenshot capture."""
-
 import logging
 import os
 import re
+import sys
 import time
+
+# Ensure project root and update/emp_mgmt are in sys.path
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
+for path_dir in (MODULE_DIR, ROOT_DIR):
+    if path_dir not in sys.path:
+        sys.path.insert(0, path_dir)
+
+venv_python = os.path.join(ROOT_DIR, ".venv", "bin", "python3")
+if os.path.exists(venv_python) and sys.executable != venv_python and not os.environ.get("_IN_VENV_SUBPROC"):
+    os.environ["_IN_VENV_SUBPROC"] = "1"
+    os.execv(venv_python, [venv_python] + sys.argv)
+
 import pytest
 
 from pages.login_page import LoginPage
 from pages.tfa_page import TfaPage
-from update.emp_mgmt.employee_update_page import EmployeeUpdatePage
-from update.emp_mgmt.employee_workbook import read_employee_cases, update_employee_result
+try:
+    from update.emp_mgmt.employee_update_page import EmployeeUpdatePage
+    from update.emp_mgmt.employee_workbook import read_employee_cases, update_employee_result
+except ImportError:
+    from employee_update_page import EmployeeUpdatePage
+    from employee_workbook import read_employee_cases, update_employee_result
 
 log = logging.getLogger(__name__)
 
@@ -179,3 +195,17 @@ def test_employee_update_case(case, page, base_url, employee_credentials):
         raise
     else:
         update_employee_result(case_id, "PASS")
+
+
+if __name__ == "__main__":
+    default_wb = os.path.join(MODULE_DIR, "test_data", "Swarajya-Update-Employee-test-cases.xlsx")
+    os.environ.setdefault("EMPLOYEE_UPDATE_WORKBOOK", default_wb)
+    os.environ.setdefault("SWARAJYA_POPUP_TITLE", "Swarajya Employee Update - Results")
+    os.environ.setdefault("SWARAJYA_POPUP_HEADER", "SWARAJYA EMPLOYEE UPDATE AUTOMATION")
+    config_file = os.path.join(ROOT_DIR, "pytest.ini")
+    extra_args = sys.argv[1:]
+    pytest_args = [__file__, "-c", config_file, "-o", f"rootdir={ROOT_DIR}", "-v", "-s"]
+    if not any(arg in extra_args for arg in ("--headed", "--headless")):
+        pytest_args.append("--headed")
+    pytest_args.extend(extra_args)
+    sys.exit(pytest.main(pytest_args))

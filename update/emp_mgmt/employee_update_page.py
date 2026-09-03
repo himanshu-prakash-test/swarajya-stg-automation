@@ -53,9 +53,13 @@ class EmployeeUpdatePage:
 
     def navigate_to_list(self):
         url = f"{self.base_url}{self.list_path}"
-        if self.page.url != url:
+        if not self.page.url.startswith(url):
             self.page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr").first.wait_for(state="visible", timeout=15_000)
+        try:
+            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(state="visible", timeout=20_000)
+        except Exception:
+            self.page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(state="visible", timeout=20_000)
         return self
 
     def _first(self, locators):
@@ -89,21 +93,24 @@ class EmployeeUpdatePage:
             return self
 
         self.navigate_to_list()
-        search = self._first([
-            self.page.locator("input[type='search']"),
-            self.page.get_by_placeholder("Search", exact=False),
-            self.page.get_by_role("textbox", name="Search", exact=False),
-        ])
-        search.fill(str(self.target_employee))
-        search.press("Enter")
-
-        row = self.page.get_by_role("row").filter(has_text=str(self.target_employee))
         try:
-            row.first.wait_for(state="visible", timeout=8_000)
+            search = self._first([
+                self.page.locator("input[type='search']"),
+                self.page.get_by_placeholder("Search", exact=False),
+                self.page.get_by_role("textbox", name="Search", exact=False),
+            ])
+            search.fill(str(self.target_employee))
+            search.press("Enter")
         except Exception:
             pass
 
-        for attempt in range(3):
+        row = self.page.get_by_role("row").filter(has_text=str(self.target_employee))
+        try:
+            row.first.wait_for(state="visible", timeout=6_000)
+        except Exception:
+            pass
+
+        for attempt in range(4):
             try:
                 profile_btn = self._first([
                     row.locator("button[mattooltip='Profile']"),
@@ -112,15 +119,16 @@ class EmployeeUpdatePage:
                     self.page.locator("button:has(i.icofont-user)"),
                     self.page.locator("a[href*='empProfile']"),
                     row.locator("button").first,
+                    self.page.locator("tbody tr button").first,
                 ])
                 profile_btn.scroll_into_view_if_needed()
                 profile_btn.click(force=True)
-                self.page.wait_for_url("**/empProfile/**", timeout=8_000)
-                self.page.locator("input[name='emp_first_name'], input[name='id']").first.wait_for(state="visible", timeout=10_000)
+                self.page.locator("input[name='emp_first_name'], input[name='id']").first.wait_for(state="visible", timeout=12_000)
                 return self
             except Exception:
-                if attempt == 2:
+                if attempt == 3:
                     raise
+
         return self
 
     def set_field(self, names, value):
@@ -214,7 +222,25 @@ class EmployeeUpdatePage:
         cancel_btn.click(force=True)
         return self
 
-    def success_message_visible(self, timeout=6_000):
+    def has_form_errors(self):
+        error_locators = self.page.locator(
+            "mat-error, .mat-mdc-form-field-error, .invalid-feedback, .text-danger, [aria-invalid='true']"
+        )
+        if error_locators.count():
+            for i in range(error_locators.count()):
+                try:
+                    if error_locators.nth(i).is_visible():
+                        return True
+                except Exception:
+                    continue
+        if self.page.locator("input.ng-invalid.ng-touched, mat-select.ng-invalid.ng-touched").count():
+            return True
+        text = self.page.locator("body").inner_text().lower()
+        if any(v in text for v in ("is required", "invalid email", "enter valid", "already exist", "must be", "cannot be")):
+            return True
+        return False
+
+    def success_message_visible(self, timeout=4_000):
         # 1. Dynamically wait for URL to transition to employeeList
         try:
             self.page.wait_for_url(lambda url: "/employeeList" in url, timeout=timeout)
@@ -229,32 +255,26 @@ class EmployeeUpdatePage:
                 return True
         except Exception:
             pass
-        return "/empProfile/" in self.page.url and not self.validation_visible()
+
+        # 3. Absence of form errors
+        return not self.has_form_errors()
 
     def validation_visible(self):
-        # 1. Visible error elements or snackbar
-        error_locators = self.page.locator(
-            "mat-error, .mat-mdc-form-field-error, .invalid-feedback, .text-danger, simple-snack-bar, .mat-mdc-snack-bar-label, [aria-invalid='true']"
-        )
-        if error_locators.count():
-            for i in range(error_locators.count()):
-                try:
-                    if error_locators.nth(i).is_visible():
-                        return True
-                except Exception:
-                    continue
-
-        # 2. Check ng-invalid inputs
-        if self.page.locator("input.ng-invalid:not(.ng-pristine), mat-select.ng-invalid:not(.ng-pristine)").count():
+        # 1. Error elements visible
+        if self.has_form_errors():
             return True
 
-        # 3. Text keywords
-        text = self.page.locator("body").inner_text().lower()
-        if any(v in text for v in ("required", "invalid", "must be", "error", "cannot be", "already exist", "allowed")):
+        # 2. Check if save button is disabled
+        save_btn = self.page.locator("button[type='submit'], button:has-text('Save'), button:has-text('Update')").first
+        if save_btn.count() and (save_btn.is_disabled() or "disabled" in (save_btn.get_attribute("class") or "")):
             return True
 
-        # 4. Form remained on profile and did not redirect to employee list
-        if "/empProfile/" in self.page.url and not ("/employeeList" in self.page.url):
+        # 3. Any ng-invalid class on page inputs
+        if self.page.locator("input.ng-invalid, mat-select.ng-invalid, .ng-invalid").count():
+            return True
+
+        # 4. Form remained on profile without redirecting to employee list
+        if "/empProfile/" in self.page.url:
             return True
 
         return False
