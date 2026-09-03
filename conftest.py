@@ -153,8 +153,19 @@ def _show_test_results_popup(summary):
 
 
 def pytest_addoption(parser):
-    parser.addoption("--headed", action="store_true", default=False)
-    parser.addoption("--headless", action="store_true", default=False)
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        parser.addoption("--headed", action="store_true", default=False)
+    if "--headless" not in existing:
+        parser.addoption("--headless", action="store_true", default=False)
 
 
 def is_headless(config):
@@ -223,7 +234,7 @@ def page(context):
     pg.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def base_url():
     return BASE_URL
 
@@ -377,5 +388,5 @@ def pytest_sessionfinish(session, exitstatus):
     except UnicodeEncodeError:
         print("\n" + "\n".join(lines).encode("ascii", "replace").decode() + "\n")
 
-    if not getattr(session.config.option, "collectonly", False):
+    if not getattr(session.config.option, "collectonly", False) and not is_headless(session.config):
         _show_test_results_popup(RESULT_SUMMARY)

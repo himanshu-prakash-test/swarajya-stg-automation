@@ -1,11 +1,25 @@
+import logging
+import os
 import sys
+import time
 
 MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if MODULE_DIR not in sys.path:
-    sys.path.insert(0, MODULE_DIR)
 ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+for path_dir in (MODULE_DIR, ROOT_DIR):
+    if path_dir not in sys.path:
+        sys.path.insert(0, path_dir)
+
+venv_python = os.path.join(ROOT_DIR, ".venv", "bin", "python3")
+if os.path.exists(venv_python) and sys.executable != venv_python and not os.environ.get("_IN_VENV_SUBPROC"):
+    os.environ["_IN_VENV_SUBPROC"] = "1"
+    os.execv(venv_python, [venv_python] + sys.argv)
+
+import pytest
+
+import pages
+consultant_pages_dir = os.path.join(MODULE_DIR, "pages")
+if os.path.exists(consultant_pages_dir) and consultant_pages_dir not in pages.__path__:
+    pages.__path__.append(consultant_pages_dir)
 
 from consultant_workbook import ConsultantWorkbook
 from pages.consultant_page import ConsultantPage
@@ -33,14 +47,16 @@ def admin_login(login_page, tfa_page, base_url, page):
     try:
         # Check if already authenticated on a dashboard/finance page
         if any(k in page.url for k in ("/default", "/finance", "/consultantdetails", "/employeeList")):
+            yield
             return
 
         login_page.navigate()
         login_page.login("332", "test@1234")
 
-        if "tfa-authcode" in login_page.page.url:
+        tfa_page.wait_for_tfa_page(timeout=15_000)
+        if tfa_page.is_on_tfa_page():
             tfa_page.submit_auth_code("111111")
-            tfa_page.is_dashboard_loaded()
+            tfa_page.is_dashboard_loaded(timeout=15_000)
 
         yield
     except Exception as e:
@@ -189,3 +205,15 @@ class TestConsultantNegativeFlows:
             page.screenshot(path=os.path.join(SCREENSHOT_DIR, f"{tc_id}_failed.png"))
             log.error("Negative test %s failed: %s", tc_id, e)
             raise
+
+
+if __name__ == "__main__":
+    os.environ.setdefault("SWARAJYA_POPUP_TITLE", "Consultant Management - Results")
+    os.environ.setdefault("SWARAJYA_POPUP_HEADER", "CONSULTANT MANAGEMENT AUTOMATION")
+    config_file = os.path.join(ROOT_DIR, "pytest.ini")
+    extra_args = sys.argv[1:]
+    pytest_args = [__file__, "-c", config_file, "-o", f"rootdir={ROOT_DIR}", "-v", "-s"]
+    if not any(arg in extra_args for arg in ("--headed", "--headless")):
+        pytest_args.append("--headed")
+    pytest_args.extend(extra_args)
+    sys.exit(pytest.main(pytest_args))
