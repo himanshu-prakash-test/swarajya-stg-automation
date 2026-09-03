@@ -35,10 +35,21 @@ os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 # --- CLI options ---
 
 def pytest_addoption(parser):
-    parser.addoption("--headed", action="store_true", default=False,
-                     help="Run browser in headed mode.")
-    parser.addoption("--headless", action="store_true", default=False,
-                     help="Run browser headless (default).")
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        parser.addoption("--headed", action="store_true", default=False,
+                         help="Run browser in headed mode.")
+    if "--headless" not in existing:
+        parser.addoption("--headless", action="store_true", default=False,
+                         help="Run browser headless (default).")
 
 
 def _is_headless(config) -> bool:
@@ -121,7 +132,7 @@ def tfa_page(page):
     return TfaPage(page, BASE_URL)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def base_url():
     return BASE_URL
 

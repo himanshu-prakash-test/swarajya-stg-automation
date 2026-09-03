@@ -50,11 +50,15 @@ swarajya-stg-automation/
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
 │   ├── emp_mgmt/                       # 📝 Update Employee Module
-│       ├── employee_update_page.py     # Page Object for Employee Editing & Patching
-│       ├── employee_workbook.py        # Excel Synchronizer for Update Scenarios
-│       ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
-│       └── tests/                      # test_employee_updates.py
-│ 
+│   │   ├── employee_update_page.py     # Page Object for Employee Editing & Patching
+│   │   ├── employee_workbook.py        # Excel Synchronizer for Update Scenarios
+│   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
+│   │   └── tests/                      # test_employee_updates.py
+│   │
+│   └── consultant-management/          # 💼 Update Consultant Module
+│       ├── consultant_pages/           # Consultant Profile & Contract Updaters
+│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
+│       └── tests/                      # test_consultant_management.py
 │
 ├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers
@@ -73,6 +77,8 @@ swarajya-stg-automation/
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
 | **Create Operations** | Consultant Management | Partner / Team | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
+| **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
+
 ---
 
 ## ⚡ Core Engineering & Quality Standards

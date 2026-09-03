@@ -28,14 +28,19 @@ os.makedirs(SCREENSHOTS, exist_ok=True)
 
 
 def pytest_addoption(parser):
-    try:
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
         parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
-    except ValueError:
-        pass
-    try:
+    if "--slowmo" not in existing:
         parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
-    except ValueError:
-        pass
 
 
 @pytest.fixture(scope="session")
