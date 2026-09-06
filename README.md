@@ -19,14 +19,11 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 swarajya-stg-automation/
 │
 ├── swarajya-login/                     # 🔐 Authentication & Session Suite
-│   ├── swarajya-automation/            # Employee & Manager Authentication
-│   │   ├── pages/                      # LoginPage, TFAPage
-│   │   ├── utils/                      # Excel I/O, Logger, Desktop Popup
-│   │   ├── test_data/                  # login_test_cases.xlsx, credentials.xlsx
-│   │   └── tests/test_login.py         # UI, Positive 2FA, Negative Creds, SQLi/XSS
-│   │
-│   └── hr_admin/                       # 🛡️ HR & Admin Authentication (Partner Module)
-│       └── tests/test_hr_admin.py      # HR/Admin RBAC, Role Authorization, 2FA
+│   └── swarajya-automation/            # Employee & Manager Authentication
+│       ├── pages/                      # LoginPage, TFAPage
+│       ├── utils/                      # Excel I/O, Logger, Desktop Popup
+│       ├── test_data/                  # login_test_cases.xlsx, credentials.xlsx
+│       └── tests/test_login.py         # UI, Positive 2FA, Negative Creds, SQLi/XSS
 │
 ├── swarajya-create/                    # 📋 Master Create Operations Suite
 │   │
@@ -36,16 +33,11 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Create-test-cases (6).xlsx
 │   │   └── tests/                      # Positive & Negative Employee Test Suites
 │   │
-│   ├── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
-│   │   ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
-│   │   ├── vendor_utils/               # Excel Reader, Logger, Popup
-│   │   ├── test_data/                  # Create-Vendor-Management.xlsx
-│   │   └── tests/                      # Positive & Negative Vendor Test Suites
-│   │
-│   └── consultant-management/          # 💼 Create Consultant Module
-│       ├── consultant_pages/           # BasePage, ConsultantPage, FormExecutor
-│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
-│       └── tests/                      # Positive & Negative Consultant Creation Tests
+│   └── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
+│       ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
+│       ├── vendor_utils/               # Excel Reader, Logger, Popup
+│       ├── test_data/                  # Create-Vendor-Management.xlsx
+│       └── tests/                      # Positive & Negative Vendor Test Suites
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
@@ -71,7 +63,6 @@ swarajya-stg-automation/
 | **Authentication** | Employee & Manager Login | Himanshu | `login_test_cases.xlsx` | Automated |
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
-| **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
 | **Create Operations** | Consultant Management | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
 
