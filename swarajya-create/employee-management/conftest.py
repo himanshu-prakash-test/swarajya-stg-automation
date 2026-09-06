@@ -42,9 +42,15 @@ def pytest_addoption(parser):
         existing.update(getattr(opt, "_long_opts", []))
 
     if "--headed" not in existing:
-        parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
+        try:
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
+        except ValueError:
+            pass
     if "--slowmo" not in existing:
-        parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
+        except ValueError:
+            pass
 
 
 def _headless(config) -> bool:
