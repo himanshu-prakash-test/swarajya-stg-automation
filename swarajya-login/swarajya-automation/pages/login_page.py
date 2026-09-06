@@ -1,17 +1,24 @@
 """Page object for the Swarajya login page."""
+import os
+import sys
 import logging
+
+_WS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+if _WS_ROOT not in sys.path:
+    sys.path.insert(0, _WS_ROOT)
+
+from shared.pages.base_page import BasePage
 
 log = logging.getLogger(__name__)
 
 
-class LoginPage:
+class LoginPage(BasePage):
     LOGIN_PATH = "/"
     DEFAULT_TIMEOUT = 10_000
     SNACKBAR_TIMEOUT = 5_000
 
     def __init__(self, page, base_url: str):
-        self.page = page
-        self.base_url = base_url.rstrip("/")
+        super().__init__(page, base_url=base_url)
 
     # --- Locators ---
 
