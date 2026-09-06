@@ -1,5 +1,5 @@
 import pytest
-from emp_pages.login_page import LoginPage
+from common.pages.login_page import LoginPage
 
 
 @pytest.mark.login

@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from pages.base_page import BasePage
+from shared.pages.base_page import BasePage
 
 
 class ProjectPage(BasePage):

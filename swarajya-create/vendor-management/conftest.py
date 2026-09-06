@@ -3,17 +3,21 @@ import os
 import sys
 import re
 from datetime import datetime
+from typing import Optional
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
+_CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
+_WORKSPACE_ROOT = os.path.dirname(_CREATE_ROOT)
+for _p in (_PROJECT_ROOT, _CREATE_ROOT, _WORKSPACE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pytest
 from playwright.sync_api import sync_playwright
 
-from vendor_pages.login_page import LoginPage
+from common.pages.login_page import LoginPage
 from vendor_utils.excel_reader import build_automation_id, read_credentials, update_test_result
-from vendor_utils.popup import show_summary_popup
+from shared.utils.popup import show_summary_popup
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,10 +85,30 @@ def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
     return False
 
 
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    """Validate that auth_state.json exists and contains actual auth tokens."""
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
+    return False
+
+
 @pytest.fixture(scope="session")
 def session_storage_state(browser, tmp_path_factory):
     """Authenticate as Manager/Admin once and cache auth_state.json."""
     storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+    if _is_valid_auth_state(storage_path):
+        return storage_path
+
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
@@ -93,19 +117,20 @@ def session_storage_state(browser, tmp_path_factory):
     login_page = LoginPage(page)
     success = login_page.login(role="Manager")
     if success:
+        page.wait_for_timeout(1000)
         context.storage_state(path=storage_path)
         log.info(f"Saved authenticated session state to {storage_path}")
     else:
         log.warning("Initial login failed; tests will authenticate per-test")
 
     context.close()
-    return storage_path if os.path.exists(storage_path) else None
+    return storage_path if _is_valid_auth_state(storage_path) else None
 
 
 @pytest.fixture(scope="function")
 def authenticated_page(browser, session_storage_state):
-    """Provides an authenticated Playwright page fixture."""
-    storage = session_storage_state if session_storage_state and os.path.exists(session_storage_state) else None
+    """Provides an authenticated Playwright page fixture with auto-login fallback."""
+    storage = session_storage_state if _is_valid_auth_state(session_storage_state) else None
     context = browser.new_context(
         viewport={"width": 1920, "height": 1080},
         storage_state=storage,
@@ -116,6 +141,16 @@ def authenticated_page(browser, session_storage_state):
 
     # Health check
     _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
+    # Self-healing fallback: if auth_state was missing/invalid or expired, login on-the-fly
+    if not storage:
+        login_page = LoginPage(page)
+        login_page.login(role="Manager")
+        storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+        try:
+            context.storage_state(path=storage_path)
+        except Exception:
+            pass
 
     yield page
 
@@ -234,6 +269,12 @@ def pytest_sessionfinish(session, exitstatus):
     skipped = len(reporter.stats.get("skipped", [])) if reporter else 0
     total = passed + failed + skipped
 
+    # Collect failed test names for the popup
+    failed_tests = []
+    if reporter:
+        for report in reporter.stats.get("failed", []):
+            failed_tests.append(report.nodeid)
+
     banner_title = "ALL PASSED" if failed == 0 and total > 0 else "FAILURES OCCURRED" if failed > 0 else "SESSION COMPLETE"
     print("\n" + "=" * 56)
     print(f"  SWARAJYA VENDOR AUTOMATION - {banner_title}")
@@ -248,4 +289,6 @@ def pytest_sessionfinish(session, exitstatus):
         failed=failed,
         skipped=skipped,
         duration_str=dur_str,
+        failed_tests=failed_tests,
     )
+

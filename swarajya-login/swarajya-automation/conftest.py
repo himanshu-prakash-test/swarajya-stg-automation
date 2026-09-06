@@ -6,9 +6,17 @@ automatic screenshots on failure, Excel result updates, and a
 tkinter popup summary after the run.
 """
 import os
+import sys
 import re
 import logging
 from datetime import datetime
+
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+_LOGIN_ROOT = os.path.dirname(_PROJECT_ROOT)
+_WORKSPACE_ROOT = os.path.dirname(_LOGIN_ROOT)
+for _p in (_PROJECT_ROOT, _LOGIN_ROOT, _WORKSPACE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pytest
 from playwright.sync_api import sync_playwright
@@ -16,6 +24,7 @@ from playwright.sync_api import sync_playwright
 from pages.login_page import LoginPage
 from pages.tfa_page import TfaPage
 from utils.excel_reader import read_credentials, update_test_result
+from shared.utils.popup import show_summary_popup
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,11 +54,17 @@ def pytest_addoption(parser):
         existing.update(getattr(opt, "_long_opts", []))
 
     if "--headed" not in existing:
-        parser.addoption("--headed", action="store_true", default=False,
-                         help="Run browser in headed mode.")
+        try:
+            parser.addoption("--headed", action="store_true", default=False,
+                             help="Run browser in headed mode.")
+        except ValueError:
+            pass
     if "--headless" not in existing:
-        parser.addoption("--headless", action="store_true", default=False,
-                         help="Run browser headless (default).")
+        try:
+            parser.addoption("--headless", action="store_true", default=False,
+                             help="Run browser headless (default).")
+        except ValueError:
+            pass
 
 
 def _is_headless(config) -> bool:
@@ -328,87 +343,12 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 def _show_popup(passed, failed, skipped, total, duration, failed_tests):
-    import tkinter as tk
-    from tkinter import font as tkfont
-
-    root = tk.Tk()
-    root.withdraw()
-
-    popup = tk.Toplevel(root)
-    popup.title("Swarajya Automation — Results")
-    popup.geometry("520x480")
-    popup.resizable(False, False)
-    popup.configure(bg="#1a1a2e")
-
-    popup.update_idletasks()
-    x = (popup.winfo_screenwidth() // 2) - 260
-    y = (popup.winfo_screenheight() // 2) - 240
-    popup.geometry(f"+{x}+{y}")
-    popup.attributes("-topmost", True)
-
-    # title
-    tf = tk.Frame(popup, bg="#16213e", pady=12)
-    tf.pack(fill="x")
-    tk.Label(tf, text="SWARAJYA LOGIN AUTOMATION",
-             font=tkfont.Font(family="Segoe UI", size=14, weight="bold"),
-             fg="#e0e0e0", bg="#16213e").pack()
-
-    # status banner
-    if failed == 0:
-        bg, txt = "#0f9b58", "ALL TESTS PASSED"
-    else:
-        bg, txt = "#d32f2f", f"{failed} TEST(S) FAILED"
-    bf = tk.Frame(popup, bg=bg, pady=10)
-    bf.pack(fill="x")
-    tk.Label(bf, text=txt, font=tkfont.Font(family="Segoe UI", size=13, weight="bold"),
-             fg="white", bg=bg).pack()
-
-    # stats
-    sf = tk.Frame(popup, bg="#1a1a2e", pady=15, padx=20)
-    sf.pack(fill="x")
-    stat_font = tkfont.Font(family="Consolas", size=12)
-    label_font = tkfont.Font(family="Segoe UI", size=11)
-
-    for i, (lbl, val, clr) in enumerate([
-        ("Total Tests", str(total), "#b0bec5"),
-        ("Passed", str(passed), "#4caf50"),
-        ("Failed", str(failed), "#f44336" if failed else "#b0bec5"),
-        ("Skipped", str(skipped), "#ff9800" if skipped else "#b0bec5"),
-        ("Duration", duration, "#64b5f6"),
-    ]):
-        tk.Label(sf, text=f"  {lbl}", font=label_font,
-                 fg="#b0bec5", bg="#1a1a2e", anchor="w", width=14).grid(row=i, column=0, sticky="w", pady=2)
-        tk.Label(sf, text=":  ", font=label_font,
-                 fg="#666", bg="#1a1a2e").grid(row=i, column=1, pady=2)
-        tk.Label(sf, text=val, font=stat_font,
-                 fg=clr, bg="#1a1a2e", anchor="w").grid(row=i, column=2, sticky="w", pady=2)
-
-    # failed list
-    if failed_tests:
-        ff = tk.Frame(popup, bg="#1a1a2e", padx=20)
-        ff.pack(fill="x")
-        tk.Label(ff, text="Failed Tests",
-                 font=tkfont.Font(family="Segoe UI", size=10, weight="bold"),
-                 fg="#f44336", bg="#1a1a2e").pack(anchor="w", pady=(5, 3))
-        fl_font = tkfont.Font(family="Consolas", size=9)
-        for ft in failed_tests[:8]:
-            name = ft[:55] + "..." if len(ft) > 55 else ft
-            tk.Label(ff, text=f"  x  {name}", font=fl_font,
-                     fg="#ef9a9a", bg="#1a1a2e", anchor="w").pack(anchor="w")
-        if len(failed_tests) > 8:
-            tk.Label(ff, text=f"     ... and {len(failed_tests) - 8} more",
-                     font=fl_font, fg="#999", bg="#1a1a2e", anchor="w").pack(anchor="w")
-
-    # close button
-    btf = tk.Frame(popup, bg="#1a1a2e", pady=10)
-    btf.pack(fill="x", side="bottom")
-    tk.Button(btf, text="Close",
-              font=tkfont.Font(family="Segoe UI", size=10),
-              fg="white", bg="#424242", activebackground="#616161",
-              activeforeground="white", relief="flat", cursor="hand2",
-              padx=30, pady=5,
-              command=lambda: (popup.destroy(), root.destroy())).pack()
-
-    popup.after(60000, lambda: (popup.destroy(), root.destroy()))
-    popup.protocol("WM_DELETE_WINDOW", lambda: (popup.destroy(), root.destroy()))
-    popup.mainloop()
+    show_summary_popup(
+        passed=passed,
+        failed=failed,
+        skipped=skipped,
+        total=total,
+        duration_str=str(duration),
+        failed_tests=failed_tests,
+        title="SWARAJYA LOGIN AUTOMATION",
+    )

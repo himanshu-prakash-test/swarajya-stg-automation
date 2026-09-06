@@ -5,7 +5,7 @@ from playwright.sync_api import Page
 
 from emp_pages.employee_page import EmployeePage
 from emp_utils.excel_reader import is_ui_case
-from emp_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("FormExecutor")
 
@@ -313,8 +313,8 @@ class FormExecutor:
             )
 
     def _assert_session_timeout_blocks_save(self, tc_id: str) -> None:
-        from pages.login_page import LoginPage
-        from utils.excel_reader import read_credentials
+        from common.pages.login_page import LoginPage
+        from common.utils.excel_base import read_credentials
 
         full_data = self._build_valid_employee_data(tc_id, {}, mandatory_only=False)
         self._fill_fields(full_data)
