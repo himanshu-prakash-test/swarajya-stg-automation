@@ -2,12 +2,14 @@ import pytest
 from vendor_pages.form_executor import FormExecutor
 from vendor_utils.excel_reader import read_test_cases, is_ui_case
 
-try:
-    NEG_TEST_CASES = [tc for tc in read_test_cases("Negative_Tests") if is_ui_case(tc)]
-    NEG_IDS = [tc["Test Case ID"] for tc in NEG_TEST_CASES]
-except Exception as e:
-    NEG_TEST_CASES = []
-    NEG_IDS = []
+NEG_TEST_CASES = [tc for tc in read_test_cases("Negative_Tests") if is_ui_case(tc)]
+NEG_IDS = [tc["Test Case ID"] for tc in NEG_TEST_CASES]
+
+if not NEG_TEST_CASES:
+    raise RuntimeError(
+        "No negative UI test cases found in Create-Vendor-Management.xlsx sheet 'Negative_Tests'. "
+        "Check that the file exists in test_data/ and the sheet contains rows with Execution Type != 'API'."
+    )
 
 
 @pytest.mark.negative

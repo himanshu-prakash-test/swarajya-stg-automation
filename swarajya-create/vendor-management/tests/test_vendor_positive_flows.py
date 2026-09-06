@@ -2,12 +2,14 @@ import pytest
 from vendor_pages.form_executor import FormExecutor
 from vendor_utils.excel_reader import read_test_cases, is_ui_case
 
-try:
-    POS_TEST_CASES = [tc for tc in read_test_cases("Positive_Tests") if is_ui_case(tc)]
-    POS_IDS = [tc["Test Case ID"] for tc in POS_TEST_CASES]
-except Exception as e:
-    POS_TEST_CASES = []
-    POS_IDS = []
+POS_TEST_CASES = [tc for tc in read_test_cases("Positive_Tests") if is_ui_case(tc)]
+POS_IDS = [tc["Test Case ID"] for tc in POS_TEST_CASES]
+
+if not POS_TEST_CASES:
+    raise RuntimeError(
+        "No positive UI test cases found in Create-Vendor-Management.xlsx sheet 'Positive_Tests'. "
+        "Check that the file exists in test_data/ and the sheet contains rows with Execution Type != 'API'."
+    )
 
 
 @pytest.mark.positive

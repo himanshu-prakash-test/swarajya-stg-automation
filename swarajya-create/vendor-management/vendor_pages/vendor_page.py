@@ -1,7 +1,7 @@
 import time
 from typing import Dict, List, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
-from vendor_pages.base_page import BasePage
+from shared.pages.base_page import BasePage
 
 
 class VendorPage(BasePage):
@@ -18,26 +18,19 @@ class VendorPage(BasePage):
         """Navigate to Vendor Management list page."""
         self.goto("/vendordetails")
         self.wait_for_dom_ready()
-        # Fallback: if not loaded, go via /finance
-        if not self.is_visible("input[placeholder*='Search'], button:has-text('New Vendor')"):
-            self.goto("/finance")
-            self.wait_for_dom_ready()
-            card = self.page.locator("text='Vendor Management'").first
-            if card.is_visible():
-                card.click()
-                self.wait_for_dom_ready()
+        try:
+            self.page.locator("input[placeholder*='Search'], button:has-text('New Vendor'), table").first.wait_for(state="visible", timeout=8000)
+        except Exception:
+            pass
 
     def open_create_vendor_form(self):
         """Open the Create / Add Vendor form."""
         self.goto("/addvendor")
         self.wait_for_dom_ready()
-        # Fallback: go to list and click 'New Vendor'
-        if not self.is_visible("input[name='vendor_name'], button:has-text('Save')"):
-            self.open_vendor_list()
-            new_btn = self.page.locator("button:has-text('New Vendor')").first
-            if new_btn.is_visible():
-                new_btn.click()
-                self.wait_for_dom_ready()
+        try:
+            self.page.locator("input[name='vendor_name'], input#mat-input-0, button:has-text('Save')").first.wait_for(state="visible", timeout=8000)
+        except Exception:
+            pass
 
     # ----------------- Form Field Interactions -----------------
 
@@ -88,7 +81,10 @@ class VendorPage(BasePage):
         try:
             el = self.page.locator(sel).first
             el.wait_for(state="visible", timeout=3000)
-            el.fill(str(value))
+            try:
+                el.fill(str(value))
+            except Exception:
+                el.evaluate("(input, val) => { input.value = val; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); }", str(value))
             self.log.info(f"Filled '{field_name}' = '{value}'")
             return True
         except Exception:
@@ -99,7 +95,10 @@ class VendorPage(BasePage):
                     name = inp.get_attribute("name") or ""
                     ph = inp.get_attribute("placeholder") or ""
                     if key in name.lower() or key in ph.lower():
-                        inp.fill(str(value))
+                        try:
+                            inp.fill(str(value))
+                        except Exception:
+                            inp.evaluate("(input, val) => { input.value = val; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); }", str(value))
                         self.log.info(f"Filled '{field_name}' via attribute fallback = '{value}'")
                         return True
                 except Exception:
@@ -145,10 +144,6 @@ class VendorPage(BasePage):
             return True
         except Exception:
             return False
-            self.log.info(f"Set Active status to {checked}")
-            return True
-        except Exception:
-            return False
 
     # ----------------- Save, Modal & Cancel Actions -----------------
 
@@ -159,32 +154,53 @@ class VendorPage(BasePage):
         self.log.info("Clicked Save button")
 
     def click_save_and_confirm(self, confirm: bool = True) -> str:
-        """Click Save, handle confirmation popup modal, and return toast outcome."""
+        """Click Save, handle confirmation popup modal if present, and return toast outcome."""
         self.click_save()
 
-        # Handle confirmation dialog
-        try:
-            if confirm:
-                yes_btn = self.page.locator("button:has-text('Yes'), button:has-text('Confirm')").first
-                yes_btn.wait_for(state="visible", timeout=3000)
-                yes_btn.click()
-                self.log.info("Confirmed Save popup (clicked Yes)")
-                self.page.wait_for_timeout(1000)
-                self.wait_for_dom_ready()
-            else:
+        # Handle confirmation dialog if present
+        if not confirm:
+            try:
                 no_btn = self.page.locator("button:has-text('No')").first
-                no_btn.wait_for(state="visible", timeout=3000)
+                no_btn.wait_for(state="visible", timeout=2500)
                 no_btn.click()
                 self.log.info("Dismissed Save popup (clicked No)")
                 self.page.wait_for_timeout(500)
                 return "Cancelled"
+            except Exception as exc:
+                self.log.warning(f"No confirmation popup appeared after clicking Save (expected 'No' button): {exc}")
+        else:
+            try:
+                yes_btn = self.page.locator("button:has-text('Yes'), button:has-text('Confirm')").first
+                yes_btn.wait_for(state="visible", timeout=2500)
+                yes_btn.click()
+                self.log.info("Confirmed Save popup (clicked Yes)")
+            except Exception as exc:
+                self.log.warning(f"No confirmation popup appeared after clicking Save (expected 'Yes' button): {exc}")
+
+        # Wait for the API to respond — either a toast appears or the URL changes
+        toast = self._wait_for_post_save_response(timeout=8000)
+        self.log.info(f"Save confirmation outcome: '{toast}'")
+        return toast
+
+    def _wait_for_post_save_response(self, timeout: int = 8000) -> str:
+        """Wait for either a toast/snackbar to appear OR the URL to change from /addvendor."""
+        toast_sel = "simple-snack-bar, .mat-mdc-snack-bar-container, .mat-snack-bar-container, .toast, [role='alert']"
+        try:
+            # Wait for either toast OR URL navigation away from addvendor
+            self.page.wait_for_function(
+                """(sel) => {
+                    const toast = document.querySelector(sel);
+                    const urlChanged = !window.location.href.toLowerCase().includes('addvendor');
+                    return (toast && toast.offsetParent !== null) || urlChanged;
+                }""",
+                arg=toast_sel,
+                timeout=timeout,
+            )
         except Exception:
             pass
 
-        # Capture toast or confirmation outcome
-        toast = self.get_toast(timeout=2000)
-        self.log.info(f"Save confirmation outcome: '{toast}'")
-        return toast
+        # Now try to capture the toast text
+        return self.get_toast(timeout=2000)
 
     def click_cancel(self) -> bool:
         """Click Cancel / Reset button."""
@@ -257,6 +273,6 @@ class VendorPage(BasePage):
         """Check if form or fields have ng-invalid or aria-invalid classes."""
         try:
             invalid_count = self.page.locator("form.ng-invalid, input.ng-invalid, textarea.ng-invalid, mat-select.ng-invalid, mat-form-field.mat-form-field-invalid, [aria-invalid='true']").count()
-            return invalid_count > 0 or ("addvendor" in self.page.url.lower())
+            return invalid_count > 0
         except Exception:
             return False

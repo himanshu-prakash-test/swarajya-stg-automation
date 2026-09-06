@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import openpyxl
 
-from emp_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("excel_reader")
 

@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 
 from playwright.sync_api import Page
 
-from emp_pages.base_page import BasePage
-from emp_utils.logger import get_logger
+from shared.pages.base_page import BasePage
+from shared.utils.logger import get_logger
 
 log = get_logger("EmployeePage")
 
@@ -285,14 +285,14 @@ class EmployeePage(BasePage):
 
         try:
             yes_button = self.page.locator(self.CONFIRM_YES_BTN).first
-            yes_button.wait_for(state="visible", timeout=3000)
-            confirmation_seen = True
-            yes_button.click()
-            try:
-                yes_button.wait_for(state="hidden", timeout=3000)
-            except Exception:
-                pass
-            log.info("Confirmed save popup")
+            if yes_button.is_visible(timeout=500):
+                confirmation_seen = True
+                yes_button.click()
+                try:
+                    yes_button.wait_for(state="hidden", timeout=2000)
+                except Exception:
+                    pass
+                log.info("Confirmed save popup")
         except Exception:
             log.info("No save confirmation popup appeared")
 

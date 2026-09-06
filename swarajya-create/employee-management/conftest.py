@@ -1,14 +1,23 @@
 import logging
 import os
+import sys
 import re
 from datetime import datetime
+from typing import Optional
+
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+_CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
+_WORKSPACE_ROOT = os.path.dirname(_CREATE_ROOT)
+for _p in (_PROJECT_ROOT, _CREATE_ROOT, _WORKSPACE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pytest
 from playwright.sync_api import sync_playwright
 
-from emp_pages.login_page import LoginPage
+from common.pages.login_page import LoginPage
 from emp_utils.excel_reader import build_automation_id, read_credentials, update_test_result
-from emp_utils.popup import show_summary_popup
+from shared.utils.popup import show_summary_popup
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,22 +72,47 @@ def browser(pw, request):
 AUTH_STATE_PATH = os.path.join(ROOT, "test_data", "auth_state.json")
 
 
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    """Validate that auth_state.json exists and contains actual auth tokens."""
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
+    return False
+
+
 @pytest.fixture(scope="session")
 def session_context(browser):
     """Log in once per session and save auth state for all tests."""
+    if _is_valid_auth_state(AUTH_STATE_PATH):
+        yield AUTH_STATE_PATH
+        return
+
     creds = read_credentials("Employee")
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
     log.info("Performing session-level authentication from credentials.xlsx")
     LoginPage(page).login(creds["employee_id"], creds["password"], creds["auth_code"])
-    context.storage_state(path=AUTH_STATE_PATH)
+    try:
+        page.wait_for_timeout(1000)
+        context.storage_state(path=AUTH_STATE_PATH)
+    except Exception:
+        pass
     try:
         page.close()
     except Exception:
         pass
     context.close()
-    yield AUTH_STATE_PATH
+    yield AUTH_STATE_PATH if _is_valid_auth_state(AUTH_STATE_PATH) else None
 
 
 def _wait_until_server_healthy(timeout=60):
@@ -100,12 +134,23 @@ def page(browser, request, session_context):
     """Use an authenticated page for Excel flows and a clean page for login tests."""
     _wait_until_server_healthy()
     is_login_test = request.node.get_closest_marker("login") is not None
+    storage = session_context if _is_valid_auth_state(session_context) else None
+
     if is_login_test:
         context = browser.new_context(viewport={"width": 1920, "height": 1080})
     else:
-        context = browser.new_context(viewport={"width": 1920, "height": 1080}, storage_state=session_context)
+        context = browser.new_context(viewport={"width": 1920, "height": 1080}, storage_state=storage)
     page_instance = context.new_page()
     page_instance.set_default_timeout(25000)
+
+    # Self-healing fallback: if auth is missing or expired, re-authenticate on the fly
+    if not is_login_test and not storage:
+        creds = read_credentials("Employee")
+        LoginPage(page_instance).login(creds["employee_id"], creds["password"], creds["auth_code"])
+        try:
+            context.storage_state(path=AUTH_STATE_PATH)
+        except Exception:
+            pass
 
     yield page_instance
 

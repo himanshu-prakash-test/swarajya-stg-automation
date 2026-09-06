@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, List, Optional
 from playwright.sync_api import Page
 from vendor_pages.vendor_page import VendorPage
-from vendor_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("VendorFormExecutor")
 
@@ -72,7 +72,7 @@ class FormExecutor:
                 search_term = full_data["Vendor Name"]
             self.vendor.open_vendor_list()
             found = self.vendor.is_vendor_in_list(search_term)
-            assert found or self.vendor.is_visible("table tr"), f"Vendor '{search_term}' not found in vendor management list"
+            assert found, f"Vendor '{search_term}' not found in vendor management list"
             return
 
         # 5. Inactive vendor listed with include inactive checked
@@ -95,9 +95,13 @@ class FormExecutor:
         errors = self.vendor.get_validation_errors()
         assert not errors, f"Vendor creation has validation errors: {errors}"
         
-        # Verify success or valid navigation
-        is_success = ("success" in outcome.lower()) or ("vendordetails" in self.page.url.lower()) or (not self.vendor.is_form_invalid())
-        assert is_success, f"Vendor creation did not succeed. Outcome: '{outcome}'"
+        # If not yet on vendordetails and toast was not captured, wait briefly for URL redirection
+        if "success" not in outcome.lower() and "vendordetails" not in self.page.url.lower():
+            self.vendor.wait_for_url_contains("vendordetails", timeout=10000)
+
+        # Verify success via explicit signals only (toast or URL redirect)
+        is_success = ("success" in outcome.lower()) or ("vendordetails" in self.page.url.lower())
+        assert is_success, f"Vendor creation did not succeed. Outcome: '{outcome}', URL: {self.page.url}"
 
         FormExecutor.last_created_vendor = {
             "name": vendor_name,
@@ -115,12 +119,15 @@ class FormExecutor:
         "TC_VENDOR_NEG_04": "Application accepted Vendor Name exceeding 100 character maximum limit",
         "TC_VENDOR_NEG_05": "Application accepted invalid email address format without validation error",
         "TC_VENDOR_NEG_06": "Application accepted alphabetic characters in phone number field",
+        "TC_VENDOR_NEG_07": "Application created vendor despite dismissing confirmation popup",
         "TC_VENDOR_NEG_08": "Non-admin user was granted unauthorized access to Vendor Management",
         "TC_VENDOR_NEG_09": "Application accepted duplicate Vendor Name without validation error",
         "TC_VENDOR_NEG_10": "Application accepted numeric/special characters in name/address/state/POC fields",
         "TC_VENDOR_NEG_11": "Application accepted non-numeric characters in numeric fields (tax/phone/percentage/days)",
+        "TC_VENDOR_NEG_12": "Application accepted improper email format without validation error",
         "TC_VENDOR_NEG_13": "Application failed to redirect to login on expired session during vendor creation",
         "TC_VENDOR_NEG_14": "Application failed to display network/server error when backend is unreachable",
+        "TC_VENDOR_NEG_15": "Vendor created during expired session was incorrectly listed in Vendor Management table",
         "TC_VENDOR_NEG_16": "Application accepted Percentage value greater than 100% or less than 0%",
         "TC_VENDOR_NEG_17": "Application accepted negative Payment Terms (Days) value",
         "TC_VENDOR_NEG_18": "Application executed raw XSS script tag payload without input sanitation",
@@ -134,13 +141,96 @@ class FormExecutor:
             self._assert_negative_rejected(tc_id)
             return
 
-        # 2. Non-admin access check
-        if tc_id == "TC_VENDOR_NEG_08":
-            # Verify role authorization boundary
-            log.info("Verified authorization check for non-admin user")
+        # 2. Duplicate email check
+        if tc_id == "TC_VENDOR_NEG_02":
+            # 1. First ensure a base vendor exists with target email
+            self.vendor.open_create_vendor_form()
+            first_data = self._build_vendor_data("TC_VENDOR_POS_02", {})
+            dup_email = first_data["Email"]
+            self._fill_vendor_fields(first_data)
+            self.vendor.click_save_and_confirm(confirm=True)
+            self.page.wait_for_timeout(1000)
+            
+            # 2. Now attempt to create a second vendor with the same email
+            self.vendor.open_create_vendor_form()
+            second_data = self._build_vendor_data(tc_id, {"Email": dup_email})
+            self._fill_vendor_fields(second_data)
+            save_outcome = self.vendor.click_save_and_confirm(confirm=True)
+            self._assert_negative_rejected(tc_id, save_outcome=save_outcome)
             return
 
-        # 3. Session timeout check
+        # 3. Duplicate vendor name check
+        if tc_id == "TC_VENDOR_NEG_09":
+            # 1. First ensure a base vendor exists with target name
+            self.vendor.open_create_vendor_form()
+            first_data = self._build_vendor_data("TC_VENDOR_POS_02", {})
+            dup_name = first_data["Vendor Name"]
+            self._fill_vendor_fields(first_data)
+            self.vendor.click_save_and_confirm(confirm=True)
+            self.page.wait_for_timeout(1000)
+            
+            # 2. Now attempt to create a second vendor with the same name
+            self.vendor.open_create_vendor_form()
+            second_data = self._build_vendor_data(tc_id, {"Vendor Name": dup_name})
+            self._fill_vendor_fields(second_data)
+            save_outcome = self.vendor.click_save_and_confirm(confirm=True)
+            self._assert_negative_rejected(tc_id, save_outcome=save_outcome)
+            return
+
+        # 4. Dismiss popup (Select No) negative check
+        if tc_id == "TC_VENDOR_NEG_07":
+            self.vendor.open_create_vendor_form()
+            full_data = self._build_vendor_data(tc_id, data)
+            self._fill_vendor_fields(full_data)
+            outcome = self.vendor.click_save_and_confirm(confirm=False)
+            assert outcome == "Cancelled" or self.vendor.is_visible("input, button:has-text('Save')"), "Did not remain on create page after selecting No"
+            return
+
+        # 5. Timeout vendor search negative check
+        if tc_id == "TC_VENDOR_NEG_15":
+            self.vendor.open_vendor_list()
+            v_name = data.get("Vendor Name", "Timeout Vendor")
+            found = self.vendor.is_vendor_in_list(v_name)
+            assert not found, f"Vendor '{v_name}' from failed session was incorrectly listed in vendor table"
+            return
+
+        # 6. Non-admin access check — login as Employee and verify access is denied
+        if tc_id == "TC_VENDOR_NEG_08":
+            from common.pages.login_page import LoginPage
+            # Open a fresh context to test as a non-admin role
+            context = self.page.context.browser.new_context(
+                viewport={"width": 1920, "height": 1080}
+            )
+            emp_page = context.new_page()
+            emp_page.set_default_timeout(15000)
+            try:
+                login_page = LoginPage(emp_page)
+                login_page.login(role="Employee")
+                emp_page.goto(
+                    f"{login_page.base_url}/vendordetails",
+                    wait_until="domcontentloaded",
+                    timeout=15000,
+                )
+                emp_page.wait_for_timeout(2000)
+                # Non-admin should be redirected away or see access denied
+                url = emp_page.url.lower()
+                content = emp_page.content().lower()
+                access_denied = (
+                    "login" in url
+                    or "dashboard" in url
+                    or "default" in url
+                    or "unauthorized" in content
+                    or "access denied" in content
+                    or "permission" in content
+                    or "vendordetails" not in url
+                )
+                assert access_denied, f"Application defect: {self.DEFECT_REASONS[tc_id]}"
+                log.info(f"Non-admin access correctly denied. URL: {emp_page.url}")
+            finally:
+                context.close()
+            return
+
+        # 7. Session timeout check
         if tc_id == "TC_VENDOR_NEG_13":
             self.vendor.open_create_vendor_form()
             # Clear cookies to simulate expired session
@@ -150,7 +240,7 @@ class FormExecutor:
             assert "login" in self.page.url.lower() or self.vendor.is_form_invalid(), f"Application defect: {self.DEFECT_REASONS[tc_id]}"
             return
 
-        # 4. Network offline / server unreachable check
+        # 8. Network offline / server unreachable check
         if tc_id == "TC_VENDOR_NEG_14":
             self.vendor.open_create_vendor_form()
             full_data = self._build_vendor_data(tc_id, data)
@@ -170,7 +260,7 @@ class FormExecutor:
                 self.page.context.set_offline(False)
             return
 
-        # 5. Standard Negative Input Overrides
+        # 9. Standard Negative Input Overrides
         self.vendor.open_create_vendor_form()
         full_data = self._build_vendor_data(tc_id, data)
         self._fill_vendor_fields(full_data)
@@ -180,25 +270,63 @@ class FormExecutor:
         if tc_id == "TC_VENDOR_NEG_18":
             self.page.on("dialog", lambda d: dialog_detected.append(d.message))
 
-        self.vendor.click_save_and_confirm(confirm=True)
+        save_outcome = self.vendor.click_save_and_confirm(confirm=True)
 
         if tc_id == "TC_VENDOR_NEG_18":
             assert not dialog_detected, f"XSS payload executed browser dialog: {dialog_detected}"
 
-        self._assert_negative_rejected(tc_id)
+        self._assert_negative_rejected(tc_id, save_outcome=save_outcome)
 
-    def _assert_negative_rejected(self, tc_id: str):
+    def _assert_negative_rejected(self, tc_id: str, save_outcome: str = ""):
+        """Assert that a negative test submission was properly rejected by the application."""
         errors = self.vendor.get_validation_errors()
         is_invalid = self.vendor.is_form_invalid()
-        toast = self.vendor.get_toast(timeout=1500)
+        # Use the toast already captured during save, or try to get a fresh one
+        toast = save_outcome if save_outcome else self.vendor.get_toast(timeout=3000)
 
-        # Negative submission is rejected if not successful and either form is invalid, errors are shown, or stays on add form
-        rejected = ("success" not in toast.lower()) and (is_invalid or bool(errors) or "addvendor" in self.page.url.lower())
         defect_msg = self.DEFECT_REASONS.get(tc_id, "Application accepted invalid vendor input without validation error")
-        assert rejected, f"Application defect: {defect_msg}"
-        log.info(f"Negative scenario [{tc_id}] correctly rejected. Errors: {errors}")
+
+        # If the page redirected to vendordetails, the creation SUCCEEDED — that's a defect for negative tests
+        if "vendordetails" in self.page.url.lower():
+            assert False, f"Application defect: {defect_msg} (redirected to vendor details page)"
+
+        # If a success toast appeared (from save outcome or fresh capture), that's a defect
+        if toast and "success" in toast.lower():
+            assert False, f"Application defect: {defect_msg} (success toast displayed: '{toast}')"
+
+        # Must have at least one explicit signal of rejection:
+        #   - Form has ng-invalid CSS class
+        #   - Visible validation error messages
+        #   - A non-success toast/snackbar was shown
+        has_error_toast = bool(toast) and "success" not in toast.lower()
+        rejected = is_invalid or bool(errors) or has_error_toast
+
+        assert rejected, f"Application defect: {defect_msg} (no validation errors, no invalid form state, no error toast)"
+        log.info(f"Negative scenario [{tc_id}] correctly rejected. Errors: {errors}, Toast: '{toast}', FormInvalid: {is_invalid}")
 
     # ----------------- Helpers -----------------
+
+    FIELD_NORM_MAP = {
+        "percentage": "TDS Percentage (%)",
+        "tds percentage": "TDS Percentage (%)",
+        "days": "Payment Terms (Days)",
+        "payment terms": "Payment Terms (Days)",
+        "payment terms (days)": "Payment Terms (Days)",
+        "tax number": "Tax Number",
+        "vendor tax number": "Tax Number",
+        "vendor name": "Vendor Name",
+        "vendor address": "Address",
+        "address": "Address",
+        "vendor state": "State",
+        "state": "State",
+        "vendor phone": "Phone",
+        "phone": "Phone",
+        "vendor email": "Email",
+        "email": "Email",
+        "vendor poc": "POC",
+        "poc": "POC",
+        "country": "Country",
+    }
 
     def _parse_test_data(self, raw_data: Any) -> Dict[str, str]:
         if not raw_data or str(raw_data).strip() in ("None", "N/A", "Fetch from excel"):
@@ -231,10 +359,17 @@ class FormExecutor:
             "Active": "Ticked",
             "Payment Terms (Days)": "30",
         }
+
+        # Normalize override keys
+        normalized_overrides = {}
         for k, v in overrides.items():
+            norm_key = self.FIELD_NORM_MAP.get(k.strip().lower(), k.strip())
+            normalized_overrides[norm_key] = v
+
+        for k, v in normalized_overrides.items():
             key_lower = k.lower()
-            if "100 times" in v.lower():
-                v = "A" * 100
+            if "100 times" in str(v).lower() or ("exceed" in str(v).lower() and len(str(v)) > 50):
+                v = "A" * 120
             elif is_pos and "vendor name" in key_lower:
                 clean_name = v.strip().replace("'", "")
                 if "space corp" in clean_name.lower():
@@ -243,17 +378,52 @@ class FormExecutor:
                     v = f"{clean_name}_{ts}"
             elif is_pos and "email" in key_lower:
                 v = f"vendor_{num}_{ts}@example.com"
-            elif is_pos and "phone" in key_lower:
-                digits = re.sub(r"\D", "", v)
-                if len(digits) == 10 and digits[0] in "6789":
-                    v = digits
-                elif len(digits) >= 10 and digits[-10] in "6789":
-                    v = digits[-10:]
+            elif "phone" in key_lower:
+                # If this test specifically tests invalid phone (NEG_06), keep the invalid phone
+                if tc_id == "TC_VENDOR_NEG_06":
+                    pass
                 else:
-                    v = default_phone
+                    # Clean or use valid 10-digit Indian phone so unrelated phone format errors don't mask defects
+                    digits = re.sub(r"\D", "", str(v))
+                    if len(digits) == 10 and digits[0] in "6789":
+                        v = digits
+                    elif len(digits) >= 10 and digits[-10] in "6789":
+                        v = digits[-10:]
+                    else:
+                        v = default_phone
+            elif "country" in key_lower and not is_pos:
+                # If country is blank (e.g. NEG_01), keep blank; otherwise use India for clean select
+                if str(v).strip() != "":
+                    v = "India"
             data[k] = v
+
+        # Specific adjustments for defect tests:
+        # NEG_10: Test non-alphabetic in name, address, state with valid POC and phone to expose backend defect
+        if tc_id == "TC_VENDOR_NEG_10":
+            data["Vendor Name"] = "213232saadadads"
+            data["Address"] = "3232131eqeq"
+            data["State"] = "sdda223213"
+            data["POC"] = "sadasd"
+            data["Phone"] = default_phone
+
+        # NEG_11: Test non-numeric in payment terms days and tax number with valid phone and valid percentage to expose backend defect
+        if tc_id == "TC_VENDOR_NEG_11":
+            data["Tax Number"] = "weqweqe1212312"
+            data["Payment Terms (Days)"] = "wqww212eqwqeq"
+            data["TDS Percentage (%)"] = "10"
+            data["Phone"] = default_phone
+
         return data
 
     def _fill_vendor_fields(self, data: Dict[str, str]):
+        failed_fields = []
         for field, value in data.items():
-            self.vendor.fill_field(field, value)
+            success = self.vendor.fill_field(field, value)
+            if not success:
+                failed_fields.append(field)
+        if failed_fields:
+            log.warning(f"Failed to fill fields: {failed_fields}")
+            # Fail the test if critical fields (Vendor Name, Country) couldn't be filled
+            critical_fields = {f for f in failed_fields if f.lower() in ("vendor name", "name", "country")}
+            if critical_fields:
+                raise AssertionError(f"Could not fill critical form fields: {critical_fields}. Test data cannot be applied.")
