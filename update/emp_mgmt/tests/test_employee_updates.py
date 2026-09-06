@@ -7,7 +7,8 @@ import time
 # Ensure project root and update/emp_mgmt are in sys.path
 MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-for path_dir in (MODULE_DIR, ROOT_DIR):
+LOGIN_DIR = os.path.join(ROOT_DIR, "swarajya-login", "swarajya-automation")
+for path_dir in (MODULE_DIR, ROOT_DIR, LOGIN_DIR):
     if path_dir not in sys.path:
         sys.path.insert(0, path_dir)
 
