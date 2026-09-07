@@ -47,11 +47,11 @@ swarajya-stg-automation/
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
-│   ├── emp_mgmt/                       # 📝 Update Employee Module
-│       ├── employee_update_page.py     # Page Object for Employee Editing & Patching
-│       ├── employee_workbook.py        # Excel Synchronizer for Update Scenarios
-│       ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
-│       └── tests/                      # test_employee_updates.py
+│   └── emp_mgmt/                       # 📝 Update Employee Module (29 Tests)
+│       ├── emp_update_pages/           # BasePage, LoginPage, EmployeeUpdatePage, FormExecutor
+│       ├── emp_update_utils/           # Excel Reader, Logger, Popup
+│       ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx, credentials.xlsx
+│       └── tests/                      # Positive & Negative Employee Update Suites
 │   
 ├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers

@@ -1,14 +1,15 @@
-"""Page object for the Employee Management update workflow."""
+"""Page object for Employee Management Update workflow."""
 
 import logging
 import os
+from playwright.sync_api import Page, Locator
+from emp_update_pages.base_page import BasePage
+from emp_update_utils.logger import get_logger
 
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-
-log = logging.getLogger(__name__)
+log = get_logger("employee_update_page")
 
 
-class EmployeeUpdatePage:
+class EmployeeUpdatePage(BasePage):
     FIELD_ALIASES = {
         "employee id": "id",
         "employee_id": "id",
@@ -45,8 +46,8 @@ class EmployeeUpdatePage:
         "pin": "emp_correspondance_pin",
     }
 
-    def __init__(self, page, base_url):
-        self.page = page
+    def __init__(self, page: Page, base_url: str = "https://swarajya-stg.corecotechnologies.com"):
+        super().__init__(page)
         self.base_url = base_url.rstrip("/")
         self.list_path = os.environ.get("EMPLOYEE_LIST_PATH", "/employeeList")
         self.target_employee = os.environ.get("EMPLOYEE_TARGET_ID", "1")
@@ -56,10 +57,15 @@ class EmployeeUpdatePage:
         if not self.page.url.startswith(url):
             self.page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         try:
-            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(state="visible", timeout=20_000)
+            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(
+                state="visible", timeout=20_000
+            )
         except Exception:
             self.page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(state="visible", timeout=20_000)
+            self.page.locator("input[type='search'], input[placeholder*='Search' i], tbody tr, table").first.wait_for(
+                state="visible", timeout=20_000
+            )
+        self.dismiss_any_tutorial_or_dialog()
         return self
 
     def _first(self, locators):
@@ -69,7 +75,7 @@ class EmployeeUpdatePage:
                     return locator.first
             except Exception:
                 continue
-        raise AssertionError("Employee-management control was not found")
+        raise AssertionError("Employee update control was not found")
 
     def _field(self, *names):
         locators = []
@@ -123,7 +129,9 @@ class EmployeeUpdatePage:
                 ])
                 profile_btn.scroll_into_view_if_needed()
                 profile_btn.click(force=True)
-                self.page.locator("input[name='emp_first_name'], input[name='id']").first.wait_for(state="visible", timeout=12_000)
+                self.page.locator("input[name='emp_first_name'], input[name='id']").first.wait_for(
+                    state="visible", timeout=12_000
+                )
                 return self
             except Exception:
                 if attempt == 3:
@@ -287,4 +295,3 @@ class EmployeeUpdatePage:
         for names, value in fields.items():
             self.set_field(names, value)
         return self.save()
-

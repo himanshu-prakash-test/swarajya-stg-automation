@@ -1,46 +1,35 @@
-"""
-Conftest for Employee Management Update Automation.
-Provides Playwright browser, context, page fixtures, credentials, and result reporting.
-"""
-
+import logging
 import os
 import sys
-import logging
+import re
 from datetime import datetime
-import openpyxl
+from typing import Optional
+
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+_WORKSPACE_ROOT = os.path.dirname(os.path.dirname(_PROJECT_ROOT))
+if _WORKSPACE_ROOT not in sys.path:
+    sys.path.insert(0, _WORKSPACE_ROOT)
+
 import pytest
 from playwright.sync_api import sync_playwright
 
-# Ensure project root and update/emp_mgmt are in sys.path
-MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-LOGIN_DIR = os.path.join(ROOT_DIR, "swarajya-login", "swarajya-automation")
-for p in (MODULE_DIR, ROOT_DIR, LOGIN_DIR):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+from emp_update_pages.login_page import LoginPage
+from emp_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
+from emp_update_utils.popup import show_summary_popup
 
-try:
-    from shared.utils.popup import show_desktop_popup
-except ImportError:
-    show_desktop_popup = None
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger("conftest")
 
-from update.emp_mgmt.employee_workbook import update_employee_result
-
-logger = logging.getLogger("update.emp_mgmt.conftest")
-
-_start_time = datetime.now()
-BASE_URL = os.environ.get("SWARAJYA_BASE_URL", "https://swarajya-stg.corecotechnologies.com")
-CREDENTIALS_FILE = os.path.join(MODULE_DIR, "test_data", "credentials.xlsx")
-SCREENSHOTS_DIR = os.path.join(MODULE_DIR, "screenshots")
-os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
-
-RESULT_SUMMARY = {
-    "total": 0,
-    "passed": 0,
-    "failed": 0,
-    "skipped": 0,
-    "failed_tests": [],
-}
+ROOT = os.path.dirname(os.path.abspath(__file__))
+SCREENSHOTS = os.path.join(ROOT, "screenshots")
+os.makedirs(SCREENSHOTS, exist_ok=True)
 
 
 def pytest_addoption(parser):
@@ -70,7 +59,7 @@ def pytest_addoption(parser):
             pass
 
 
-def is_headless(config):
+def is_headless(config) -> bool:
     if config.getoption("--headed", default=False):
         return False
     if config.getoption("--headless", default=False):
@@ -82,212 +71,185 @@ def is_headless(config):
 
 
 @pytest.fixture(scope="session")
-def playwright_instance():
-    with sync_playwright() as pw:
-        yield pw
+def headed(request) -> bool:
+    return not is_headless(request.config)
 
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance, request):
-    headless = is_headless(request.config)
-    slowmo = 0
+def slowmo(request) -> int:
     try:
-        slowmo = request.config.getoption("--slowmo") or 0
-    except (ValueError, AttributeError):
-        pass
-
-    launch_args = []
-    if not headless:
-        launch_args.append("--start-maximized")
-    else:
-        launch_args.extend([
-            "--no-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--window-size=1920,1080",
-        ])
-
-    browser = playwright_instance.chromium.launch(
-        headless=headless,
-        slow_mo=slowmo,
-        args=launch_args,
-    )
-    yield browser
-    browser.close()
-
-
-@pytest.fixture(scope="function")
-def context(browser, request):
-    headless = is_headless(request.config)
-    if headless:
-        ctx = browser.new_context(viewport={"width": 1920, "height": 1080})
-    else:
-        ctx = browser.new_context(no_viewport=True)
-    yield ctx
-    ctx.close()
-
-
-@pytest.fixture(scope="function")
-def page(context):
-    pg = context.new_page()
-    pg.set_default_timeout(10_000)
-    yield pg
-    pg.close()
+        return request.config.getoption("--slowmo") or 0
+    except Exception:
+        return 0
 
 
 @pytest.fixture(scope="session")
-def base_url():
-    return BASE_URL
+def playwright_instance():
+    with sync_playwright() as p:
+        yield p
 
 
-def _read_credentials(role="HR"):
-    if not os.path.exists(CREDENTIALS_FILE):
-        return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
-    wb = openpyxl.load_workbook(CREDENTIALS_FILE, read_only=True, data_only=True)
-    ws = wb.active
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-    if not rows or len(rows) < 2:
-        return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
-    headers = [str(h or "").strip().lower() for h in rows[0]]
-    role_idx = headers.index("role") if "role" in headers else 0
-    id_idx = next((i for i, h in enumerate(headers) if "id" in h), 1)
-    pwd_idx = next((i for i, h in enumerate(headers) if "pass" in h), 2)
-    code_idx = next((i for i, h in enumerate(headers) if "code" in h), 3)
-
-    target_role = role.strip().upper()
-    fallback_row = None
-    for r in rows[1:]:
-        if not r or not any(r):
-            continue
-        if fallback_row is None:
-            fallback_row = r
-        if str(r[role_idx] or "").strip().upper() == target_role:
-            return {
-                "role": str(r[role_idx] or ""),
-                "employee_id": str(r[id_idx] or "").strip(),
-                "password": str(r[pwd_idx] or "").strip(),
-                "auth_code": str(r[code_idx] or "").strip(),
-            }
-    if fallback_row:
-        return {
-            "role": str(fallback_row[role_idx] or ""),
-            "employee_id": str(fallback_row[id_idx] or "").strip(),
-            "password": str(fallback_row[pwd_idx] or "").strip(),
-            "auth_code": str(fallback_row[code_idx] or "").strip(),
-        }
-    return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
+@pytest.fixture(scope="session")
+def browser(playwright_instance, headed, slowmo):
+    br = playwright_instance.chromium.launch(headless=not headed, slow_mo=slowmo)
+    yield br
+    br.close()
 
 
-@pytest.fixture
-def employee_credentials():
-    role = os.environ.get("SWARAJYA_ROLE", "HR")
-    return _read_credentials(role)
-
-
-@pytest.fixture(autouse=True)
-def capture_screenshot_on_failure(request, page):
-    yield
-    report = getattr(request.node, "rep_call", None)
-    if report and report.failed:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        name = request.node.name.replace("[", "_").replace("]", "").replace("/", "_")
-        path = os.path.join(SCREENSHOTS_DIR, f"{name}_{timestamp}.png")
+def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
+    """Poll staging URL dynamically to confirm server is healthy and not 503."""
+    url = "https://swarajya-stg.corecotechnologies.com/"
+    for attempt in range(max_retries):
         try:
-            page.screenshot(path=path, full_page=True)
-            logger.info("Screenshot saved: %s", path)
-        except Exception as exc:
-            logger.warning("Screenshot failed: %s", exc)
+            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            content = page.content().lower()
+            if "service unavailable" not in content and "503" not in content:
+                return True
+        except Exception:
+            pass
+        page.wait_for_timeout(delay_s * 1000)
+    return False
+
+
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
+    return False
+
+
+@pytest.fixture(scope="session")
+def session_storage_state(browser, tmp_path_factory):
+    """Authenticate as HR once and cache auth_state.json."""
+    storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+    if _is_valid_auth_state(storage_path):
+        return storage_path
+
+    context = browser.new_context(viewport={"width": 1920, "height": 1080})
+    page = context.new_page()
+
+    _wait_until_server_healthy(page)
+
+    login_page = LoginPage(page)
+    success = login_page.login(role="HR")
+    if success:
+        page.wait_for_timeout(1000)
+        context.storage_state(path=storage_path)
+        log.info(f"Saved authenticated session state to {storage_path}")
+    else:
+        log.warning("Initial login failed; tests will authenticate per-test")
+
+    context.close()
+    return storage_path if _is_valid_auth_state(storage_path) else None
+
+
+@pytest.fixture(scope="function")
+def authenticated_page(browser, session_storage_state):
+    """Provides an authenticated Playwright page fixture with auto-login fallback."""
+    storage = session_storage_state if _is_valid_auth_state(session_storage_state) else None
+    context = browser.new_context(
+        viewport={"width": 1920, "height": 1080},
+        storage_state=storage,
+    )
+    page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
+
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
+    if not storage:
+        login_page = LoginPage(page)
+        login_page.login(role="HR")
+        storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+        try:
+            context.storage_state(path=storage_path)
+        except Exception:
+            pass
+
+    yield page
+    context.close()
+
+
+@pytest.fixture(scope="function")
+def unauthenticated_page(browser):
+    """Provides a fresh unauthenticated Playwright page fixture."""
+    context = browser.new_context(viewport={"width": 1920, "height": 1080})
+    page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
+
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
+    yield page
+    context.close()
+
+
+# ----------------- Reporting & Screenshot Hooks -----------------
+
+_session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now()}
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
-    setattr(item, f"rep_{report.when}", report)
 
-
-def _find_tc_id(nodeid):
-    import re
-    match = re.search(r"(TC_[A-Z]+_[A-Z]+_\d+)", nodeid)
-    return match.group(1) if match else None
-
-
-def pytest_runtest_logreport(report):
     if report.when != "call":
         return
 
-    RESULT_SUMMARY["total"] += 1
+    tc_id = "UNKNOWN"
+    m = re.search(r"TC_(?:POS|NEG)_UPD_\d+", item.name)
+    if m:
+        tc_id = m.group(0)
+    elif hasattr(item, "callspec"):
+        for param_val in item.callspec.params.values():
+            if isinstance(param_val, dict) and "Test Case ID" in param_val:
+                tc_id = param_val["Test Case ID"]
+                break
+
+    page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
+
     if report.passed:
-        RESULT_SUMMARY["passed"] += 1
+        _session_stats["passed"] += 1
+        if page:
+            scr = os.path.join(SCREENSHOTS, f"PASS_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+            try:
+                page.screenshot(path=scr)
+            except Exception:
+                pass
+        update_test_result(tc_id, "PASS", "Execution Passed Successfully", report.duration)
+
     elif report.failed:
-        RESULT_SUMMARY["failed"] += 1
-        RESULT_SUMMARY["failed_tests"].append(report.nodeid)
+        _session_stats["failed"] += 1
+        if page:
+            scr = os.path.join(SCREENSHOTS, f"FAIL_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+            try:
+                page.screenshot(path=scr)
+            except Exception:
+                pass
+        err_msg = str(report.longrepr) if report.longrepr else "Test Assertion / Execution Failure"
+        update_test_result(tc_id, "FAIL", err_msg[:250], report.duration)
+
     elif report.skipped:
-        RESULT_SUMMARY["skipped"] += 1
-
-    tc_id = _find_tc_id(report.nodeid)
-    if not tc_id:
-        return
-
-    if report.passed:
-        result = "PASS"
-        remarks = "Automation completed successfully."
-    elif report.failed:
-        result = "FAIL"
-        remarks = str(getattr(report, "longreprtext", ""))[:1000]
-    elif report.skipped:
-        result = "SKIPPED"
-        remarks = str(getattr(report, "longreprtext", ""))[:1000]
-    else:
-        return
-
-    try:
-        update_employee_result(tc_id, result, remarks)
-    except Exception as exc:
-        logger.warning("Could not update Excel for %s: %s", tc_id, exc)
+        _session_stats["skipped"] += 1
+        update_test_result(tc_id, "SKIPPED", "Scenario Skipped / Non-UI Flow", report.duration)
 
 
 def pytest_sessionfinish(session, exitstatus):
-    duration = datetime.now() - _start_time if _start_time else None
-    dur_str = str(duration).split(".")[0] if duration else "N/A"
-    RESULT_SUMMARY["duration"] = dur_str
+    if getattr(session.config.option, "collectonly", False):
+        return
 
-    passed = RESULT_SUMMARY["passed"]
-    failed = RESULT_SUMMARY["failed"]
-    skipped = RESULT_SUMMARY["skipped"]
-    total = RESULT_SUMMARY["total"]
-    failed_tests = RESULT_SUMMARY["failed_tests"]
-
-    status = "ALL PASSED" if failed == 0 else f"{failed} FAILED"
-
-    lines = [
-        f"{'=' * 56}",
-        f"  SWARAJYA EMPLOYEE UPDATE AUTOMATION - {status}",
-        f"{'=' * 56}",
-        f"  Total : {total}   Passed : {passed}   Failed : {failed}   Skipped : {skipped}",
-        f"  Time  : {dur_str}",
-        f"{'=' * 56}",
-    ]
-    if failed_tests:
-        lines.append("  Failed Tests:")
-        for ft in failed_tests[:10]:
-            lines.append(f"    - {ft}")
-        lines.append(f"{'=' * 56}")
-
-    try:
-        print("\n" + "\n".join(lines) + "\n")
-    except UnicodeEncodeError:
-        print("\n" + "\n".join(lines).encode("ascii", "replace").decode() + "\n")
-
-    if not getattr(session.config.option, "collectonly", False) and not is_headless(session.config):
-        if show_desktop_popup:
-            show_desktop_popup(
-                title=os.environ.get("SWARAJYA_POPUP_TITLE", "Swarajya Employee Update - Results"),
-                total=total,
-                passed=passed,
-                failed=failed,
-                skipped=skipped,
-                duration=dur_str,
-                failed_tests=failed_tests,
-            )
+    dur = (datetime.now() - _session_stats["start_time"]).total_seconds()
+    log.info(
+        f"Session Complete: Passed={_session_stats['passed']}, Failed={_session_stats['failed']}, Skipped={_session_stats['skipped']} in {dur:.1f}s"
+    )
+    show_summary_popup(_session_stats["passed"], _session_stats["failed"], _session_stats["skipped"], dur)
