@@ -42,10 +42,11 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Create-Vendor-Management.xlsx
 │   │   └── tests/                      # Positive & Negative Vendor Test Suites
 │   │
-│   └── consultant-management/          # 💼 Create Consultant Module
-│       ├── consultant_pages/           # BasePage, ConsultantPage, FormExecutor
-│       ├── test_data/                  # Swarajya-Consultant-test-cases.xlsx
-│       └── tests/                      # Positive & Negative Consultant Creation Tests
+│   └── consultant-management/          # 💼 Create Consultant Module (47 Tests)
+│       ├── consultant_pages/           # BasePage, LoginPage, ConsultantPage, FormExecutor
+│       ├── consultant_utils/           # Excel Reader, Logger, Popup
+│       ├── test_data/                  # Create-Consultant-Management.xlsx, credentials.xlsx
+│       └── tests/                      # Positive & Negative Consultant Creation Suites
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
@@ -75,7 +76,7 @@ swarajya-stg-automation/
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
-| **Create Operations** | Consultant Management | Partner / Team | `Swarajya-Consultant-test-cases.xlsx` | Automated |
+| **Create Operations** | Consultant Management | Partner / Team | `Create-Consultant-Management.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
 | **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 
@@ -112,13 +113,19 @@ cd swarajya-create\employee-management
 pytest
 ```
 
-### 3. Run Login Authentication Suite
+### 3. Run Consultant Management
+```powershell
+cd swarajya-create\consultant-management
+pytest
+```
+
+### 4. Run Login Authentication Suite
 ```powershell
 cd swarajya-login\swarajya-automation
 pytest
 ```
 
-### 4. Run Update Employee Suite (Partner Module)
+### 5. Run Update Employee Suite (Partner Module)
 ```powershell
 cd update\emp_mgmt
 pytest

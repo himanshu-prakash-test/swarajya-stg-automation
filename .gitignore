@@ -30,6 +30,8 @@ screenshots/
 playwright-report/
 test-results/
 scratch/
+logs/
+*.log
 
 # ── OS files ──
 .DS_Store
