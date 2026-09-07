@@ -9,7 +9,7 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 | Contributor / Scope | Modules Covered | Branches | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
 | **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module | `login/emp-manager`<br>`create/employee-mgmt`<br>`create/vendor-mgmt` | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• Dynamic Waits, Modal Handlers, Network Offline Mocks |
-| **Partner (Mrugank)** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Consultant Management** Module | `update_emp_mgmt`<br>`features/mrugank` | • `test_hr_admin.py`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• `Swarajya-Consultant-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
+| **Partner (Mrugank)** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create & Update Consultant** Module | `create/consultant_mgmt`<br>`update/emp_mgmt` | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
 
 ---
 
@@ -33,11 +33,17 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Create-test-cases (6).xlsx
 │   │   └── tests/                      # Positive & Negative Employee Test Suites
 │   │
-│   └── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
-│       ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
-│       ├── vendor_utils/               # Excel Reader, Logger, Popup
-│       ├── test_data/                  # Create-Vendor-Management.xlsx
-│       └── tests/                      # Positive & Negative Vendor Test Suites
+│   ├── vendor-management/              # 🏢 Create Vendor Module (24 Tests)
+│   │   ├── vendor_pages/               # BasePage, LoginPage, VendorPage, FormExecutor
+│   │   ├── vendor_utils/               # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Create-Vendor-Management.xlsx
+│   │   └── tests/                      # Positive & Negative Vendor Test Suites
+│   │
+│   └── consultant-management/          # 💼 Create Consultant Module (47 Tests)
+│       ├── consultant_pages/           # BasePage, LoginPage, ConsultantPage, FormExecutor
+│       ├── consultant_utils/           # Excel Reader, Logger, Popup
+│       ├── test_data/                  # Create-Consultant-Management.xlsx, credentials.xlsx
+│       └── tests/                      # Positive & Negative Consultant Creation Suites
 │
 ├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
 │   │
@@ -47,8 +53,6 @@ swarajya-stg-automation/
 │       ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx
 │       └── tests/                      # test_employee_updates.py
 │   
-│  
-│
 ├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers
 └── README.md                           # Master Architecture Documentation
@@ -63,8 +67,10 @@ swarajya-stg-automation/
 | **Authentication** | Employee & Manager Login | Himanshu | `login_test_cases.xlsx` | Automated |
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
-| **Create Operations** | Consultant Management | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
+| **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
+| **Create Operations** | Consultant Management | Partner / Team | `Create-Consultant-Management.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
+| **Update Operations** | Consultant Updates | Mrugank | `Swarajya-Consultant-test-cases.xlsx` | Automated |
 
 ---
 
@@ -99,13 +105,19 @@ cd swarajya-create\employee-management
 pytest
 ```
 
-### 3. Run Login Authentication Suite
+### 3. Run Consultant Management
+```powershell
+cd swarajya-create\consultant-management
+pytest
+```
+
+### 4. Run Login Authentication Suite
 ```powershell
 cd swarajya-login\swarajya-automation
 pytest
 ```
 
-### 4. Run Update Employee Suite (Partner Module)
+### 5. Run Update Employee Suite (Partner Module)
 ```powershell
 cd update\emp_mgmt
 pytest

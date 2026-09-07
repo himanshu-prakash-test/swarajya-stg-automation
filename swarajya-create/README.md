@@ -1,6 +1,6 @@
 # 📋 Swarajya Create Operations Automation Suite
 
-Master framework containing end-to-end automated test suites for all **Create Operations** in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), covering **Employee Management** and **Vendor Management**.
+Master framework containing end-to-end automated test suites for all **Create Operations** in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), covering **Employee Management**, **Vendor Management**, and **Consultant Management**.
 
 ---
 
@@ -27,6 +27,15 @@ swarajya-create/
 │   ├── pytest.ini                       # Module execution settings
 │   └── README.md                        # Vendor Management Manual
 │
+├── consultant-management/               # 💼 Consultant Management Module
+│   ├── consultant_pages/                # POM (base_page, login_page, consultant_page, form_executor)
+│   ├── consultant_utils/                # Utilities (excel_reader, logger, popup)
+│   ├── test_data/                       # Create-Consultant-Management.xlsx, credentials.xlsx
+│   ├── tests/                           # Positive & Negative Consultant Creation Suites
+│   ├── screenshots/                     # Test evidence screenshots
+│   ├── pytest.ini                       # Module execution settings
+│   └── README.md                        # Consultant Management Manual
+│
 ├── pytest.ini                           # Root Create operations pytest configuration
 └── README.md                            # Create Operations Overview
 ```
@@ -39,16 +48,17 @@ swarajya-create/
 | :--- | :--- | :---: | :--- |
 | [**Employee Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/employee-management/README.md) | Automates employee onboarding, multi-tab forms, role assignments, and validation checks. | **30 Tests** (10 Pos / 20 Neg) | Datepicker handling, Excel synchronization, storage state caching |
 | [**Vendor Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/vendor-management/README.md) | Automates vendor creation, mandatory fields, 10-digit phone regex, and confirmation modals. | **24 Tests** (9 Pos / 15 Neg) | Modal confirmation handling, strict positive assertions, search grid validation |
+| [**Consultant Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/consultant-management/README.md) | Automates consultant profile creation, contract period assignment, rates, and bank details. | **47 Tests** (22 Pos / 25 Neg) | Modal confirmation handling, dynamic grid search, rate validations, Excel reporting |
 
 ---
 
 ## 🚀 Execution Guide
 
-### 1. Run Complete Create Operations Suite (Both Modules)
+### 1. Run Complete Create Operations Suite
 ```powershell
 # Run from swarajya-create root
 cd swarajya-create
-pytest employee-management/tests vendor-management/tests
+pytest
 ```
 
 ### 2. Run Individual Modules
@@ -59,5 +69,9 @@ pytest
 
 # Run Vendor Management
 cd swarajya-create\vendor-management
+pytest
+
+# Run Consultant Management
+cd swarajya-create\consultant-management
 pytest
 ```
