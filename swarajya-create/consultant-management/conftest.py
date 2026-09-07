@@ -38,19 +38,44 @@ def pytest_addoption(parser):
         existing.update(getattr(opt, "_long_opts", []))
 
     if "--headed" not in existing:
-        parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
+        try:
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless")
+        except ValueError:
+            pass
     if "--slowmo" not in existing:
-        parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
+        except ValueError:
+            pass
+
+
+def is_headless(config) -> bool:
+    if config.getoption("--headed", default=False):
+        return False
+    if config.getoption("--headless", default=False):
+        return True
+    env_val = os.environ.get("HEADLESS")
+    if env_val is not None:
+        return env_val.lower() in ("true", "1", "yes")
+    return True
 
 
 @pytest.fixture(scope="session")
 def headed(request) -> bool:
-    return request.config.getoption("--headed")
+    return not is_headless(request.config)
 
 
 @pytest.fixture(scope="session")
 def slowmo(request) -> int:
-    return request.config.getoption("--slowmo")
+    try:
+        return request.config.getoption("--slowmo") or 0
+    except Exception:
+        return 0
 
 
 @pytest.fixture(scope="session")

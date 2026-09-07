@@ -46,6 +46,11 @@ def pytest_addoption(parser):
             parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
         except ValueError:
             pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless")
+        except ValueError:
+            pass
     if "--slowmo" not in existing:
         try:
             parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms)")
@@ -54,10 +59,14 @@ def pytest_addoption(parser):
 
 
 def _headless(config) -> bool:
-    try:
-        return not config.getoption("--headed")
-    except (ValueError, AttributeError):
+    if config.getoption("--headed", default=False):
+        return False
+    if config.getoption("--headless", default=False):
         return True
+    env_val = os.environ.get("HEADLESS")
+    if env_val is not None:
+        return env_val.lower() in ("true", "1", "yes")
+    return True
 
 
 def _tc_id_from_nodeid(nodeid: str):
