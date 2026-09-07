@@ -9,7 +9,7 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 | Contributor / Scope | Modules Covered | Branches | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
 | **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module | `login/emp-manager`<br>`create/employee-mgmt`<br>`create/vendor-mgmt` | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• Dynamic Waits, Modal Handlers, Network Offline Mocks |
-| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create & Update Consultant** Module | `create/consultant_mgmt`<br>`update/emp_mgmt` | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
+| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module | `create/consultant_mgmt`<br>`update/emp_mgmt` | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
 
 ---
 
