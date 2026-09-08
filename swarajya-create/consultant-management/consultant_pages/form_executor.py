@@ -11,6 +11,20 @@ log = get_logger("ConsultantFormExecutor")
 SCREENSHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
+DEFAULT_VALID_CONSULTANT = {
+    "First Name": "ValidFirst",
+    "Last Name": "ValidLast",
+    "Phone": "9822334455",
+    "Personal Email": "valid.consultant@example.com",
+    "Monthly Fees": "35000",
+    "TDS Percentage": "2",
+    "Bank Name": "HDFC Bank",
+    "Account Number": "50100234567890",
+    "IFSC Code": "HDFC0001234",
+    "Account Type": "Savings",
+    "Active": "Ticked",
+}
+
 
 class FormExecutor:
     """Executes data-driven test scenarios from Create-Consultant-Management.xlsx."""
@@ -139,7 +153,7 @@ class FormExecutor:
         if tc_id == "TC_CONSULTANT_POS_16" or "status toggle" in scenario.lower():
             self.consultant.open_consultant_list()
             toggle = self.page.locator("tbody tr mat-slide-toggle, mat-slide-toggle, [role='switch']").first
-            if toggle.is_visible(timeout=5000):
+            if toggle.count() and toggle.is_visible():
                 toggle.click()
                 time.sleep(1)
             return
@@ -147,8 +161,7 @@ class FormExecutor:
         # 11. Pagination
         if tc_id == "TC_CONSULTANT_POS_17" or "pagination" in scenario.lower():
             self.consultant.open_consultant_list()
-            paginator = self.page.locator("mat-paginator, .pagination, .mat-mdc-paginator").first
-            assert paginator.is_visible(timeout=5000) or self.consultant.is_visible("tbody"), "Pagination control not found"
+            assert self.consultant.is_visible("mat-paginator, .pagination, .mat-mdc-paginator") or self.consultant.is_visible("tbody"), "Pagination control not found"
             return
 
         # 12. Standard Creation Flows (POS_04, POS_05, POS_07, POS_09, POS_12, POS_13, POS_18, POS_20, POS_21, POS_22)
@@ -191,17 +204,56 @@ class FormExecutor:
             assert self.consultant.is_account_number_masked(), "Masking comparison check failed"
             return
 
-        # 6. Standard negative creation flows
-        self.consultant.open_create_consultant_form()
-        if data:
-            self.consultant.fill_consultant_form(data)
+        # 6. Negative creation flows
+        # Build baseline payload to ensure all non-tested mandatory fields are valid
+        payload = dict(DEFAULT_VALID_CONSULTANT)
+        payload.update(data)
 
+        # Handle specific field clearances
+        if tc_id == "TC_CONSULTANT_NEG_01":
+            payload = {}
+        elif tc_id == "TC_CONSULTANT_NEG_02":
+            payload["First Name"] = ""
+        elif tc_id == "TC_CONSULTANT_NEG_03":
+            payload["Phone"] = ""
+        elif tc_id == "TC_CONSULTANT_NEG_19":
+            payload["Account Type"] = ""
+        elif tc_id == "TC_CONSULTANT_NEG_22":
+            payload["TDS Percentage"] = ""
+
+        self.consultant.open_create_consultant_form()
+        if payload:
+            self.consultant.fill_consultant_form(payload)
+
+        # Handle confirmation cancellation test
         if tc_id == "TC_CONSULTANT_NEG_07" or ("no" in scenario.lower() and "confirmation" in scenario.lower()):
             outcome = self.consultant.click_save_and_confirm(confirm=False)
             assert outcome == "Cancelled" or self.consultant.is_visible("button:has-text('Save')"), "Did not remain on form after selecting No"
             self.consultant.click_cancel()
             return
 
+        # Trigger save to test validation enforcement
+        save_enabled_before = self.consultant.is_save_button_enabled()
         outcome = self.consultant.click_save_and_confirm(confirm=True)
-        assert self.consultant.has_validation_errors(), f"Expected validation errors or disabled save for {tc_id}, but form was accepted: {outcome}"
+
+        # Strict validation assertion:
+        # The application MUST either:
+        # (a) keep the Save button disabled, OR
+        # (b) display explicit validation error message / ng-invalid state, OR
+        # (c) display an error toast and block consultant creation.
+        errs = self.consultant.get_validation_errors()
+        ng_invalid = self.page.locator("input.ng-invalid, mat-select.ng-invalid, textarea.ng-invalid").count()
+
+        is_properly_rejected = (
+            not save_enabled_before
+            or len(errs) > 0
+            or ng_invalid > 0
+            or "invalid" in outcome.lower()
+            or "error" in outcome.lower()
+            or outcome == "Save Disabled"
+        )
+
+        assert is_properly_rejected, (
+            f"Defect in staging application: {tc_id} ({scenario}) - Form was accepted without validation! Outcome: '{outcome}', Save Enabled: {save_enabled_before}"
+        )
         self.consultant.click_cancel()

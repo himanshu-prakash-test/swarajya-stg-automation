@@ -49,9 +49,8 @@ class ConsultantPage(BasePage):
     def open_create_consultant_form(self):
         """Open the Create / Add Consultant form."""
         self.open_consultant_list()
-        new_btn = self.page.locator("button:has-text('New Consultant')").first
-        if new_btn.is_visible(timeout=8000):
-            new_btn.click()
+        if self.is_visible("button:has-text('New Consultant')", timeout=8000):
+            self.page.locator("button:has-text('New Consultant')").first.click()
             self.wait_for_dom_ready()
             self.page.locator("input[name='firstname'], input[name='lastname']").first.wait_for(state="visible", timeout=8000)
 
@@ -96,9 +95,8 @@ class ConsultantPage(BasePage):
         select_el = self.page.locator("mat-select[name='account_type'], mat-select").first
         select_el.click()
         time.sleep(0.5)
-        option = self.page.locator(f"mat-option:has-text('{account_type}')").first
-        if option.is_visible(timeout=3000):
-            option.click()
+        if self.is_visible(f"mat-option:has-text('{account_type}')", timeout=3000):
+            self.page.locator(f"mat-option:has-text('{account_type}')").first.click()
         else:
             self.page.locator("mat-option").first.click()
         time.sleep(0.3)
@@ -133,12 +131,15 @@ class ConsultantPage(BasePage):
             return f"Error: {e}"
 
         time.sleep(1)
-        dialog = self.page.locator("mat-dialog-container, .modal-dialog, .swal2-popup, .cdk-overlay-pane").first
-        if dialog.is_visible(timeout=4000):
-            action_btn = dialog.locator(f"button:has-text('{'Yes' if confirm else 'No'}')").first
-            if action_btn.is_visible(timeout=3000):
-                action_btn.click()
+        if self.is_visible("mat-dialog-container, .modal-dialog, .swal2-popup, .cdk-overlay-pane, .modal-overlay", timeout=4000):
+            btn_text = 'Yes' if confirm else 'No'
+            if self.is_visible(f"button:has-text('{btn_text}')", timeout=3000):
+                self.page.locator(f"button:has-text('{btn_text}')").first.click()
                 time.sleep(1)
+                try:
+                    self.page.locator(".modal-overlay, mat-dialog-container, .cdk-overlay-container").wait_for(state="hidden", timeout=3000)
+                except Exception:
+                    pass
                 return "Confirmed" if confirm else "Cancelled"
 
         toast = self.get_toast(timeout=3000)
@@ -146,18 +147,26 @@ class ConsultantPage(BasePage):
 
     def click_cancel(self) -> bool:
         """Click Cancel button."""
-        cancel_btn = self.page.locator("button:has-text('Cancel')").first
-        if cancel_btn.is_visible(timeout=3000):
-            cancel_btn.click()
-            time.sleep(1)
-            return True
+        time.sleep(0.5)
+        try:
+            self.page.locator(".modal-overlay, mat-dialog-container").wait_for(state="hidden", timeout=2000)
+        except Exception:
+            pass
+        if self.is_visible("button:has-text('Cancel')", timeout=4000):
+            try:
+                self.page.locator("button:has-text('Cancel')").first.click(force=True)
+                time.sleep(1)
+                return True
+            except Exception:
+                pass
         return False
 
     def toggle_include_inactive(self, checked: bool = True):
         """Toggle 'Include Inactive Consultant' checkbox/filter."""
         self.open_consultant_list()
-        chk = self.page.locator("mat-checkbox:has-text('Inactive'), mat-checkbox:has-text('Include Inactive'), mat-slide-toggle, input[type='checkbox']").first
-        if chk.is_visible(timeout=3000):
+        selector = "mat-checkbox:has-text('Inactive'), mat-checkbox:has-text('Include Inactive'), mat-slide-toggle, input[type='checkbox']"
+        if self.is_visible(selector, timeout=3000):
+            chk = self.page.locator(selector).first
             classes = chk.get_attribute("class") or ""
             is_checked = "mat-mdc-checkbox-checked" in classes or "mat-checked" in classes or "mat-mdc-slide-toggle-checked" in classes
             if is_checked != checked:
@@ -168,8 +177,8 @@ class ConsultantPage(BasePage):
     def search_consultant(self, query: str):
         """Search for consultant by query string."""
         self.open_consultant_list()
-        search_input = self.page.locator("input[placeholder*='Search' i]").first
-        if search_input.is_visible(timeout=5000):
+        if self.is_visible("input[placeholder*='Search' i]", timeout=5000):
+            search_input = self.page.locator("input[placeholder*='Search' i]").first
             search_input.fill(query)
             search_input.press("Enter")
             self.page.wait_for_load_state("networkidle")
@@ -200,7 +209,7 @@ class ConsultantPage(BasePage):
         edit_btn = self.page.locator("tbody tr button:has(i.icofont-edit), tbody tr button[mattooltip*='Edit' i], tbody tr a[href*='edit']").first
         if not edit_btn.count():
             edit_btn = self.page.locator("tbody tr button").first
-        if edit_btn.is_visible(timeout=5000):
+        if edit_btn.count() and edit_btn.is_visible():
             edit_btn.click()
             time.sleep(1)
             return True
