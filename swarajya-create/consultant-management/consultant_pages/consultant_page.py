@@ -1,7 +1,7 @@
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
-from consultant_pages.base_page import BasePage
+from shared.pages.base_page import BasePage
 
 
 class ConsultantPage(BasePage):

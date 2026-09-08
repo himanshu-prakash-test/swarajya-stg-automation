@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from playwright.sync_api import Page
-from consultant_pages.base_page import BasePage
+from shared.pages.base_page import BasePage
 from consultant_utils.excel_reader import read_credentials
 
 AUTH_STORAGE = os.path.join(
