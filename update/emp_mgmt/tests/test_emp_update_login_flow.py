@@ -1,7 +1,7 @@
 import pytest
 from emp_update_pages.login_page import LoginPage
 from emp_update_pages.employee_update_page import EmployeeUpdatePage
-from emp_update_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("test_emp_update_login_flow")
 

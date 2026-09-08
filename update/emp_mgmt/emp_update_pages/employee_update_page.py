@@ -3,8 +3,8 @@
 import logging
 import os
 from playwright.sync_api import Page, Locator
-from emp_update_pages.base_page import BasePage
-from emp_update_utils.logger import get_logger
+from shared.pages.base_page import BasePage
+from shared.utils.logger import get_logger
 
 log = get_logger("employee_update_page")
 

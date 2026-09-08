@@ -1,9 +1,9 @@
 import os
 from typing import Optional
 from playwright.sync_api import Page
-from emp_update_pages.base_page import BasePage
+from shared.pages.base_page import BasePage
 from emp_update_utils.excel_reader import read_credentials
-from emp_update_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("login_page")
 

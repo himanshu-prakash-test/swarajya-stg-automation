@@ -5,7 +5,7 @@ import re
 import pytest
 from playwright.sync_api import Page
 from emp_update_pages.employee_update_page import EmployeeUpdatePage
-from emp_update_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("form_executor")
 
