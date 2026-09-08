@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 import openpyxl
 from openpyxl.styles import Font, PatternFill
 
-from emp_update_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("excel_reader")
 
