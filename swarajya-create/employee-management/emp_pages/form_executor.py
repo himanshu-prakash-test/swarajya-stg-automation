@@ -313,9 +313,6 @@ class FormExecutor:
             )
 
     def _assert_session_timeout_blocks_save(self, tc_id: str) -> None:
-        from common.pages.login_page import LoginPage
-        from common.utils.excel_base import read_credentials
-
         full_data = self._build_valid_employee_data(tc_id, {}, mandatory_only=False)
         self._fill_fields(full_data)
         self.page.context.clear_cookies()
@@ -328,9 +325,7 @@ class FormExecutor:
         url = self.page.url.lower()
         success_msg = self.emp.get_confirmation_message(timeout=1000)
         blocked = ("login" in url or "unauthorized" in body or "session" in body or "timeout" in body or "addnewemployee" in url) and ("successfully" not in success_msg.lower())
-        
-        # Restore session credentials for subsequent test cases
-        creds = read_credentials("Employee")
-        LoginPage(self.page).login(creds["employee_id"], creds["password"], creds["auth_code"])
+
         assert blocked, "Expired session did not block saving the Create Employee form"
         log.info(f"Negative scenario [{tc_id}] session timeout blocked save as expected.")
+
