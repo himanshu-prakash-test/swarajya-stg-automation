@@ -52,17 +52,38 @@ class BasePage:
         except Exception:
             pass
 
+    def wait_for_network_idle(self, timeout_ms: int = 10000):
+        """Wait for network idle state."""
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=timeout_ms)
+        except Exception:
+            pass
+
+    def dismiss_any_tutorial_or_dialog(self):
+        """Dismiss tutorial / tour popups that may overlay form controls."""
+        try:
+            dismiss_buttons = [
+                self.page.locator("button:has-text('Skip Intro')"),
+                self.page.locator("button:has-text('Skip')"),
+                self.page.locator("button:has-text('Got it')"),
+                self.page.locator("button:has-text('Close')"),
+                self.page.locator("button:has-text('close')"),
+                self.page.locator(".introjs-skipbutton"),
+                self.page.locator(".shepherd-cancel-icon"),
+                self.page.locator(".close-drawer"),
+            ]
+            for btn in dismiss_buttons:
+                if btn.count() and btn.first.is_visible():
+                    try:
+                        btn.first.click(force=True)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     def _dismiss_tutorial(self):
-        """Dismiss guided-tour overlays (Intro.js / skip intro) dynamically if present."""
-        for _ in range(3):
-            skip = self.page.locator("button:has-text('Skip Intro'), button:has-text('Skip'), .introjs-skipbutton")
-            if skip.count() and skip.first.is_visible():
-                try:
-                    skip.first.click()
-                    skip.first.wait_for(state="hidden", timeout=2000)
-                except Exception:
-                    pass
-                return
+        """Dismiss guided-tour overlays dynamically if present."""
+        self.dismiss_any_tutorial_or_dialog()
 
     def click(self, selector: str, timeout: int = 8000):
         """Wait for selector to be visible, then click."""

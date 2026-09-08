@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 from playwright.sync_api import Page
 from consultant_pages.consultant_page import ConsultantPage
-from consultant_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 log = get_logger("ConsultantFormExecutor")
 SCREENSHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")

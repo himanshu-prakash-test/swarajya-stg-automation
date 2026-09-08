@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import openpyxl
 
-from consultant_utils.logger import get_logger
+from shared.utils.logger import get_logger
 
 logger = get_logger("excel_reader")
 

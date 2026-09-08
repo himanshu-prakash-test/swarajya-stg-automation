@@ -5,15 +5,18 @@ import re
 from datetime import datetime
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
+_CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
+_WORKSPACE_ROOT = os.path.dirname(_CREATE_ROOT)
+for _p in (_PROJECT_ROOT, _CREATE_ROOT, _WORKSPACE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pytest
 from playwright.sync_api import sync_playwright
 
 from consultant_pages.login_page import LoginPage
 from consultant_utils.excel_reader import build_automation_id, read_credentials, update_test_result
-from consultant_utils.popup import show_summary_popup
+from shared.utils.popup import show_summary_popup
 
 logging.basicConfig(
     level=logging.INFO,
@@ -155,7 +158,7 @@ def unauthenticated_page(browser):
     context.close()
 
 
-_session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now()}
+_session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now(), "failed_tests": []}
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -184,6 +187,8 @@ def pytest_runtest_makereport(item, call):
 
         elif report.failed:
             _session_stats["failed"] += 1
+            fail_label = tc_id if tc_id != "UNKNOWN" else item.name
+            _session_stats["failed_tests"].append(fail_label)
             if page:
                 scr = os.path.join(SCREENSHOTS, f"FAIL_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
                 try:
@@ -199,8 +204,20 @@ def pytest_runtest_makereport(item, call):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    if getattr(session.config.option, "collectonly", False):
+        return
     dur = (datetime.now() - _session_stats["start_time"]).total_seconds()
     log.info(
         f"Session Complete: Passed={_session_stats['passed']}, Failed={_session_stats['failed']}, Skipped={_session_stats['skipped']} in {dur:.1f}s"
     )
-    show_summary_popup(_session_stats["passed"], _session_stats["failed"], _session_stats["skipped"], dur)
+    dur_str = f"{int(dur // 60)}m {int(dur % 60)}s"
+    total = _session_stats["passed"] + _session_stats["failed"] + _session_stats["skipped"]
+    show_summary_popup(
+        total=total,
+        passed=_session_stats["passed"],
+        failed=_session_stats["failed"],
+        skipped=_session_stats["skipped"],
+        duration_str=dur_str,
+        failed_tests=_session_stats["failed_tests"],
+        suite_title="Consultant Management",
+    )
