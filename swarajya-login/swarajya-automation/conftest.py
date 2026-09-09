@@ -25,6 +25,7 @@ from pages.login_page import LoginPage
 from pages.tfa_page import TfaPage
 from utils.excel_reader import read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
+from shared.reporter import PytestReporterPlugin, TestCaseResult
 
 logging.basicConfig(
     level=logging.INFO,
@@ -210,6 +211,7 @@ def pytest_configure(config):
 _results = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
 _failed_tests = []
 _start_time = None
+_html_reporter = PytestReporterPlugin(suite_title="Login Authentication")
 
 
 def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 60):
@@ -283,10 +285,35 @@ def pytest_runtest_logreport(report):
     else:
         return
 
+    # Look for screenshot
+    shot_path = None
+    if os.path.exists(SCREENSHOTS_DIR):
+        for f in sorted(os.listdir(SCREENSHOTS_DIR), reverse=True):
+            if f.lower().endswith(".png") and (tc_id in f or report.nodeid.split("::")[-1] in f):
+                shot_path = os.path.join(SCREENSHOTS_DIR, f)
+                break
+
     try:
         update_test_result(tc_id, result, remarks)
     except Exception as exc:
         log.warning("Excel update failed for %s: %s", tc_id, exc)
+
+    # Record in HTML Reporter
+    test_res = TestCaseResult(
+        nodeid=report.nodeid,
+        name=tc_id,
+        tc_id=tc_id,
+        status=result,
+        duration=getattr(report, "duration", 0.0),
+        module_name="Login Authentication",
+        description="Login Authentication test verification",
+        error_message=remarks if result == "FAIL" else "",
+        stacktrace=str(report.longrepr) if getattr(report, "longrepr", None) else "",
+        screenshot_path=shot_path,
+        remarks=remarks,
+        auto_id=f"AUT_{tc_id}",
+    )
+    _html_reporter.reporter.add_result(test_res)
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -322,9 +349,16 @@ def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
 
+    report_path = None
+    if total > 0:
+        try:
+            report_path = _html_reporter.finalize_report(filename_prefix="login_auth")
+        except Exception as exc:
+            log.warning(f"Could not finalize HTML report: {exc}")
+
     # popup
     try:
-        _show_popup(passed, failed, skipped, total, dur_str, _failed_tests)
+        _show_popup(passed, failed, skipped, total, dur_str, _failed_tests, report_path=report_path)
         return
     except Exception:
         pass
@@ -342,7 +376,7 @@ def pytest_sessionfinish(session, exitstatus):
         pass
 
 
-def _show_popup(passed, failed, skipped, total, duration, failed_tests):
+def _show_popup(passed, failed, skipped, total, duration, failed_tests, report_path=None):
     show_summary_popup(
         passed=passed,
         failed=failed,
@@ -351,4 +385,5 @@ def _show_popup(passed, failed, skipped, total, duration, failed_tests):
         duration_str=str(duration),
         failed_tests=failed_tests,
         title="SWARAJYA LOGIN AUTOMATION",
+        report_path=report_path,
     )

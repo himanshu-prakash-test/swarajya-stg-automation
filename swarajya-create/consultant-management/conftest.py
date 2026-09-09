@@ -17,6 +17,7 @@ from playwright.sync_api import sync_playwright
 from consultant_pages.login_page import LoginPage
 from consultant_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
+from shared.reporter import PytestReporterPlugin
 
 logging.basicConfig(
     level=logging.INFO,
@@ -159,6 +160,7 @@ def unauthenticated_page(browser):
 
 
 _session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now(), "failed_tests": []}
+_html_reporter = PytestReporterPlugin(suite_title="Consultant Management")
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -174,6 +176,7 @@ def pytest_runtest_makereport(item, call):
 
         # Get test page if available
         page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page")
+        scr = None
 
         if report.passed:
             _session_stats["passed"] += 1
@@ -182,8 +185,18 @@ def pytest_runtest_makereport(item, call):
                 try:
                     page.screenshot(path=scr)
                 except Exception:
-                    pass
-            update_test_result(tc_id, "PASS", "Execution Passed Successfully", report.duration)
+                    scr = None
+            remarks = "Execution Passed Successfully"
+            update_test_result(tc_id, "PASS", remarks, report.duration)
+            _html_reporter.record_test(
+                item=item,
+                report=report,
+                status="PASS",
+                remarks=remarks,
+                auto_id=build_automation_id(tc_id),
+                screenshot_path=scr,
+                duration=report.duration,
+            )
 
         elif report.failed:
             _session_stats["failed"] += 1
@@ -194,13 +207,32 @@ def pytest_runtest_makereport(item, call):
                 try:
                     page.screenshot(path=scr)
                 except Exception:
-                    pass
+                    scr = None
             err_msg = str(report.longrepr) if report.longrepr else "Test Assertion / Execution Failure"
-            update_test_result(tc_id, "FAIL", err_msg[:250], report.duration)
+            remarks = err_msg[:250]
+            update_test_result(tc_id, "FAIL", remarks, report.duration)
+            _html_reporter.record_test(
+                item=item,
+                report=report,
+                status="FAIL",
+                remarks=remarks,
+                auto_id=build_automation_id(tc_id),
+                screenshot_path=scr,
+                duration=report.duration,
+            )
 
         elif report.skipped:
             _session_stats["skipped"] += 1
-            update_test_result(tc_id, "SKIP", "Scenario Skipped / Non-UI Flow", report.duration)
+            remarks = "Scenario Skipped / Non-UI Flow"
+            update_test_result(tc_id, "SKIP", remarks, report.duration)
+            _html_reporter.record_test(
+                item=item,
+                report=report,
+                status="SKIPPED",
+                remarks=remarks,
+                auto_id=build_automation_id(tc_id),
+                duration=report.duration,
+            )
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -212,6 +244,14 @@ def pytest_sessionfinish(session, exitstatus):
     )
     dur_str = f"{int(dur // 60)}m {int(dur % 60)}s"
     total = _session_stats["passed"] + _session_stats["failed"] + _session_stats["skipped"]
+
+    report_path = None
+    if total > 0:
+        try:
+            report_path = _html_reporter.finalize_report(filename_prefix="consultant_mgmt")
+        except Exception as exc:
+            log.warning(f"Could not finalize HTML report: {exc}")
+
     show_summary_popup(
         total=total,
         passed=_session_stats["passed"],
@@ -220,4 +260,5 @@ def pytest_sessionfinish(session, exitstatus):
         duration_str=dur_str,
         failed_tests=_session_stats["failed_tests"],
         suite_title="Consultant Management",
+        report_path=report_path,
     )

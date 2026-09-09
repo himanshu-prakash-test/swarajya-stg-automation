@@ -18,6 +18,7 @@ from playwright.sync_api import sync_playwright
 from common.pages.login_page import LoginPage
 from emp_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
+from shared.reporter import PytestReporterPlugin, TestCaseResult
 
 logging.basicConfig(
     level=logging.INFO,
@@ -252,6 +253,7 @@ _metrics = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
 _failures = []
 _recorded_nodes = set()
 _t0 = None
+_html_reporter = PytestReporterPlugin(suite_title="Employee Management")
 
 
 def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 60):
@@ -304,15 +306,41 @@ def _record_excel_result(report, status: str, remark: str = ""):
         _metrics["skipped"] += 1
         _failures.append(f"{tc_id}: {remark or 'skipped'}")
 
+    # Find matching screenshot if generated
+    shot_path = None
+    if os.path.exists(SCREENSHOTS):
+        for f in sorted(os.listdir(SCREENSHOTS), reverse=True):
+            if f.lower().endswith(".png") and tc_id in f:
+                shot_path = os.path.join(SCREENSHOTS, f)
+                break
+
+    auto_id = build_automation_id(tc_id)
     try:
         update_test_result(
             tc_id,
             status,
-            auto_id=build_automation_id(tc_id),
+            auto_id=auto_id,
             remark=remark,
         )
     except Exception as exc:
         log.warning(f"Excel update failed for {tc_id}: {exc}")
+
+    # Record in HTML Reporter
+    test_res = TestCaseResult(
+        nodeid=report.nodeid,
+        name=tc_id,
+        tc_id=tc_id,
+        status=status,
+        duration=getattr(report, "duration", 0.0),
+        module_name="Employee Management",
+        description="Validation of employee record operations",
+        error_message=remark if status == "FAIL" else "",
+        stacktrace=str(report.longrepr) if getattr(report, "longrepr", None) else "",
+        screenshot_path=shot_path,
+        remarks=remark,
+        auto_id=auto_id,
+    )
+    _html_reporter.reporter.add_result(test_res)
 
 
 def _clean_failure_message(longrepr) -> str:
@@ -373,6 +401,13 @@ def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
 
+    report_path = None
+    if total > 0:
+        try:
+            report_path = _html_reporter.finalize_report(filename_prefix="employee_mgmt")
+        except Exception as exc:
+            log.warning(f"Could not finalize HTML report: {exc}")
+
     try:
         show_summary_popup(
             passed=passed,
@@ -381,6 +416,7 @@ def pytest_sessionfinish(session, exitstatus):
             total=total,
             duration=elapsed,
             failures=_failures,
+            report_path=report_path,
         )
     except Exception as exc:
         log.warning(f"Popup display note: {exc}")

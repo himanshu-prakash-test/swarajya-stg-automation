@@ -18,6 +18,7 @@ from playwright.sync_api import sync_playwright
 from common.pages.login_page import LoginPage
 from vendor_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
+from shared.reporter import PytestReporterPlugin
 
 logging.basicConfig(
     level=logging.INFO,
@@ -198,6 +199,9 @@ def unauthenticated_page(browser):
 
 # ----------------- Reporting & Screenshot Hooks -----------------
 
+_html_reporter = PytestReporterPlugin(suite_title="Vendor Management")
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
@@ -230,6 +234,7 @@ def pytest_runtest_makereport(item, call):
 
     # Save 1-to-1 screenshot for every test case
     page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
+    shot_path = None
     if page:
         try:
             label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
@@ -240,6 +245,16 @@ def pytest_runtest_makereport(item, call):
             log.info(f"Captured 1-to-1 test screenshot ({status}): {shot_filename}")
         except Exception as exc:
             log.warning(f"Could not capture screenshot for {item.name}: {exc}")
+
+    _html_reporter.record_test(
+        item=item,
+        report=report,
+        status=status,
+        remarks=remarks,
+        auto_id=build_automation_id(tc_id) if tc_id else "",
+        screenshot_path=shot_path,
+        duration=report.duration,
+    )
 
 
 def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 60):
@@ -308,6 +323,13 @@ def pytest_sessionfinish(session, exitstatus):
     print(f"  Time  : {dur_str}")
     print("=" * 56 + "\n")
 
+    report_path = None
+    if total > 0:
+        try:
+            report_path = _html_reporter.finalize_report(filename_prefix="vendor_mgmt")
+        except Exception as exc:
+            log.warning(f"Could not finalize HTML report: {exc}")
+
     show_summary_popup(
         total=total,
         passed=passed,
@@ -315,5 +337,7 @@ def pytest_sessionfinish(session, exitstatus):
         skipped=skipped,
         duration_str=dur_str,
         failed_tests=failed_tests,
+        suite_title="Vendor Management",
+        report_path=report_path,
     )
 
