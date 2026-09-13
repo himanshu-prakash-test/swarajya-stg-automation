@@ -39,19 +39,30 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Create-Vendor-Management.xlsx
 │   │   └── tests/                      # Positive & Negative Vendor Test Suites
 │   │
-│   └── consultant-management/          # 💼 Create Consultant Module (47 Tests)
-│       ├── consultant_pages/           # BasePage, LoginPage, ConsultantPage, FormExecutor
-│       ├── consultant_utils/           # Excel Reader, Logger, Popup
-│       ├── test_data/                  # Create-Consultant-Management.xlsx, credentials.xlsx
-│       └── tests/                      # Positive & Negative Consultant Creation Suites
-│
-├── update/                             # 🔄 Master Update Operations Suite (Partner Module)
+│   ├── consultant-management/          # 💼 Create Consultant Module (47 Tests)
+│   │   ├── consultant_pages/           # BasePage, LoginPage, ConsultantPage, FormExecutor
+│   │   ├── consultant_utils/           # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Create-Consultant-Management.xlsx, credentials.xlsx
+│   │   └── tests/                      # Positive & Negative Consultant Creation Suites
 │   │
-│   └── emp_mgmt/                       # 📝 Update Employee Module (29 Tests)
-│       ├── emp_update_pages/           # BasePage, LoginPage, EmployeeUpdatePage, FormExecutor
-│       ├── emp_update_utils/           # Excel Reader, Logger, Popup
-│       ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx, credentials.xlsx
-│       └── tests/                      # Positive & Negative Employee Update Suites
+│   └── customer-management/            # 👥 Create Customer Module (36 Tests)
+│       ├── customer_pages/             # BasePage, LoginPage, CustomerPage, FormExecutor
+│       ├── customer_utils/             # Excel Reader
+│       ├── test_data/                  # Create-Customer-Management.xlsx, credentials.xlsx
+│       └── tests/                      # Positive & Negative Customer Creation Suites
+│
+├── swarajya-update/                    # 🔄 Master Update Operations Suite
+│   ├── common/                         # 🌐 Shared Common Components
+│   │   ├── pages/                      # Common Pages (login_page, auth_setup_page)
+│   │   └── utils/                      # Common Utilities (excel_base)
+│   │
+│   ├── employee-management/            # 📝 Update Employee Module (29 Tests)
+│   │   ├── emp_update_pages/           # BasePage, LoginPage, EmployeeUpdatePage, FormExecutor
+│   │   ├── emp_update_utils/           # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx, credentials.xlsx
+│   │   └── tests/                      # Positive & Negative Employee Update Suites
+│   ├── pytest.ini                      # Suite-level Pytest Configuration
+│   └── README.md                       # Update Operations Manual
 │   
 ├── .gitignore                          # Excludes caches, screenshots & session tokens
 ├── pytest.ini                          # Root Pytest Configuration & Unified Markers
@@ -69,6 +80,7 @@ swarajya-stg-automation/
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
 | **Create Operations** | Consultant Management | Mrugank | `Create-Consultant-Management.xlsx` | Automated |
+| **Create Operations** | Customer Management | Himanshu | `Create-Customer-Management.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
 ---
 
