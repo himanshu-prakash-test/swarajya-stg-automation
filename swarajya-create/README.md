@@ -36,6 +36,15 @@ swarajya-create/
 │   ├── pytest.ini                       # Module execution settings
 │   └── README.md                        # Consultant Management Manual
 │
+├── customer-management/                 # 👥 Customer Management Module
+│   ├── customer_pages/                  # POM (base_page, login_page, customer_page, form_executor)
+│   ├── customer_utils/                  # Utilities (excel_reader)
+│   ├── test_data/                       # Create-Customer-Management.xlsx, credentials.xlsx
+│   ├── tests/                           # Positive & Negative Customer Creation Suites
+│   ├── screenshots/                     # Test evidence screenshots
+│   ├── pytest.ini                       # Module execution settings
+│   └── README.md                        # Customer Management Manual
+│
 ├── pytest.ini                           # Root Create operations pytest configuration
 └── README.md                            # Create Operations Overview
 ```
@@ -49,6 +58,7 @@ swarajya-create/
 | [**Employee Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/employee-management/README.md) | Automates employee onboarding, multi-tab forms, role assignments, and validation checks. | **30 Tests** (10 Pos / 20 Neg) | Datepicker handling, Excel synchronization, storage state caching |
 | [**Vendor Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/vendor-management/README.md) | Automates vendor creation, mandatory fields, 10-digit phone regex, and confirmation modals. | **24 Tests** (9 Pos / 15 Neg) | Modal confirmation handling, strict positive assertions, search grid validation |
 | [**Consultant Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/consultant-management/README.md) | Automates consultant profile creation, contract period assignment, rates, and bank details. | **47 Tests** (22 Pos / 25 Neg) | Modal confirmation handling, dynamic grid search, rate validations, Excel reporting |
+| [**Customer Management**](customer-management/README.md) | Automates customer onboarding, 20 fields, currency/tax/terms variants, dropdown options, IGST switch, confirmation dialogs (Yes/No), and grid search. | **36 Tests** (2 Login / 26 Pos / 8 Neg) | Full profile creation, confirmation popup (Yes/No), search verification, dropdown & switch testing, session timeout, Excel reporting |
 
 ---
 
@@ -73,5 +83,9 @@ pytest
 
 # Run Consultant Management
 cd swarajya-create\consultant-management
+pytest
+
+# Run Customer Management
+cd swarajya-create\customer-management
 pytest
 ```

@@ -42,6 +42,8 @@ def _extract_module_name(nodeid: str) -> str:
         return "Vendor Management"
     if "consultant-management" in n:
         return "Consultant Management"
+    if "customer-management" in n:
+        return "Customer Management"
     if "swarajya-login" in n or "login" in n:
         return "Login Authentication"
     if "emp_mgmt" in n or "update" in n:
@@ -131,8 +133,11 @@ class PytestReporterPlugin:
     def finalize_report(self, filename_prefix: Optional[str] = None) -> str:
         """Generate report on session finish and print status."""
         report_path = self.reporter.generate_report(filename_prefix=filename_prefix)
-        print(f"\n{'=' * 65}")
-        print(f"  📊 PLAYWRIGHT HTML REPORT GENERATED SUCCESSFULLY")
-        print(f"  File: {report_path}")
-        print(f"{'=' * 65}\n")
+        try:
+            print(f"\n{'=' * 65}")
+            print(f"  📊 PLAYWRIGHT HTML REPORT GENERATED SUCCESSFULLY")
+            print(f"  File: {report_path}")
+            print(f"{'=' * 65}\n")
+        except Exception:
+            print(f"\n{'=' * 65}\n  PLAYWRIGHT HTML REPORT GENERATED SUCCESSFULLY\n  File: {report_path}\n{'=' * 65}\n")
         return report_path
