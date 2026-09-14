@@ -6,10 +6,10 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 
 ## 👥 Team Module Ownership & Division of Responsibilities
 
-| Contributor / Scope | Modules Covered | Branches | Key Areas & Test Artifacts |
+| Contributor / Scope | Modules Covered | Isolated Branches (Click to View) | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
-| **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module | `login/emp-manager`<br>`create/employee-mgmt`<br>`create/vendor-mgmt` | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• Dynamic Waits, Modal Handlers, Network Offline Mocks |
-| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module | `create/consultant_mgmt`<br>`update/emp_mgmt` | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
+| **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module<br>• **Create Customer** Module<br>• **Update Purchase Order** Module | [`login/emp-manager`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/emp-manager)<br>[`create/employee-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/employee-mgmt)<br>[`create/vendor-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/vendor-mgmt)<br>[`create/customer-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/customer-mgmt)<br>[`update/purchase-orders`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/purchase-orders) | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• `Create-Customer-Management.xlsx`<br>• `Update-Purchase-Order.xlsx`<br>• Dynamic Waits, Modal Handlers, Offline Mocks |
+| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module | [`login/hr-admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr-admin)<br>[`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt)<br>[`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt) | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
 
 ---
 
