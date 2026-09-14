@@ -61,6 +61,12 @@ swarajya-stg-automation/
 │   │   ├── emp_update_utils/           # Excel Reader, Logger, Popup
 │   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx, credentials.xlsx
 │   │   └── tests/                      # Positive & Negative Employee Update Suites
+│   │
+│   ├── purchase-orders/                # 📑 Update Purchase Order Module (28 Tests)
+│   │   ├── po_update_pages/            # BasePage, LoginPage, POUpdatePage
+│   │   ├── po_update_utils/            # Excel Reader, Logger, Popup
+│   │   ├── test_data/                  # Update-Purchase-Order.xlsx, credentials.xlsx
+│   │   └── tests/                      # Positive, Negative, and Navigation PO Update Suites
 │   ├── pytest.ini                      # Suite-level Pytest Configuration
 │   └── README.md                       # Update Operations Manual
 │   
@@ -82,6 +88,7 @@ swarajya-stg-automation/
 | **Create Operations** | Consultant Management | Mrugank | `Create-Consultant-Management.xlsx` | Automated |
 | **Create Operations** | Customer Management | Himanshu | `Create-Customer-Management.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
+| **Update Operations** | Purchase Order Updates | Himanshu | `Update-Purchase-Order.xlsx` | Automated |
 ---
 
 ## ⚡ Core Engineering & Quality Standards

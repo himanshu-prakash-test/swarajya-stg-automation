@@ -21,6 +21,15 @@ swarajya-update/
 │   ├── pytest.ini                       # Module execution settings
 │   └── README.md                        # Employee Update Manual
 │
+├── purchase-orders/                     # 📑 Purchase Order Update Module
+│   ├── po_update_pages/                 # Page Objects for PO update operations
+│   ├── po_update_utils/                 # PO update helpers & Excel readers
+│   ├── test_data/                       # credentials.xlsx, Update-Purchase-Order.xlsx
+│   ├── tests/                           # Positive, Negative, and Navigation PO Update Test Suites
+│   ├── pytest.ini                       # Module execution settings
+│   ├── requirements.txt                 # Module dependencies
+│   └── README.md                        # Purchase Order Update Manual
+│
 ├── pytest.ini                           # Suite-level pytest configuration
 └── README.md                            # Update Operations Overview
 ```
@@ -32,6 +41,7 @@ swarajya-update/
 | Module | Description | Test Coverage | Key Features |
 | :--- | :--- | :---: | :--- |
 | [**Employee Management (Update)**](employee-management/README.md) | Automates employee profile updating, field modifications, validation handling, and audit confirmation. | **26 Tests** (1 Login / 15 Pos / 10 Neg) | Dynamic field editing, modal confirmation handling, Excel reporting, storage state caching |
+| [**Purchase Order (Update)**](purchase-orders/README.md) | Automates Purchase Order modification, line item adjustments, status updates, and audit verification. | **28 Tests** (1 Auth / 2 Nav / 17 Pos / 8 Neg) | Modular POM, bi-directional Excel reporting, 1-to-1 screenshot audit |
 
 ---
 
@@ -52,5 +62,12 @@ pytest
 
 ```bash
 cd swarajya-update\employee-management
+pytest
+```
+
+### Run Purchase Order Update Specifically
+
+```bash
+cd swarajya-update\purchase-orders
 pytest
 ```
