@@ -9,7 +9,7 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 | Contributor / Scope | Modules Covered | Isolated Branches (Click to View) | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
 | **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module<br>• **Create Customer** Module<br>• **Update Purchase Order** Module | [`login/emp-manager`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/emp-manager)<br>[`create/employee-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/employee-mgmt)<br>[`create/vendor-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/vendor-mgmt)<br>[`create/customer-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/customer-mgmt)<br>[`update/purchase-orders`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/purchase-orders) | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• `Create-Customer-Management.xlsx`<br>• `Update-Purchase-Order.xlsx`<br>• Dynamic Waits, Modal Handlers, Offline Mocks |
-| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module | [`login/hr-admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr-admin)<br>[`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt)<br>[`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt) | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• Update Form Validation, Consultant Flows |
+| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module<br>• **Create Purchase Order** Module | [`login/hr-admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr-admin)<br>[`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt)<br>[`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt)<br>[`create/purchase_order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/purchase_order) | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• `Create-Purchase-Order-Test-Cases.xlsx`<br>• Update Form Validation, Consultant Flows, PO Creation |
 
 ---
 
@@ -45,11 +45,17 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Create-Consultant-Management.xlsx, credentials.xlsx
 │   │   └── tests/                      # Positive & Negative Consultant Creation Suites
 │   │
-│   └── customer-management/            # 👥 Create Customer Module (36 Tests)
-│       ├── customer_pages/             # BasePage, LoginPage, CustomerPage, FormExecutor
-│       ├── customer_utils/             # Excel Reader
-│       ├── test_data/                  # Create-Customer-Management.xlsx, credentials.xlsx
-│       └── tests/                      # Positive & Negative Customer Creation Suites
+│   ├── customer-management/            # 👥 Create Customer Module (36 Tests)
+│   │   ├── customer_pages/             # BasePage, LoginPage, CustomerPage, FormExecutor
+│   │   ├── customer_utils/             # Excel Reader
+│   │   ├── test_data/                  # Create-Customer-Management.xlsx, credentials.xlsx
+│   │   └── tests/                      # Positive & Negative Customer Creation Suites
+│   │
+│   └── purchase-order/                 # 📦 Create Purchase Order Module
+│       ├── po_pages/                   # BasePage, LoginPage, POPage, FormExecutor
+│       ├── po_utils/                   # Excel Reader
+│       ├── test_data/                  # Create-Purchase-Order-Test-Cases.xlsx, credentials.xlsx, sample_po.pdf
+│       └── tests/                      # Login, Positive & Negative PO Creation Suites
 │
 ├── swarajya-update/                    # 🔄 Master Update Operations Suite
 │   ├── common/                         # 🌐 Shared Common Components
@@ -87,6 +93,7 @@ swarajya-stg-automation/
 | **Create Operations** | Vendor Management | Himanshu | `Create-Vendor-Management.xlsx` | Automated |
 | **Create Operations** | Consultant Management | Mrugank | `Create-Consultant-Management.xlsx` | Automated |
 | **Create Operations** | Customer Management | Himanshu | `Create-Customer-Management.xlsx` | Automated |
+| **Create Operations** | Purchase Order Creation | Mrugank | `Create-Purchase-Order-Test-Cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
 | **Update Operations** | Purchase Order Updates | Himanshu | `Update-Purchase-Order.xlsx` | Automated |
 ---

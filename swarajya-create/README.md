@@ -45,6 +45,15 @@ swarajya-create/
 │   ├── pytest.ini                       # Module execution settings
 │   └── README.md                        # Customer Management Manual
 │
+├── purchase-order/                      # 📦 Purchase Order Management Module
+│   ├── po_pages/                        # POM (base_page, login_page, po_page, form_executor)
+│   ├── po_utils/                        # Utilities (excel_reader)
+│   ├── test_data/                       # Create-Purchase-Order-Test-Cases.xlsx, credentials.xlsx, sample_po.pdf
+│   ├── tests/                           # Positive & Negative PO Creation Suites
+│   ├── screenshots/                     # Test evidence screenshots
+│   ├── pytest.ini                       # Module execution settings
+│   └── README.md                        # Purchase Order Management Manual
+│
 ├── pytest.ini                           # Root Create operations pytest configuration
 └── README.md                            # Create Operations Overview
 ```
@@ -55,10 +64,11 @@ swarajya-create/
 
 | Module | Description | Test Coverage | Key Features |
 | :--- | :--- | :---: | :--- |
-| [**Employee Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/employee-management/README.md) | Automates employee onboarding, multi-tab forms, role assignments, and validation checks. | **30 Tests** (10 Pos / 20 Neg) | Datepicker handling, Excel synchronization, storage state caching |
-| [**Vendor Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/vendor-management/README.md) | Automates vendor creation, mandatory fields, 10-digit phone regex, and confirmation modals. | **24 Tests** (9 Pos / 15 Neg) | Modal confirmation handling, strict positive assertions, search grid validation |
-| [**Consultant Management**](file:///c:/Users/Himanshu%20Raj%20Prakash/Desktop/swarajya-stg-automation/swarajya-create/consultant-management/README.md) | Automates consultant profile creation, contract period assignment, rates, and bank details. | **47 Tests** (22 Pos / 25 Neg) | Modal confirmation handling, dynamic grid search, rate validations, Excel reporting |
+| [**Employee Management**](employee-management/README.md) | Automates employee onboarding, multi-tab forms, role assignments, and validation checks. | **30 Tests** (10 Pos / 20 Neg) | Datepicker handling, Excel synchronization, storage state caching |
+| [**Vendor Management**](vendor-management/README.md) | Automates vendor creation, mandatory fields, 10-digit phone regex, and confirmation modals. | **24 Tests** (9 Pos / 15 Neg) | Modal confirmation handling, strict positive assertions, search grid validation |
+| [**Consultant Management**](consultant-management/README.md) | Automates consultant profile creation, contract period assignment, rates, and bank details. | **47 Tests** (22 Pos / 25 Neg) | Modal confirmation handling, dynamic grid search, rate validations, Excel reporting |
 | [**Customer Management**](customer-management/README.md) | Automates customer onboarding, 20 fields, currency/tax/terms variants, dropdown options, IGST switch, confirmation dialogs (Yes/No), and grid search. | **36 Tests** (2 Login / 26 Pos / 8 Neg) | Full profile creation, confirmation popup (Yes/No), search verification, dropdown & switch testing, session timeout, Excel reporting |
+| [**Purchase Order**](purchase-order/README.md) | Automates PO creation, customer mapping, base/tax/total amounts, PDF document upload, and status validation. | **20 Tests** (2 Login / 10 Pos / 8 Neg) | Direct PO navigation, modal form automation, file upload, calculation validations, Excel synchronization |
 
 ---
 
