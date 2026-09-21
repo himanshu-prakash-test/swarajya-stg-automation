@@ -9,7 +9,7 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 | Contributor / Scope | Modules Covered | Isolated Branches (Click to View) | Key Areas & Test Artifacts |
 | :--- | :--- | :--- | :--- |
 | **Himanshu** | • **Login Suite** (Employee & Manager)<br>• **Create Employee** Module<br>• **Create Vendor** Module<br>• **Create Customer** Module<br>• **Update Purchase Order** Module | [`login/emp-manager`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/emp-manager)<br>[`create/employee-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/employee-mgmt)<br>[`create/vendor-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/vendor-mgmt)<br>[`create/customer-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/customer-mgmt)<br>[`update/purchase-orders`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/purchase-orders) | • `login_test_cases.xlsx`<br>• `Swarajya-Create-test-cases (6).xlsx`<br>• `Create-Vendor-Management.xlsx`<br>• `Create-Customer-Management.xlsx`<br>• `Update-Purchase-Order.xlsx`<br>• Dynamic Waits, Modal Handlers, Offline Mocks |
-| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module<br>• **Create Purchase Order** Module | [`login/hr-admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr-admin)<br>[`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt)<br>[`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt)<br>[`create/purchase_order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/purchase_order) | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• `Create-Purchase-Order-Test-Cases.xlsx`<br>• Update Form Validation, Consultant Flows, PO Creation |
+| **Mrugank** | • **HR / Admin Login** Suite<br>• **Update Employee** Module<br>• **Create Consultant** Module<br>• **Create Purchase Order** Module<br>• **Update Customer** Module | [`login/hr-admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr-admin)<br>[`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt)<br>[`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt)<br>[`create/purchase_order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/purchase_order)<br>[`update/customer_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/customer_mgmt) | • `Create-Consultant-Management.xlsx`<br>• `Swarajya-Update-Employee-test-cases.xlsx`<br>• `Create-Purchase-Order-Test-Cases.xlsx`<br>• `Update-Customer-Management.xlsx`<br>• Update Form Validation, Consultant Flows, PO Creation |
 
 ---
 
@@ -73,6 +73,12 @@ swarajya-stg-automation/
 │   │   ├── po_update_utils/            # Excel Reader, Logger, Popup
 │   │   ├── test_data/                  # Update-Purchase-Order.xlsx, credentials.xlsx
 │   │   └── tests/                      # Positive, Negative, and Navigation PO Update Suites
+│   │
+│   ├── customer-management/            # 👥 Update Customer Module (49 Tests)
+│   │   ├── customer_update_pages/      # BasePage, LoginPage, CustomerUpdatePage, FormExecutor
+│   │   ├── customer_update_utils/      # Excel Reader, Logger
+│   │   ├── test_data/                  # Update-Customer-Management.xlsx, credentials.xlsx
+│   │   └── tests/                      # Login, Positive, and Negative Customer Update Suites
 │   ├── pytest.ini                      # Suite-level Pytest Configuration
 │   └── README.md                       # Update Operations Manual
 │   
@@ -86,7 +92,7 @@ swarajya-stg-automation/
 ## 📊 Comprehensive Test Coverage Matrix
 
 | Category | Sub-Module | Ownership | Reference Workbook | Execution Mode |
-| :--- | :--- | :---: | :--- | :---: |
+| :--- | :--- | :---: | :--- | :--- |
 | **Authentication** | Employee & Manager Login | Himanshu | `login_test_cases.xlsx` | Automated |
 | **Authentication** | HR & Admin Login | Mrugank | `login_test_cases_ready.xlsx` | Automated |
 | **Create Operations** | Employee Management | Himanshu | `Swarajya-Create-test-cases (6).xlsx` | Automated |
@@ -96,6 +102,7 @@ swarajya-stg-automation/
 | **Create Operations** | Purchase Order Creation | Mrugank | `Create-Purchase-Order-Test-Cases.xlsx` | Automated |
 | **Update Operations** | Employee Updates | Mrugank | `Swarajya-Update-Employee-test-cases.xlsx` | Automated |
 | **Update Operations** | Purchase Order Updates | Himanshu | `Update-Purchase-Order.xlsx` | Automated |
+| **Update Operations** | Customer Updates | Mrugank | `Update-Customer-Management.xlsx` | Automated |
 ---
 
 ## ⚡ Core Engineering & Quality Standards
