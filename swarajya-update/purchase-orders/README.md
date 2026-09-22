@@ -62,7 +62,7 @@ The Purchase Order Update operation follows a 4-step path from the portal dashbo
 | **`TC_PO_POS_16`** | Amount Fields Update Reflection | Updates Base Amount and Total Amount; verifies listing column update | **Passed** |
 | **`TC_PO_POS_17`** | Document Replacement Re-upload | Re-attaches replacement document, validates persistence of document link | **Passed** |
 
-### Negative Test Scenarios (`Negative_Tests` - 8 Cases)
+### Negative Test Scenarios (`Negative_Tests` - 11 Cases)
 
 | Test Case ID | Scenario | Verification Focus | Status |
 | :--- | :--- | :--- | :---: |
@@ -74,6 +74,9 @@ The Purchase Order Update operation follows a 4-step path from the portal dashbo
 | **`TC_PO_NEG_06`** | Modal Close Icon Dismissal | Top-right 'X' icon button cleanly dismisses modal and discards uncommitted changes | **Passed** |
 | **`TC_PO_NEG_07`** | Search Clear Grid Restoration | Clearing search query automatically restores full table records without reload | **Passed** |
 | **`TC_PO_NEG_08`** | Mandatory Field Asterisk Indicators | Asserts red asterisk (`*`) indicators are present strictly on required fields | **Passed** |
+| **`TC_PO_NEG_09`** | Duplicate PO Reference Number Collision | Asserts application rejects duplicate PO Reference Number assignment matching an existing PO | **Defect / Validation** |
+| **`TC_PO_NEG_10`** | Financial Calculation Consistency | Asserts application validates mathematical consistency when Total Amount != Base Amount + Tax Amount | **Defect / Validation** |
+| **`TC_PO_NEG_11`** | Cancelled PO Financial Immutability | Asserts lifecycle rules restrict modifying financial terms and amounts on CANCELLED Purchase Orders | **Defect / Validation** |
 
 ---
 

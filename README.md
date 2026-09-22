@@ -68,7 +68,7 @@ swarajya-stg-automation/
 │   │   ├── test_data/                  # Swarajya-Update-Employee-test-cases.xlsx, credentials.xlsx
 │   │   └── tests/                      # Positive & Negative Employee Update Suites
 │   │
-│   ├── purchase-orders/                # 📑 Update Purchase Order Module (28 Tests)
+│   ├── purchase-orders/                # 📑 Update Purchase Order Module (31 Tests)
 │   │   ├── po_update_pages/            # BasePage, LoginPage, POUpdatePage
 │   │   ├── po_update_utils/            # Excel Reader, Logger, Popup
 │   │   ├── test_data/                  # Update-Purchase-Order.xlsx, credentials.xlsx
