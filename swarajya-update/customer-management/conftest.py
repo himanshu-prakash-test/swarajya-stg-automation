@@ -322,7 +322,31 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
+    tag = "ALL PASSED" if _session_stats["failed"] == 0 and total > 0 else "FAILURES OCCURRED" if _session_stats["failed"] > 0 else "SESSION COMPLETE"
+    print(f"\n{'=' * 65}")
+    print(f"  📊 SWARAJYA CUSTOMER UPDATE - {tag}")
+    print(f"{'=' * 65}")
+    print(f"  Total    : {total:<4} Passed : {_session_stats['passed']:<4} Failed : {_session_stats['failed']:<4} Skipped : {_session_stats['skipped']}")
+    print(f"  Duration : {dur_str}")
+    if _session_stats["failed_tests"]:
+        print(f"  Failed Cases ({len(_session_stats['failed_tests'])}):")
+        for ft in _session_stats["failed_tests"]:
+            print(f"    ❌ {ft}")
+    if report_path:
+        print(f"  Report   : {report_path}")
+    print(f"{'=' * 65}\n")
+
     try:
+        if sys.platform == "darwin":
+            try:
+                import subprocess
+                subprocess.run(
+                    ["osascript", "-e", 'tell application "System Events" to set frontmost of every process whose name contains "Python" to true'],
+                    check=False,
+                    capture_output=True,
+                )
+            except Exception:
+                pass
         show_summary_popup(
             total=total,
             passed=_session_stats["passed"],
