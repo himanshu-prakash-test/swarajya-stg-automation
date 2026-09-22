@@ -584,3 +584,147 @@ class TestPurchaseOrderUpdateNegativeFlows:
 
         po_page.click_cancel()
         update_test_result("TC_PO_NEG_08", "Passed", "Mandatory indicators verified")
+
+    @pytest.mark.negative
+    @pytest.mark.tc_id("TC_PO_NEG_09")
+    def test_po_duplicate_reference_collision(self, authenticated_page):
+        """Verify application rejects duplicate PO Reference Number assignment matching an existing PO."""
+        po_page = POUpdatePage(authenticated_page)
+        po_page.open_purchase_order_list(direct=True)
+        authenticated_page.wait_for_selector("tbody tr", timeout=10000)
+
+        rows = po_page.get_purchase_order_rows()
+        if len(rows) < 2:
+            pytest.skip("Requires at least 2 PO records in table to test duplicate reference collision")
+
+        ref_orig = po_page.get_row_ref_no(0)
+        ref_target = po_page.get_row_ref_no(1)
+        if not ref_target or not ref_orig or ref_orig == ref_target:
+            pytest.skip("Could not find two distinct PO reference numbers in table rows")
+
+        # Open row 0 and attempt to assign row 1's reference number
+        po_page.open_po_edit_modal(row_index=0)
+        po_page.set_form_field("po_ref_no", ref_target)
+        po_page.click_update()
+
+        snackbar = po_page.get_snackbar_info(timeout_ms=5000)
+        is_rejected = (
+            snackbar["is_error"]
+            or "duplicate" in snackbar["text"].lower()
+            or "already exists" in snackbar["text"].lower()
+            or "conflict" in snackbar["text"].lower()
+        )
+
+        # Rollback / restore original ref
+        if po_page.is_update_form_visible():
+            po_page.click_cancel()
+        else:
+            po_page.open_po_edit_modal(row_index=0)
+            po_page.set_form_field("po_ref_no", ref_orig)
+            po_page.click_update()
+            authenticated_page.wait_for_timeout(1000)
+
+        if is_rejected:
+            update_test_result("TC_PO_NEG_09", "Passed", "Duplicate PO Reference Number correctly rejected")
+        else:
+            update_test_result(
+                "TC_PO_NEG_09",
+                "Failed",
+                f"Data Integrity Defect: System accepted duplicate PO Reference No '{ref_target}' without conflict error",
+            )
+
+        assert is_rejected, (
+            f"Data Integrity Defect: System accepted duplicate PO Reference No '{ref_target}' "
+            f"which already belongs to another PO. Notification received: '{snackbar['text']}'"
+        )
+
+    @pytest.mark.negative
+    @pytest.mark.tc_id("TC_PO_NEG_10")
+    def test_po_calculation_consistency_check(self, authenticated_page):
+        """Verify application validates financial calculation consistency when Total Amount does not equal Base + Tax."""
+        po_page = POUpdatePage(authenticated_page)
+        po_page.open_purchase_order_list(direct=True)
+        po_page.open_po_edit_modal(row_index=0)
+
+        # Set mathematically inconsistent values: Base: 5000 + Tax: 500 != Total: 99999
+        po_page.set_form_field("base_amount", "5000")
+        po_page.set_form_field("tax_amount", "500")
+        po_page.set_form_field("total_amount", "99999")
+        po_page.click_update()
+
+        snackbar = po_page.get_snackbar_info(timeout_ms=5000)
+        is_rejected = (
+            snackbar["is_error"]
+            or "mismatch" in snackbar["text"].lower()
+            or "total amount" in snackbar["text"].lower()
+            or "equal" in snackbar["text"].lower()
+        )
+
+        if po_page.is_update_form_visible():
+            po_page.click_cancel()
+
+        if is_rejected:
+            update_test_result("TC_PO_NEG_10", "Passed", "Calculation mismatch rejected or enforced")
+        else:
+            update_test_result(
+                "TC_PO_NEG_10",
+                "Failed",
+                "Financial Calculation Defect: System permitted saving contradictory amounts (Base: 5000 + Tax: 500 != Total: 99999)",
+            )
+
+        assert is_rejected, (
+            "Financial Calculation Defect: System permitted saving contradictory amounts "
+            "(Base: 5000 + Tax: 500 != Total: 99999) without mathematical validation."
+        )
+
+    @pytest.mark.negative
+    @pytest.mark.tc_id("TC_PO_NEG_11")
+    def test_po_cancelled_record_immutability(self, authenticated_page):
+        """Verify application restricts modifying critical financial amounts on CANCELLED Purchase Orders."""
+        po_page = POUpdatePage(authenticated_page)
+        po_page.open_purchase_order_list(direct=True)
+
+        # Set row 0 to CANCELLED
+        po_page.open_po_edit_modal(row_index=0)
+        orig_status = po_page.get_form_field_value("status")
+        po_page.select_status("CANCELLED")
+        po_page.click_update()
+        authenticated_page.wait_for_timeout(1000)
+
+        # Attempt to modify financial amounts on this CANCELLED PO
+        po_page.open_po_edit_modal(row_index=0)
+        po_page.set_form_field("base_amount", "88888")
+        po_page.set_form_field("total_amount", "88888")
+        po_page.click_update()
+
+        snackbar = po_page.get_snackbar_info(timeout_ms=5000)
+        is_blocked = (
+            snackbar["is_error"]
+            or "cancelled" in snackbar["text"].lower()
+            or "cannot be modified" in snackbar["text"].lower()
+            or "read-only" in snackbar["text"].lower()
+        )
+
+        # Revert status back to original (e.g. ACTIVE)
+        if po_page.is_update_form_visible():
+            po_page.click_cancel()
+
+        po_page.open_po_edit_modal(row_index=0)
+        po_page.select_status(orig_status if orig_status else "ACTIVE")
+        po_page.click_update()
+        authenticated_page.wait_for_timeout(1000)
+
+        if is_blocked:
+            update_test_result("TC_PO_NEG_11", "Passed", "Cancelled PO financial immutability enforced")
+        else:
+            update_test_result(
+                "TC_PO_NEG_11",
+                "Failed",
+                "Lifecycle State Defect: System permitted modifying amounts on a CANCELLED Purchase Order without reactivation",
+            )
+
+        assert is_blocked, (
+            "Lifecycle State Defect: System permitted modifying financial amounts on a CANCELLED "
+            "Purchase Order without requiring reactivation."
+        )
+

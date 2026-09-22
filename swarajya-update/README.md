@@ -50,7 +50,7 @@ swarajya-update/
 | Module | Description | Test Coverage | Key Features |
 | :--- | :--- | :---: | :--- |
 | [**Employee Management (Update)**](employee-management/README.md) | Automates employee profile updating, field modifications, validation handling, and audit confirmation. | **26 Tests** (1 Login / 15 Pos / 10 Neg) | Dynamic field editing, modal confirmation handling, Excel reporting, storage state caching |
-| [**Purchase Order (Update)**](purchase-orders/README.md) | Automates Purchase Order modification, line item adjustments, status updates, and audit verification. | **28 Tests** (1 Auth / 2 Nav / 17 Pos / 8 Neg) | Modular POM, bi-directional Excel reporting, 1-to-1 screenshot audit |
+| [**Purchase Order (Update)**](purchase-orders/README.md) | Automates Purchase Order modification, line item adjustments, status updates, and audit verification. | **31 Tests** (1 Auth / 2 Nav / 17 Pos / 11 Neg) | Modular POM, bi-directional Excel reporting, 1-to-1 screenshot audit |
 | [**Customer Management (Update)**](customer-management/README.md) | Automates Customer profile and tax detail updates, modal handling, validation checks, and audit verification. | **49 Tests** (1 Auth-Nav / 32 Pos / 16 Neg) | Multi-step navigation, dynamic field updating, Excel reporting, offline/error validation |
 
 ---
