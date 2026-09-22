@@ -338,15 +338,33 @@ def pytest_sessionfinish(session, exitstatus):
 
     try:
         if sys.platform == "darwin":
+            import subprocess
+            import threading
+            import time
+
+            def _bring_popup_to_front():
+                time.sleep(0.4)
+                try:
+                    subprocess.run(
+                        ["osascript", "-e", 'tell application "System Events" to set frontmost of (first process whose name is "python3" or name is "Python") to true'],
+                        check=False,
+                        capture_output=True,
+                    )
+                except Exception:
+                    pass
+
+            threading.Thread(target=_bring_popup_to_front, daemon=True).start()
+
             try:
-                import subprocess
+                stat_msg = f"Passed: {_session_stats['passed']} | Failed: {_session_stats['failed']} | Duration: {dur_str}"
                 subprocess.run(
-                    ["osascript", "-e", 'tell application "System Events" to set frontmost of every process whose name contains "Python" to true'],
+                    ["osascript", "-e", f'display notification "{stat_msg}" with title "Customer Update Automation" sound name "Glass"'],
                     check=False,
                     capture_output=True,
                 )
             except Exception:
                 pass
+
         show_summary_popup(
             total=total,
             passed=_session_stats["passed"],
