@@ -14,6 +14,11 @@ class TestPurchaseOrderLoginAndNavFlow:
 
     @pytest.mark.tc_id("TC_PO_AUTH_01")
     def test_admin_login_and_access(self, unauthenticated_page):
+        """
+        Verify:
+        1. Login with Admin credentials
+        2. Landing on authenticated dashboard /default
+        """
         page = unauthenticated_page
         login_page = LoginPage(page)
         creds = read_credentials("Admin")
@@ -101,3 +106,8 @@ class TestPurchaseOrderLoginAndNavFlow:
 
         po_page.click_cancel()
         assert not po_page.is_update_form_visible(), "Update form should be closed after clicking Cancel."
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(pytest.main([__file__, "-v", "-s"]))

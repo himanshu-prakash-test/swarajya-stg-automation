@@ -60,6 +60,56 @@ def read_credentials(role: str = "Admin", path: Optional[str] = None) -> Dict[st
     }
 
 
+def load_test_cases(sheet_name: str, file_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Read all test case rows from given sheet in Update-Purchase-Order.xlsx.
+    Returns empty list if file or sheet does not exist.
+    """
+    path = file_path or TEST_WORKBOOK_PATH
+    if not os.path.exists(path):
+        return []
+
+    try:
+        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    except Exception:
+        return []
+
+    target_sheet = None
+    if sheet_name in wb.sheetnames:
+        target_sheet = sheet_name
+    else:
+        for s in wb.sheetnames:
+            if sheet_name.lower() in s.lower() or s.lower() in sheet_name.lower():
+                target_sheet = s
+                break
+
+    if not target_sheet:
+        wb.close()
+        return []
+
+    ws = wb[target_sheet]
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+
+    if not rows:
+        return []
+
+    headers = [str(cell).strip() if cell is not None else f"col_{idx}" for idx, cell in enumerate(rows[0])]
+    cases = []
+    for row_idx, row in enumerate(rows[1:], start=2):
+        if not any(row):
+            continue
+        row_dict = dict(zip(headers, row))
+        tc_id = str(row_dict.get("Test Case ID", "") or "").strip()
+        if not tc_id or tc_id.lower() == "none":
+            continue
+        row_dict["_row_idx"] = row_idx
+        row_dict["_sheet"] = target_sheet
+        cases.append(row_dict)
+
+    return cases
+
+
 def build_automation_id(tc_id: str) -> str:
     """Generate standardized automation test ID."""
     return f"AUTO_{tc_id.upper()}"
@@ -69,6 +119,7 @@ def update_test_result(
     tc_id: str,
     status: str = "Passed",
     remarks: str = "",
+    duration: Optional[float] = None,
     file_path: Optional[str] = None,
 ) -> bool:
     """Update execution status and remarks in Update-Purchase-Order.xlsx."""
@@ -95,16 +146,28 @@ def update_test_result(
                 cell_val = str(ws.cell(row=row, column=tc_col).value or "").strip()
                 if cell_val.upper() == tc_id.strip().upper():
                     status_cell = ws.cell(row=row, column=status_col)
-                    status_cell.value = status.capitalize()
-                    if status.lower() == "passed":
+                    st_lower = status.strip().lower()
+
+                    if st_lower in ["passed", "pass"]:
+                        status_cell.value = "Passed"
                         status_cell.fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
                         status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="006100")
-                    else:
+                    elif st_lower in ["failed", "fail"]:
+                        status_cell.value = "Failed"
                         status_cell.fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
                         status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="9C0006")
+                    elif st_lower in ["skipped", "skip"]:
+                        status_cell.value = "Skipped"
+                        status_cell.fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+                        status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="9C6500")
+                    else:
+                        status_cell.value = status.capitalize()
 
                     if remarks:
-                        ws.cell(row=row, column=remarks_col).value = remarks
+                        remark_text = remarks
+                        if duration:
+                            remark_text = f"{remarks} ({duration:.2f}s)"
+                        ws.cell(row=row, column=remarks_col).value = remark_text
                     updated = True
                     break
 

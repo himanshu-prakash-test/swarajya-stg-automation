@@ -18,7 +18,7 @@ from shared.reporter import PytestReporterPlugin
 from shared.utils.popup import show_summary_popup
 
 from po_update_pages.login_page import LoginPage
-from po_update_utils.excel_reader import read_credentials
+from po_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,9 +41,24 @@ def pytest_addoption(parser):
     except Exception:
         pass
     try:
+        parser.addoption("--headless", action="store_true", default=False, help="Run tests headless")
+    except Exception:
+        pass
+    try:
         parser.addoption("--slowmo", type=int, default=0, help="Slow down Playwright actions by milliseconds")
     except Exception:
         pass
+
+
+def is_headless(config) -> bool:
+    if config.getoption("--headed", default=False):
+        return False
+    if config.getoption("--headless", default=False):
+        return True
+    env_val = os.environ.get("HEADLESS")
+    if env_val is not None:
+        return env_val.lower() in ("true", "1", "yes")
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -55,10 +70,7 @@ def playwright_instance():
 @pytest.fixture(scope="session")
 def browser(request, playwright_instance):
     """Launch shared Playwright browser instance."""
-    is_headed = request.config.getoption("--headed", default=False)
-    env_headless = os.environ.get("HEADLESS", "true").lower() == "true"
-    headless = False if is_headed else env_headless
-
+    headless = is_headless(request.config)
     slow_mo = request.config.getoption("--slowmo", default=0)
 
     browser = playwright_instance.chromium.launch(
@@ -68,6 +80,22 @@ def browser(request, playwright_instance):
     )
     yield browser
     browser.close()
+
+
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    if not path or not os.path.exists(path):
+        return False
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
+    return False
 
 
 @pytest.fixture(scope="session")
@@ -80,6 +108,9 @@ def session_storage_state(browser):
     if not os.path.exists(storage_path) and os.path.exists(fallback_auth):
         os.makedirs(os.path.dirname(storage_path), exist_ok=True)
         shutil.copy2(fallback_auth, storage_path)
+
+    if _is_valid_auth_state(storage_path):
+        return storage_path
 
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
@@ -136,6 +167,12 @@ def pytest_runtest_makereport(item, call):
             tc_id = marker.args[0]
             break
 
+    if tc_id == "UNKNOWN" and hasattr(item, "callspec"):
+        for param_val in item.callspec.params.values():
+            if isinstance(param_val, dict) and "Test Case ID" in param_val:
+                tc_id = param_val["Test Case ID"]
+                break
+
     if tc_id == "UNKNOWN":
         m = re.search(r"TC_PO_(?:POS|NEG|AUTH|NAV|FORM)_\d+", item.name)
         if m:
@@ -155,12 +192,15 @@ def pytest_runtest_makereport(item, call):
             except Exception as e:
                 log.warning(f"Could not capture pass screenshot: {e}")
                 scr = None
+        remarks = "Execution Passed Successfully"
+        if tc_id != "UNKNOWN":
+            update_test_result(tc_id, "PASS", remarks, report.duration)
         _html_reporter.record_test(
             item=item,
             report=report,
             status="PASS",
-            remarks="Execution Passed Successfully",
-            auto_id=tc_id if tc_id != "UNKNOWN" else "",
+            remarks=remarks,
+            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
             screenshot_path=scr,
             duration=report.duration,
         )
@@ -179,23 +219,29 @@ def pytest_runtest_makereport(item, call):
                 log.warning(f"Could not capture screenshot: {e}")
                 scr = None
         err_msg = str(report.longrepr) if report.longrepr else "Test Assertion / Execution Failure"
+        remarks = err_msg[:250]
+        if tc_id != "UNKNOWN":
+            update_test_result(tc_id, "FAIL", remarks, report.duration)
         _html_reporter.record_test(
             item=item,
             report=report,
             status="FAIL",
-            remarks=err_msg[:250],
-            auto_id=tc_id if tc_id != "UNKNOWN" else "",
+            remarks=remarks,
+            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
             screenshot_path=scr,
             duration=report.duration,
         )
     elif report.skipped:
         _session_stats["skipped"] += 1
+        remarks = "Scenario Skipped"
+        if tc_id != "UNKNOWN":
+            update_test_result(tc_id, "SKIPPED", remarks, report.duration)
         _html_reporter.record_test(
             item=item,
             report=report,
             status="SKIPPED",
-            remarks="Scenario Skipped",
-            auto_id=tc_id if tc_id != "UNKNOWN" else "",
+            remarks=remarks,
+            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
             duration=report.duration,
         )
 
@@ -217,15 +263,16 @@ def pytest_sessionfinish(session, exitstatus):
             log.warning(f"Could not finalize HTML report: {exc}")
 
     try:
-        show_summary_popup(
-            total=total,
-            passed=_session_stats["passed"],
-            failed=_session_stats["failed"],
-            skipped=_session_stats["skipped"],
-            duration_str=dur_str,
-            failed_tests=_session_stats["failed_tests"],
-            suite_title="Purchase Order Update Management",
-            report_path=report_path,
-        )
+        if os.environ.get("PYTEST_NO_POPUP") != "1":
+            show_summary_popup(
+                total=total,
+                passed=_session_stats["passed"],
+                failed=_session_stats["failed"],
+                skipped=_session_stats["skipped"],
+                duration_str=dur_str,
+                failed_tests=_session_stats["failed_tests"],
+                suite_title="Purchase Order Update Management",
+                report_path=report_path,
+            )
     except Exception as e:
         log.warning(f"Could not display summary popup: {e}")

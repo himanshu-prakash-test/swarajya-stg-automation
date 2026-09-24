@@ -84,8 +84,9 @@ The Purchase Order Update operation follows a 4-step path from the portal dashbo
 
 ```
 purchase-order/
-├── po_update_pages/        # Page Object Models (POUpdatePage, LoginPage)
+├── po_update_pages/        # Page Object Models & Form Executor
 │   ├── __init__.py
+│   ├── form_executor.py
 │   ├── po_update_page.py
 │   └── login_page.py
 ├── po_update_utils/        # Utilities & Excel Parsers
@@ -98,8 +99,9 @@ purchase-order/
 │   └── auth_state.json
 ├── tests/                  # Pytest test suites
 │   ├── __init__.py
-│   ├── test_po_login_and_nav_flow.py
-│   └── test_po_update_scenarios.py
+│   ├── test_po_update_login_flow.py
+│   ├── test_po_update_positive_flows.py
+│   └── test_po_update_negative_flows.py
 ├── screenshots/            # Failure and audit screenshots
 ├── conftest.py             # Playwright fixtures & hooks
 ├── pytest.ini              # Module execution settings
@@ -111,15 +113,18 @@ purchase-order/
 ## 🚀 Execution Guide
 
 ```bash
-# Run all 28 Purchase Order update tests
-pytest swarajya-update/purchase-order/tests -v
+# Run all Purchase Order update tests (31 tests)
+pytest swarajya-update/purchase-orders/tests -v
 
-# Run only positive test cases
-pytest swarajya-update/purchase-order/tests/test_po_update_scenarios.py -m positive -v
+# Run authentication and navigation path tests
+pytest swarajya-update/purchase-orders/tests/test_po_update_login_flow.py -v
 
-# Run only negative test cases
-pytest swarajya-update/purchase-order/tests/test_po_update_scenarios.py -m negative -v
+# Run only positive flow test cases
+pytest swarajya-update/purchase-orders/tests/test_po_update_positive_flows.py -v
+
+# Run only negative flow test cases
+pytest swarajya-update/purchase-orders/tests/test_po_update_negative_flows.py -v
 
 # Run in headed mode
-pytest swarajya-update/purchase-order/tests -v --headed
+pytest swarajya-update/purchase-orders/tests -v --headed
 ```
