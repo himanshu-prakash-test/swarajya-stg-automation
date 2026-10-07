@@ -1,19 +1,20 @@
 """
-conftest.py — fixtures and hooks for the Swarajya login test suite.
+conftest.py — Fixtures and hooks for HR & Admin Login Module.
 
 Provides browser lifecycle, page objects, credential fixtures,
 automatic screenshots on failure, Excel result updates, and a
-tkinter popup summary after the run.
+summary popup after the run.
 """
+
 import os
 import sys
 import re
 import logging
 from datetime import datetime
 
-_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-_LOGIN_ROOT = os.path.dirname(_PROJECT_ROOT)
-_WORKSPACE_ROOT = os.path.dirname(_LOGIN_ROOT)
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) # swarajya-login/hr_admin
+_LOGIN_ROOT = os.path.dirname(_PROJECT_ROOT)               # swarajya-login
+_WORKSPACE_ROOT = os.path.dirname(_LOGIN_ROOT)             # workspace root
 for _p in (_PROJECT_ROOT, _LOGIN_ROOT, _WORKSPACE_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -21,23 +22,26 @@ for _p in (_PROJECT_ROOT, _LOGIN_ROOT, _WORKSPACE_ROOT):
 import pytest
 from playwright.sync_api import sync_playwright
 
-from pages.login_page import LoginPage
-from pages.tfa_page import TfaPage
-from utils.excel_reader import read_credentials, update_test_result
+from common.pages.login_page import LoginPage
+from common.pages.tfa_page import TfaPage
+from common.utils.excel_reader import get_base_url, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
+from shared.reporter import PytestReporterPlugin, TestCaseResult
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("conftest")
+log = logging.getLogger("hr_admin_conftest")
 
-BASE_URL = os.environ.get(
-    "SWARAJYA_BASE_URL",
-    "https://swarajya-stg.corecotechnologies.com",
-)
-SCREENSHOTS_DIR = os.path.join(os.path.dirname(__file__), "screenshots")
+try:
+    _DEFAULT_URL = get_base_url()
+except Exception:
+    _DEFAULT_URL = "https://swarajya-stg.corecotechnologies.com"
+
+BASE_URL = os.environ.get("SWARAJYA_BASE_URL", _DEFAULT_URL)
+SCREENSHOTS_DIR = os.path.join(_PROJECT_ROOT, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 
@@ -155,13 +159,13 @@ def base_url():
 # --- Credential fixtures ---
 
 @pytest.fixture
-def employee_credentials():
-    return read_credentials("Employee")
+def admin_credentials():
+    return read_credentials("Admin")
 
 
 @pytest.fixture
-def manager_credentials():
-    return read_credentials("Manager")
+def hr_credentials():
+    return read_credentials("HR")
 
 
 # --- 1-to-1 Screenshot for Every Test Case ---
@@ -210,10 +214,10 @@ def pytest_configure(config):
 _results = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
 _failed_tests = []
 _start_time = None
+_html_reporter = PytestReporterPlugin(suite_title="HR & Admin Login Authentication")
 
 
 def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 60):
-    """Automatically purge screenshots older than max_age_hours or if count exceeds max_files."""
     if not os.path.exists(directory):
         return
     import time
@@ -247,7 +251,6 @@ def pytest_sessionstart(session):
 
 
 def pytest_runtest_logreport(report):
-    # count results
     if report.when == "call":
         _results["total"] += 1
         if report.passed:
@@ -259,7 +262,6 @@ def pytest_runtest_logreport(report):
         _results["total"] += 1
         _results["skipped"] += 1
 
-    # update Excel
     if report.when != "call" and not (report.when == "setup" and report.skipped):
         return
 
@@ -283,14 +285,36 @@ def pytest_runtest_logreport(report):
     else:
         return
 
+    shot_path = None
+    if os.path.exists(SCREENSHOTS_DIR):
+        for f in sorted(os.listdir(SCREENSHOTS_DIR), reverse=True):
+            if f.lower().endswith(".png") and (tc_id in f or report.nodeid.split("::")[-1] in f):
+                shot_path = os.path.join(SCREENSHOTS_DIR, f)
+                break
+
     try:
         update_test_result(tc_id, result, remarks)
     except Exception as exc:
         log.warning("Excel update failed for %s: %s", tc_id, exc)
 
+    test_res = TestCaseResult(
+        nodeid=report.nodeid,
+        name=tc_id,
+        tc_id=tc_id,
+        status=result,
+        duration=getattr(report, "duration", 0.0),
+        module_name="HR & Admin Login",
+        description="HR & Admin Login Authentication test verification",
+        error_message=remarks if result == "FAIL" else "",
+        stacktrace=str(report.longrepr) if getattr(report, "longrepr", None) else "",
+        screenshot_path=shot_path,
+        remarks=remarks,
+        auto_id=f"AUT_{tc_id}",
+    )
+    _html_reporter.reporter.add_result(test_res)
+
 
 def pytest_sessionfinish(session, exitstatus):
-    """Print console summary and show a popup with test results."""
     duration = datetime.now() - _start_time if _start_time else None
     dur_str = str(duration).split(".")[0] if duration else "N/A"
 
@@ -303,7 +327,7 @@ def pytest_sessionfinish(session, exitstatus):
 
     lines = [
         f"{'=' * 44}",
-        f"  SWARAJYA LOGIN AUTOMATION — {status}",
+        f"  SWARAJYA HR & ADMIN LOGIN — {status}",
         f"{'=' * 44}",
         f"  Total: {total}  |  Passed: {passed}  |  Failed: {failed}  |  Skipped: {skipped}",
         f"  Duration: {dur_str}",
@@ -322,33 +346,23 @@ def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
 
-    # popup
+    report_path = None
+    if total > 0:
+        try:
+            report_path = _html_reporter.finalize_report(filename_prefix="login_hr_admin")
+        except Exception as exc:
+            log.warning(f"Could not finalize HTML report: {exc}")
+
     try:
-        _show_popup(passed, failed, skipped, total, dur_str, _failed_tests)
-        return
+        show_summary_popup(
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            total=total,
+            duration_str=str(dur_str),
+            failed_tests=_failed_tests,
+            title="SWARAJYA HR & ADMIN LOGIN",
+            report_path=report_path,
+        )
     except Exception:
         pass
-
-    # fallback: Windows MessageBox
-    try:
-        import ctypes
-        icon = 0x40 if failed == 0 else 0x10
-        msg = (f"Total: {total}\nPassed: {passed}\nFailed: {failed}\n"
-               f"Skipped: {skipped}\nDuration: {dur_str}")
-        if _failed_tests:
-            msg += "\n\nFailed:\n" + "\n".join(f"  - {t}" for t in _failed_tests[:5])
-        ctypes.windll.user32.MessageBoxW(0, msg, f"Swarajya — {status}", icon)
-    except Exception:
-        pass
-
-
-def _show_popup(passed, failed, skipped, total, duration, failed_tests):
-    show_summary_popup(
-        passed=passed,
-        failed=failed,
-        skipped=skipped,
-        total=total,
-        duration_str=str(duration),
-        failed_tests=failed_tests,
-        title="SWARAJYA LOGIN AUTOMATION",
-    )

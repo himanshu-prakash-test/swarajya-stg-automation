@@ -1,6 +1,7 @@
 import os
 import sys
 import tkinter as tk
+import webbrowser
 from tkinter import ttk
 from typing import List, Optional
 
@@ -15,6 +16,7 @@ def show_summary_popup(
     suite_title: str = "SWARAJYA AUTOMATION",
     duration: Optional[str] = None,
     failures: Optional[List[str]] = None,
+    report_path: Optional[str] = None,
     **kwargs,
 ):
     """
@@ -143,21 +145,48 @@ def show_summary_popup(
             if len(failed_tests) > 4:
                 scrollbar.pack(side="right", fill="y")
 
-        # Close button
-        btn = tk.Button(
-            root,
+        # Action buttons
+        btn_frame = tk.Frame(root, bg=bg_color)
+        btn_frame.pack(pady=(15, 18))
+
+        if report_path and os.path.exists(report_path):
+            def _open_html():
+                try:
+                    webbrowser.open(f"file://{os.path.abspath(report_path)}")
+                except Exception:
+                    pass
+
+            report_btn = tk.Button(
+                btn_frame,
+                text="🌐 View HTML Report",
+                font=("Segoe UI", 9, "bold"),
+                bg="#A6E3A1",
+                fg="#11111B",
+                activebackground="#94E2D5",
+                activeforeground="#11111B",
+                relief="flat",
+                padx=14,
+                pady=4,
+                cursor="hand2",
+                command=_open_html,
+            )
+            report_btn.pack(side="left", padx=(0, 10))
+
+        close_btn = tk.Button(
+            btn_frame,
             text="Close",
-            font=("Segoe UI", 10, "bold"),
+            font=("Segoe UI", 9, "bold"),
             bg=accent_color,
             fg="#11111B",
             activebackground="#B4BEFE",
             activeforeground="#11111B",
             relief="flat",
-            padx=20,
+            padx=16,
             pady=4,
+            cursor="hand2",
             command=root.destroy,
         )
-        btn.pack(pady=(15, 18))
+        close_btn.pack(side="left")
 
         root.update_idletasks()
         w = max(root.winfo_reqwidth(), 380)

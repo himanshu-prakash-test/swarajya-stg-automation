@@ -19,11 +19,11 @@ Production-grade, end-to-end test automation framework powered by **Playwright (
 swarajya-stg-automation/
 │
 ├── swarajya-login/                     # 🔐 Authentication & Session Suite
-│   └── swarajya-automation/            # Employee & Manager Authentication
-│       ├── pages/                      # LoginPage, TFAPage
-│       ├── utils/                      # Excel I/O, Logger, Desktop Popup
-│       ├── test_data/                  # login_test_cases.xlsx, credentials.xlsx
-│       └── tests/test_login.py         # UI, Positive 2FA, Negative Creds, SQLi/XSS
+│   ├── common/                         # Shared Layer (LoginPage, TfaPage, Excel Reader)
+│   └── hr_admin/                       # HR & Admin Authentication Module (39 Tests)
+│       ├── conftest.py                 # Module fixtures & hooks
+│       ├── tests/positive_flows.py     # Positive Authentication Flows (10 Tests)
+│       └── tests/negative_flows.py     # Negative & Boundary Flows (29 Tests)
 │
 ├── swarajya-create/                    # 📋 Master Create Operations Suite
 │   │
