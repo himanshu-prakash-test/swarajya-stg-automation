@@ -32,6 +32,7 @@ from common.utils.excel_reader import (
 )
 
 SHEET_NAME = "loginhr_admin"
+SHORT_WAIT_TIMEOUT = int(os.environ.get("SHORT_WAIT_TIMEOUT_MS", 3000))
 
 
 def _login_to_tfa(page, base_url, role="Admin"):
@@ -41,7 +42,7 @@ def _login_to_tfa(page, base_url, role="Admin"):
     login.navigate()
     login.login(creds["employee_id"], creds["password"])
     tfa = TfaPage(page, base_url)
-    tfa.wait_for_tfa_page(timeout=15_000)
+    tfa.wait_for_tfa_page()
     return login, tfa, creds
 
 
@@ -64,7 +65,7 @@ class TestAdminHrNegativeFlows:
         login_page.enter_password(creds["password"])
         login_page.click_sign_in()
 
-        error = login_page.get_error_message(timeout=5_000)
+        error = login_page.get_error_message()
         assert error or "/tfa-authcode/" not in login_page.get_current_url(), (
             "Invalid Admin ID unexpectedly reached 2FA"
         )
@@ -79,7 +80,7 @@ class TestAdminHrNegativeFlows:
         login_page.enter_password(wrong_pwd)
         login_page.click_sign_in()
 
-        error = login_page.get_error_message(timeout=5_000)
+        error = login_page.get_error_message()
         assert error or "/tfa-authcode/" not in login_page.get_current_url(), (
             "Incorrect Admin password unexpectedly reached 2FA"
         )
@@ -94,7 +95,7 @@ class TestAdminHrNegativeFlows:
         login_page.enter_password(creds["password"])
         login_page.click_sign_in()
 
-        error = login_page.get_error_message(timeout=5_000)
+        error = login_page.get_error_message()
         assert error or "/tfa-authcode/" not in login_page.get_current_url(), (
             "Invalid HR ID unexpectedly reached 2FA"
         )
@@ -109,7 +110,7 @@ class TestAdminHrNegativeFlows:
         login_page.enter_password(wrong_pwd)
         login_page.click_sign_in()
 
-        error = login_page.get_error_message(timeout=5_000)
+        error = login_page.get_error_message()
         assert error or "/tfa-authcode/" not in login_page.get_current_url(), (
             "Incorrect HR password unexpectedly reached 2FA"
         )
@@ -119,82 +120,82 @@ class TestAdminHrNegativeFlows:
         """TC_LOGIN_NEG_01: Login with both Employee ID and password incorrect."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(f"INV_{creds['employee_id']}", f"Wrong_{creds['password']}")
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_02")
     def test_blank_employee_id_TC_LOGIN_NEG_02(self, login_page, base_url):
         """TC_LOGIN_NEG_02: Login with the Employee ID field left blank."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login("", creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
+        assert login_page.get_error_message() or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_03")
     def test_blank_password_TC_LOGIN_NEG_03(self, login_page, base_url):
         """TC_LOGIN_NEG_03: Login with the Password field left blank."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(creds["employee_id"], "")
-        assert login_page.get_error_message(timeout=5_000) or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
+        assert login_page.get_error_message() or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_04")
     def test_both_fields_blank_TC_LOGIN_NEG_04(self, login_page, base_url):
         """TC_LOGIN_NEG_04: Login with both the Employee ID and Password fields left blank."""
         login_page.login("", "")
-        assert login_page.get_error_message(timeout=5_000) or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
+        assert login_page.get_error_message() or login_page.get_current_url() == f"{base_url}/" or not login_page.is_sign_in_button_enabled()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_05")
     def test_employee_id_whitespace_TC_LOGIN_NEG_05(self, login_page):
         """TC_LOGIN_NEG_05: Login with an Employee ID containing leading or trailing spaces."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(f"  {creds['employee_id']}  ", creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" in login_page.get_current_url() or login_page.is_on_login_page()
+        assert login_page.get_error_message() or "/tfa-authcode/" in login_page.get_current_url() or login_page.is_on_login_page()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_06")
     def test_password_whitespace_TC_LOGIN_NEG_06(self, login_page):
         """TC_LOGIN_NEG_06: Login with a password containing leading or trailing spaces."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(creds["employee_id"], f"  {creds['password']}  ")
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_07")
     def test_special_characters_employee_id_TC_LOGIN_NEG_07(self, login_page):
         """TC_LOGIN_NEG_07: Login with special characters entered in the Employee ID field."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login("!@#$%^&*()_+", creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_08")
     def test_sql_injection_attempt_TC_LOGIN_NEG_08(self, login_page):
         """TC_LOGIN_NEG_08: Login with a SQL injection string entered in the login fields."""
         login_page.login("' OR '1'='1", "' OR '1'='1")
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_09")
     def test_script_injection_xss_attempt_TC_LOGIN_NEG_09(self, login_page):
         """TC_LOGIN_NEG_09: Login with a script injection (XSS) string entered in the Employee ID field."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login("<script>alert(1)</script>", creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_10")
     def test_excessive_length_employee_id_TC_LOGIN_NEG_10(self, login_page):
         """TC_LOGIN_NEG_10: Login with an Employee ID exceeding the supported character limit."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(str(creds["employee_id"]) * 50, creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_11")
     def test_excessive_length_password_TC_LOGIN_NEG_11(self, login_page):
         """TC_LOGIN_NEG_11: Login with a password exceeding the supported character limit."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(creds["employee_id"], str(creds["password"]) * 30)
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_12")
     def test_locked_deactivated_account_TC_LOGIN_NEG_12(self, login_page):
         """TC_LOGIN_NEG_12: Login attempt using a locked or deactivated account."""
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login_page.login(f"DEACT_{creds['employee_id']}", creds["password"])
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_13")
     def test_password_case_sensitivity_TC_LOGIN_NEG_13(self, login_page):
@@ -202,7 +203,7 @@ class TestAdminHrNegativeFlows:
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         cased_pwd = creds["password"].swapcase()
         login_page.login(creds["employee_id"], cased_pwd)
-        assert login_page.get_error_message(timeout=5_000) or "/tfa-authcode/" not in login_page.get_current_url()
+        assert login_page.get_error_message() or "/tfa-authcode/" not in login_page.get_current_url()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_14")
     def test_incorrect_auth_code_2fa_TC_LOGIN_NEG_14(self, page, base_url):
@@ -211,7 +212,7 @@ class TestAdminHrNegativeFlows:
         wrong_code = "999999" if creds["auth_code"] != "999999" else "000000"
         tfa.submit_auth_code(wrong_code)
         assert tfa.is_on_tfa_page(), "Submitting incorrect 2FA code navigated away"
-        assert not tfa.is_dashboard_loaded(timeout=3_000), "Dashboard loaded with incorrect 2FA code"
+        assert not tfa.is_dashboard_loaded(timeout=SHORT_WAIT_TIMEOUT), "Dashboard loaded with incorrect 2FA code"
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_15")
     def test_blank_auth_code_2fa_TC_LOGIN_NEG_15(self, page, base_url):
@@ -219,7 +220,7 @@ class TestAdminHrNegativeFlows:
         _, tfa, _ = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code("")
         assert tfa.is_on_tfa_page(), "Blank 2FA code navigated away from 2FA"
-        assert not tfa.is_dashboard_loaded(timeout=3_000), "Dashboard loaded with blank 2FA code"
+        assert not tfa.is_dashboard_loaded(timeout=SHORT_WAIT_TIMEOUT), "Dashboard loaded with blank 2FA code"
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_16")
     def test_expired_auth_code_2fa_TC_LOGIN_NEG_16(self, page, base_url):
@@ -233,19 +234,19 @@ class TestAdminHrNegativeFlows:
         """TC_LOGIN_NEG_17: Login attempt reusing an already-consumed Google Authenticator code."""
         login, tfa, creds = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_dashboard_loaded()
 
-        page.goto(f"{base_url}/logout", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/logout", wait_until="domcontentloaded")
         login.navigate()
         login.login(creds["employee_id"], creds["password"])
-        tfa.wait_for_tfa_page(timeout=15_000)
+        tfa.wait_for_tfa_page()
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_on_tfa_page() or tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_on_tfa_page() or tfa.is_dashboard_loaded()
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_18")
     def test_direct_2fa_url_access_denied_TC_LOGIN_NEG_18(self, page, base_url):
         """TC_LOGIN_NEG_18: Verify the 2FA page cannot be accessed directly without a valid prior sign-in."""
-        page.goto(f"{base_url}/tfa-authcode/", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/tfa-authcode/", wait_until="domcontentloaded")
         login = LoginPage(page, base_url)
         assert "/tfa-authcode/" not in page.url or login.is_employee_id_field_visible(), (
             f"2FA page accessible directly without prior sign-in. URL: {page.url}"
@@ -267,7 +268,7 @@ class TestAdminHrNegativeFlows:
         login = LoginPage(page, base_url)
         login.navigate()
         login.login(f"INV_{creds['employee_id']}", f"Wrong_{creds['password']}")
-        page.goto(f"{base_url}/default", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/default", wait_until="domcontentloaded")
         assert login.is_employee_id_field_visible() or "/default" not in page.url.lower(), (
             f"Failed login granted access to dashboard: {page.url}"
         )
@@ -275,7 +276,7 @@ class TestAdminHrNegativeFlows:
     @pytest.mark.tc_id("TC_LOGIN_NEG_21")
     def test_unauthenticated_user_cannot_access_dashboard_TC_LOGIN_NEG_21(self, page, base_url):
         """TC_LOGIN_NEG_21: Verify an unauthenticated user cannot access the dashboard directly."""
-        page.goto(f"{base_url}/default", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/default", wait_until="domcontentloaded")
         login = LoginPage(page, base_url)
         assert login.is_employee_id_field_visible() or "/default" not in page.url.lower(), (
             f"Unauthenticated user was not redirected away from dashboard. URL: {page.url}"
@@ -289,11 +290,11 @@ class TestAdminHrNegativeFlows:
         login.navigate()
         login.login(creds["employee_id"], creds["password"])
         tfa = TfaPage(page, base_url)
-        tfa.wait_for_tfa_page(timeout=15_000)
+        tfa.wait_for_tfa_page()
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_dashboard_loaded()
 
-        page.goto(f"{base_url}/admin", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/admin", wait_until="domcontentloaded")
         content_lower = page.content().lower()
         assert (
             "admin" not in page.url.lower()
@@ -311,17 +312,17 @@ class TestAdminHrNegativeFlows:
         wrong_pwd = f"Wrong_{creds['password']}"
         for _ in range(3):
             login.login(creds["employee_id"], wrong_pwd)
-        assert login.get_error_message(timeout=5_000) or "/tfa-authcode/" not in page.url
+        assert login.get_error_message() or "/tfa-authcode/" not in page.url
 
     @pytest.mark.tc_id("TC_LOGIN_NEG_24")
     def test_session_expiration_protection_TC_LOGIN_NEG_24(self, page, base_url):
         """TC_LOGIN_NEG_24: Verify login is required again after session expiration."""
         _, tfa, creds = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_dashboard_loaded()
 
-        page.goto(f"{base_url}/logout", wait_until="networkidle", timeout=15_000)
-        page.goto(f"{base_url}/default", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/logout", wait_until="domcontentloaded")
+        page.goto(f"{base_url}/default", wait_until="domcontentloaded")
         login = LoginPage(page, base_url)
         assert login.is_employee_id_field_visible() or "/default" not in page.url.lower()
 
@@ -330,9 +331,9 @@ class TestAdminHrNegativeFlows:
         """TC_LOGIN_NEG_25: Verify the browser back button does not expose a cached page after logout."""
         _, tfa, creds = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_dashboard_loaded()
 
-        page.goto(f"{base_url}/logout", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/logout", wait_until="domcontentloaded")
         page.go_back()
         login = LoginPage(page, base_url)
         assert login.is_employee_id_field_visible() or "/default" not in page.url.lower()

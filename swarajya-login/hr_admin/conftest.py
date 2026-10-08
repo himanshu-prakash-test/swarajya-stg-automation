@@ -35,12 +35,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("hr_admin_conftest")
 
-try:
-    _DEFAULT_URL = get_base_url()
-except Exception:
-    _DEFAULT_URL = "https://swarajya-stg.corecotechnologies.com"
-
-BASE_URL = os.environ.get("SWARAJYA_BASE_URL", _DEFAULT_URL)
+SHEET_NAME = "loginhr_admin"
+BASE_URL = os.environ.get("SWARAJYA_BASE_URL") or get_base_url(SHEET_NAME)
 SCREENSHOTS_DIR = os.path.join(_PROJECT_ROOT, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
@@ -114,25 +110,32 @@ def context(browser, request):
     ctx.close()
 
 
-def _wait_until_server_healthy(timeout=60):
-    import time
-    import urllib.request
+# --- Dynamic Server Health & Page Lifecycle ---
 
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            with urllib.request.urlopen("https://swarajya-stg.corecotechnologies.com/", timeout=4) as resp:
-                if resp.status in (200, 301, 302):
-                    return
-        except Exception:
-            time.sleep(2)
+@pytest.fixture(scope="session", autouse=True)
+def server_health_check(playwright_instance, base_url):
+    """
+    Dynamically verify target server responsiveness once per test session
+    using Playwright's native API request context.
+    Avoids redundant checks, static sleeps, or blocking loops on individual tests.
+    """
+    timeout_ms = int(os.environ.get("SERVER_HEALTH_TIMEOUT_MS", 10_000))
+    try:
+        req_ctx = playwright_instance.request.new_context()
+        resp = req_ctx.get(base_url, timeout=timeout_ms)
+        if resp.status in (200, 301, 302):
+            log.info("Target server is healthy (%s returned %d)", base_url, resp.status)
+        else:
+            log.warning("Target server returned HTTP %d for %s", resp.status, base_url)
+    except Exception as exc:
+        log.warning("Server check encountered %s for %s; test suite will rely on page dynamic retry", exc, base_url)
 
 
 @pytest.fixture(scope="function")
 def page(context):
-    _wait_until_server_healthy()
+    default_timeout = int(os.environ.get("PLAYWRIGHT_DEFAULT_TIMEOUT_MS", 15_000))
     pg = context.new_page()
-    pg.set_default_timeout(30_000)
+    pg.set_default_timeout(default_timeout)
     yield pg
     pg.close()
 

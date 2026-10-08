@@ -41,7 +41,7 @@ def _login_to_tfa(page, base_url, role="Admin"):
     login.navigate()
     login.login(creds["employee_id"], creds["password"])
     tfa = TfaPage(page, base_url)
-    tfa.wait_for_tfa_page(timeout=15_000)
+    tfa.wait_for_tfa_page()
     return login, tfa, creds
 
 
@@ -66,7 +66,7 @@ class TestAdminHrPositiveFlows:
         login.login(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
-        tfa.wait_for_tfa_page(timeout=15_000)
+        tfa.wait_for_tfa_page()
 
         assert tfa.is_on_tfa_page(), (
             f"Admin credentials did not reach 2FA page. URL: {page.url}"
@@ -77,7 +77,7 @@ class TestAdminHrPositiveFlows:
 
         tfa.submit_auth_code(creds["auth_code"])
 
-        assert tfa.is_dashboard_loaded(timeout=15_000), (
+        assert tfa.is_dashboard_loaded(), (
             f"Admin valid login did not reach dashboard. Expected: {tc_meta.get('Expected Result') if tc_meta else 'Dashboard'}. URL: {page.url}"
         )
 
@@ -94,7 +94,7 @@ class TestAdminHrPositiveFlows:
         login.login(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
-        tfa.wait_for_tfa_page(timeout=15_000)
+        tfa.wait_for_tfa_page()
 
         assert tfa.is_on_tfa_page(), (
             f"HR credentials did not reach 2FA page. URL: {page.url}"
@@ -105,7 +105,7 @@ class TestAdminHrPositiveFlows:
 
         tfa.submit_auth_code(creds["auth_code"])
 
-        assert tfa.is_dashboard_loaded(timeout=15_000), (
+        assert tfa.is_dashboard_loaded(), (
             f"HR valid login did not reach dashboard. Expected: {tc_meta.get('Expected Result') if tc_meta else 'Dashboard'}. URL: {page.url}"
         )
 
@@ -137,7 +137,7 @@ class TestAdminHrPositiveFlows:
         login.login(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
-        tfa.wait_for_tfa_page(timeout=15_000)
+        tfa.wait_for_tfa_page()
 
         assert tfa.is_on_tfa_page(), (
             f"Valid credentials did not reach 2FA page. URL: {page.url}"
@@ -149,7 +149,7 @@ class TestAdminHrPositiveFlows:
         """TC_LOGIN_POS_04: Verify a valid Google Authenticator code completes the login."""
         _, tfa, creds = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000), (
+        assert tfa.is_dashboard_loaded(), (
             f"Valid Auth Code did not redirect to dashboard. URL: {page.url}"
         )
 
@@ -160,7 +160,7 @@ class TestAdminHrPositiveFlows:
         assert tfa.is_back_to_login_visible(), "Back to Login link is not visible on 2FA page"
         tfa.click_back_to_login()
         login = LoginPage(page, base_url)
-        assert login.is_employee_id_field_visible(timeout=10_000), (
+        assert login.is_employee_id_field_visible(), (
             "Clicking Back to Login did not return user to sign-in page"
         )
 
@@ -169,11 +169,11 @@ class TestAdminHrPositiveFlows:
         """TC_LOGIN_POS_06: Verify a logged-in user can log out successfully."""
         _, tfa, creds = _login_to_tfa(page, base_url, role="Admin")
         tfa.submit_auth_code(creds["auth_code"])
-        assert tfa.is_dashboard_loaded(timeout=15_000)
+        assert tfa.is_dashboard_loaded()
 
-        page.goto(f"{base_url}/logout", wait_until="networkidle", timeout=15_000)
+        page.goto(f"{base_url}/logout", wait_until="domcontentloaded")
         login = LoginPage(page, base_url)
-        assert login.is_employee_id_field_visible(timeout=10_000), (
+        assert login.is_employee_id_field_visible(), (
             f"Logout did not return user to login page. Current URL: {page.url}"
         )
 
