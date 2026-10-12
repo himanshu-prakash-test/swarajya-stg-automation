@@ -6,11 +6,11 @@ import pytest
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
 from po_update_pages.po_update_page import POUpdatePage
 from shared.utils.logger import get_logger
+from shared.utils.paths import SAMPLE_PO_FILE
 
 log = get_logger("po_form_executor")
 
-_MODULE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SAMPLE_PDF = os.path.join(_MODULE_ROOT, "test_data", "sample_po.pdf")
+SAMPLE_PDF = SAMPLE_PO_FILE
 
 
 def _clean_val(val: str) -> str:
@@ -21,10 +21,12 @@ def _clean_val(val: str) -> str:
     return s
 
 
-def _parse_key_values(text: str) -> dict:
+def _parse_key_values(text) -> dict:
     """Parse newline, comma, pipe, or semicolon separated Key: Value pairs from Excel test data."""
     if not text:
         return {}
+    if isinstance(text, dict):
+        return text
     res = {}
     matches = re.findall(r"([^:,|\n]+)\s*:\s*([^,\n|]+)", str(text))
     if matches:

@@ -19,6 +19,7 @@ from shared.utils.popup import show_summary_popup
 
 from po_update_pages.login_page import LoginPage
 from po_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
+from shared.utils.paths import AUTH_STATE_FILE
 
 logging.basicConfig(
     level=logging.INFO,
@@ -101,13 +102,7 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
 @pytest.fixture(scope="session")
 def session_storage_state(browser):
     """Authenticate and cache auth_state.json for fast session reuse."""
-    storage_path = os.path.join(_MODULE_ROOT, "test_data", "auth_state.json")
-    fallback_auth = os.path.join(_WORKSPACE_ROOT, "swarajya-create", "customer-management", "test_data", "auth_state.json")
-
-    # Reuse existing auth state if present and recent
-    if not os.path.exists(storage_path) and os.path.exists(fallback_auth):
-        os.makedirs(os.path.dirname(storage_path), exist_ok=True)
-        shutil.copy2(fallback_auth, storage_path)
+    storage_path = AUTH_STATE_FILE
 
     if _is_valid_auth_state(storage_path):
         return storage_path
@@ -123,7 +118,7 @@ def session_storage_state(browser):
         log.info(f"Saved authenticated session state to {storage_path}")
 
     context.close()
-    return storage_path if os.path.exists(storage_path) else None
+    return storage_path if os.path.exists(storage_path) and _is_valid_auth_state(storage_path) else None
 
 
 @pytest.fixture(scope="function")

@@ -4,13 +4,10 @@ import os
 from typing import Optional
 from playwright.sync_api import Page
 from shared.pages.base_page import BasePage
+from shared.utils.paths import AUTH_STATE_FILE
 from po_update_utils.excel_reader import read_credentials
 
-AUTH_STORAGE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "test_data",
-    "auth_state.json",
-)
+AUTH_STORAGE = AUTH_STATE_FILE
 
 
 class LoginPage(BasePage):
