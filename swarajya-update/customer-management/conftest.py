@@ -19,7 +19,7 @@ from playwright.sync_api import sync_playwright
 from shared.reporter import PytestReporterPlugin
 from shared.utils.popup import show_summary_popup
 
-from customer_update_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from customer_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 
 logging.basicConfig(

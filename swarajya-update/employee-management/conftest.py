@@ -16,7 +16,7 @@ if _WORKSPACE_ROOT not in sys.path:
 import pytest
 from playwright.sync_api import sync_playwright
 
-from emp_update_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from emp_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin

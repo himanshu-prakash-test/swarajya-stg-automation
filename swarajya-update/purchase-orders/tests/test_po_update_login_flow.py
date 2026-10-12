@@ -1,7 +1,7 @@
 """Test suite verifying login and navigation workflow for Purchase Order Update module."""
 
 import pytest
-from po_update_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from po_update_pages.po_update_page import POUpdatePage
 from po_update_utils.excel_reader import read_credentials
 
