@@ -17,6 +17,8 @@ from playwright.sync_api import sync_playwright
 
 from shared.pages.login_page import LoginPage
 from emp_utils.excel_reader import build_automation_id, read_credentials, update_test_result
+from shared.pages.base_page import BASE_URL
+from shared.utils.paths import AUTH_STATE_FILE
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin, TestCaseResult
 
@@ -90,13 +92,24 @@ def browser(pw, request):
     browser_instance.close()
 
 
-AUTH_STATE_PATH = os.path.join(ROOT, "test_data", "auth_state.json")
+AUTH_STATE_PATH = AUTH_STATE_FILE
 
 
 def _is_valid_auth_state(path: Optional[str]) -> bool:
-    """Validate that auth_state.json exists and contains actual auth tokens."""
+    """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
     if not path or not os.path.exists(path):
         return False
+    # Check session storage file as well (Swarajya Angular app stores auth in sessionStorage)
+    ss_file = path.replace(".json", "_session.json")
+    if os.path.exists(ss_file):
+        try:
+            import json
+            with open(ss_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data and any("token" in k.lower() or "isloggedin" in k.lower() or "currentuser" in k.lower() for k in data.keys()):
+                return True
+        except Exception:
+            pass
     try:
         import json
         with open(path, "r", encoding="utf-8") as f:
@@ -117,17 +130,17 @@ def session_context(browser):
         yield AUTH_STATE_PATH
         return
 
-    creds = read_credentials("Employee")
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
-    log.info("Performing session-level authentication from credentials.xlsx")
-    LoginPage(page).login(creds["employee_id"], creds["password"], creds["auth_code"])
-    try:
-        page.wait_for_timeout(1000)
-        context.storage_state(path=AUTH_STATE_PATH)
-    except Exception:
-        pass
+    log.info("Performing session-level authentication from createemp-mgmt sheet")
+    login_page = LoginPage(page)
+    success = login_page.login(role="Admin", sheet_name="createemp-mgmt")
+    if success:
+        log.info(f"Saved authenticated session state to {AUTH_STATE_PATH}")
+    else:
+        log.warning("Initial login failed; tests will authenticate per-test")
+
     try:
         page.close()
     except Exception:
@@ -143,7 +156,7 @@ def _wait_until_server_healthy(timeout=60):
     start = time.time()
     while time.time() - start < timeout:
         try:
-            with urllib.request.urlopen("https://swarajya-stg.corecotechnologies.com/", timeout=4) as resp:
+            with urllib.request.urlopen(f"{BASE_URL}/", timeout=4) as resp:
                 if resp.status in (200, 301, 302):
                     return
         except Exception:
@@ -159,20 +172,23 @@ def page(browser, request, session_context):
 
     if is_login_test:
         context = browser.new_context(viewport={"width": 1920, "height": 1080})
+        page_instance = context.new_page()
     else:
-        context = browser.new_context(viewport={"width": 1920, "height": 1080}, storage_state=storage)
-    page_instance = context.new_page()
-    page_instance.set_default_timeout(25000)
+        kwargs = {"viewport": {"width": 1920, "height": 1080}}
+        if storage:
+            kwargs["storage_state"] = storage
+        context = browser.new_context(**kwargs)
+        page_instance = context.new_page()
+        LoginPage.inject_session_storage(page_instance)
 
-    # Self-healing fallback: if auth is missing or expired, re-authenticate on the fly
-    if not is_login_test and not storage:
-        creds = read_credentials("Employee")
-        LoginPage(page_instance).login(creds["employee_id"], creds["password"], creds["auth_code"])
         try:
-            context.storage_state(path=AUTH_STATE_PATH)
+            page_instance.goto(f"{BASE_URL}/default", timeout=12000, wait_until="domcontentloaded")
+            if "login" in page_instance.url.lower() or "tfa" in page_instance.url.lower():
+                LoginPage(page_instance).login(role="Admin", sheet_name="createemp-mgmt")
         except Exception:
-            pass
+            LoginPage(page_instance).login(role="Admin", sheet_name="createemp-mgmt")
 
+    page_instance.set_default_timeout(25000)
     yield page_instance
 
     try:
@@ -198,44 +214,6 @@ def employee_creds():
 @pytest.fixture
 def manager_creds():
     return read_credentials("Manager")
-
-
-@pytest.fixture(autouse=True)
-def _take_screenshot_after_test(request, page):
-    yield
-    status = "PASS"
-    if getattr(request.node, "rep_call", None) and request.node.rep_call.failed:
-        status = "FAIL"
-    elif getattr(request.node, "rep_setup", None) and request.node.rep_setup.failed:
-        status = "FAIL"
-
-    tc_id = None
-    if hasattr(request.node, "callspec"):
-        for val in request.node.callspec.params.values():
-            if isinstance(val, dict) and "Test Case ID" in val:
-                tc_id = val["Test Case ID"]
-                break
-    if not tc_id:
-        m = re.search(r"TC_[A-Z]+_[A-Z]+_\d+", request.node.name)
-        if m:
-            tc_id = m.group(0)
-
-    label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", request.node.name)[:50]
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    shot_filename = f"{status}_{label}__{timestamp}.png"
-    path = os.path.join(SCREENSHOTS, shot_filename)
-    try:
-        page.screenshot(path=path, full_page=True)
-        log.info(f"Captured 1-to-1 test screenshot ({status}): {shot_filename}")
-    except Exception as exc:
-        log.warning(f"Failed to capture screenshot for {request.node.name}: {exc}")
-
-
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-    setattr(item, f"rep_{rep.when}", rep)
 
 
 def pytest_configure(config):
@@ -290,59 +268,6 @@ def pytest_sessionstart(session):
     _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=60)
 
 
-def _record_excel_result(report, status: str, remark: str = ""):
-    tc_id = _tc_id_from_nodeid(report.nodeid)
-    if not tc_id or report.nodeid in _recorded_nodes:
-        return
-
-    _recorded_nodes.add(report.nodeid)
-    _metrics["total"] += 1
-    if status == "PASS":
-        _metrics["passed"] += 1
-    elif status == "FAIL":
-        _metrics["failed"] += 1
-        _failures.append(f"{tc_id}: {remark or 'failed'}")
-    else:
-        _metrics["skipped"] += 1
-        _failures.append(f"{tc_id}: {remark or 'skipped'}")
-
-    # Find matching screenshot if generated
-    shot_path = None
-    if os.path.exists(SCREENSHOTS):
-        for f in sorted(os.listdir(SCREENSHOTS), reverse=True):
-            if f.lower().endswith(".png") and tc_id in f:
-                shot_path = os.path.join(SCREENSHOTS, f)
-                break
-
-    auto_id = build_automation_id(tc_id)
-    try:
-        update_test_result(
-            tc_id,
-            status,
-            auto_id=auto_id,
-            remark=remark,
-        )
-    except Exception as exc:
-        log.warning(f"Excel update failed for {tc_id}: {exc}")
-
-    # Record in HTML Reporter
-    test_res = TestCaseResult(
-        nodeid=report.nodeid,
-        name=tc_id,
-        tc_id=tc_id,
-        status=status,
-        duration=getattr(report, "duration", 0.0),
-        module_name="Employee Management",
-        description="Validation of employee record operations",
-        error_message=remark if status == "FAIL" else "",
-        stacktrace=str(report.longrepr) if getattr(report, "longrepr", None) else "",
-        screenshot_path=shot_path,
-        remarks=remark,
-        auto_id=auto_id,
-    )
-    _html_reporter.reporter.add_result(test_res)
-
-
 def _clean_failure_message(longrepr) -> str:
     if not longrepr:
         return "Test failed: Assertion error"
@@ -358,25 +283,79 @@ def _clean_failure_message(longrepr) -> str:
     return text.splitlines()[-1].strip()[:240]
 
 
-def pytest_runtest_logreport(report):
-    if report.when == "call":
-        if report.passed:
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
+
+    if report.when == "call" or (report.when == "setup" and report.skipped):
+        if report.nodeid in _recorded_nodes:
+            return
+        _recorded_nodes.add(report.nodeid)
+
+        tc_id = None
+        if hasattr(item, "callspec"):
+            for val in getattr(item.callspec, "params", {}).values():
+                if isinstance(val, dict) and "Test Case ID" in val:
+                    tc_id = val["Test Case ID"]
+                    break
+        if not tc_id:
+            m = re.search(r"(TC_[A-Za-z0-9_]+)", item.name) or re.search(r"(TC_[A-Za-z0-9_]+)", report.nodeid)
+            if m:
+                tc_id = m.group(1)
+
+        if not tc_id:
+            tc_id = "UNKNOWN"
+
+        page = item.funcargs.get("page")
+        status = "PASS" if report.passed else "FAIL" if report.failed else "SKIPPED"
+        auto_id = build_automation_id(tc_id) if tc_id != "UNKNOWN" else ""
+
+        if status == "PASS":
+            _metrics["passed"] += 1
             is_pos = "pos" in report.nodeid.lower()
             remark = (
                 "Validation successful: Employee record created and verified in employee list."
                 if is_pos
                 else "Validation successful: Form rejected invalid input and prevented submission."
             )
-            _record_excel_result(report, "PASS", remark)
-        elif report.failed:
-            message = _clean_failure_message(report.longrepr)
-            _record_excel_result(report, "FAIL", message[:240])
-    elif report.when == "setup":
-        if report.skipped:
-            _record_excel_result(report, "SKIP", "Skipped: Execution Type is API in Excel workbook")
-        elif report.failed:
-            message = _clean_failure_message(report.longrepr)
-            _record_excel_result(report, "FAIL", message[:240])
+        elif status == "FAIL":
+            _metrics["failed"] += 1
+            remark = _clean_failure_message(report.longrepr)
+            _failures.append(f"{tc_id}: {remark}")
+        else:
+            _metrics["skipped"] += 1
+            remark = "Skipped: Execution Type is API or non-UI in Excel workbook"
+        _metrics["total"] += 1
+
+        shot_path = None
+        if page and status in ("PASS", "FAIL"):
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            shot_filename = f"{status}_{tc_id}__{ts}.png"
+            shot_path = os.path.join(SCREENSHOTS, shot_filename)
+            try:
+                page.screenshot(path=shot_path, timeout=5000)
+                log.info(f"Captured 1-to-1 test screenshot ({status}): {shot_filename}")
+            except Exception as exc:
+                log.warning(f"Failed to capture screenshot for {tc_id}: {exc}")
+                shot_path = None
+
+        if tc_id != "UNKNOWN":
+            try:
+                update_test_result(tc_id, status, auto_id=auto_id, remark=remark)
+            except Exception as exc:
+                log.warning(f"Excel update failed for {tc_id}: {exc}")
+
+        _html_reporter.record_test(
+            item=item,
+            report=report,
+            status=status,
+            remarks=remark,
+            auto_id=auto_id,
+            screenshot_path=shot_path,
+            duration=getattr(report, "duration", 0.0),
+        )
 
 
 def pytest_sessionfinish(session, exitstatus):
