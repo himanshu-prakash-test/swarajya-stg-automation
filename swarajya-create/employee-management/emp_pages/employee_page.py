@@ -117,37 +117,62 @@ class EmployeePage(BasePage):
             first_input.wait_for(state="visible", timeout=12000)
 
     def fill_field(self, field_label: str, value: str) -> bool:
-        key = field_label.strip().lower()
+        clean_label = re.sub(r"[\*:]", "", str(field_label)).strip()
+        key = clean_label.lower()
         raw_value = "" if value is None else str(value)
+
+        # Ignore metadata keys such as Test Case ID, Scenario, Steps, etc.
+        metadata_keys = {
+            "test case id", "tc id", "tc_id", "scenario", "test scenario",
+            "pre-condition", "test steps", "steps", "expected result",
+            "automation status", "execution type", "test status",
+            "remarks / defect observed", "remarks", "defect", "test data",
+            "data", "_sheet", "auto_id"
+        }
+        if key in metadata_keys or key.startswith("col_"):
+            log.debug(f"Ignoring non-form metadata key '{field_label}'")
+            return True
 
         if raw_value.lower() in ("blank", "(blank)", "unselected", "none", "not attached", "empty"):
             log.info(f"Leaving field '{field_label}' blank as per Excel test data")
             return True
 
+        # Check dropdowns
         if key in self.DROPDOWN_MAP:
             return self.select_dropdown(key, raw_value)
+        for dk in self.DROPDOWN_MAP:
+            if dk in key:
+                return self.select_dropdown(dk, raw_value)
 
+        # Check dates
         if key in self.DATE_MAP or "date" in key or "dob" in key:
-            return self.fill_date(key, raw_value)
+            date_key = "joining date" if "join" in key else "date of birth"
+            return self.fill_date(date_key, raw_value)
 
         selector = self.FIELD_MAP.get(key)
         if not selector:
+            for fk, sel in self.FIELD_MAP.items():
+                if fk in key or key in fk:
+                    selector = sel
+                    break
+
+        if not selector:
             cleaned = key.replace(" ", "_")
-            selector = f"input[name*='{cleaned}' i], input[placeholder*='{field_label}' i]"
+            selector = f"input[name*='{cleaned}' i], input[placeholder*='{clean_label}' i]"
 
         try:
             input_locator = self.page.locator(selector).first
-            input_locator.wait_for(state="visible", timeout=5000)
+            input_locator.wait_for(state="visible", timeout=4000)
             input_locator.click()
             input_locator.fill("")
             input_locator.press_sequentially(raw_value, delay=10)
             input_locator.dispatch_event("input")
             input_locator.dispatch_event("change")
             input_locator.press("Tab")
-            log.info(f"Filled '{field_label}' from Excel data")
+            log.info(f"Filled '{clean_label}' from Excel data")
             return True
         except Exception as exc:
-            log.warning(f"Could not fill text field '{field_label}': {exc}")
+            log.warning(f"Could not fill text field '{clean_label}': {exc}")
             return False
 
     def fill_date(self, date_field_key: str, date_str: str) -> bool:
