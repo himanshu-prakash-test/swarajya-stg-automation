@@ -6,9 +6,38 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 from playwright.sync_api import Page
 from customer_pages.customer_page import CustomerPage
+from shared.pages.base_page import BASE_URL
 from shared.utils.logger import get_logger
 
 log = get_logger("CustomerFormExecutor")
+
+METADATA_KEYS = {
+    "test case id", "tc id", "tc_id", "scenario", "test scenario",
+    "pre-condition", "pre condition", "test steps", "steps",
+    "expected result", "expected results", "automation status",
+    "execution type", "test status", "remarks / defect observed",
+    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
+    "module", "comments", "description"
+}
+
+
+def get_baseline_customer() -> Dict[str, str]:
+    """Fetch baseline valid customer test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        from shared.utils.excel_loader import load_test_data_sheet
+        data_map = load_test_data_sheet("createcustomer")
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and row.get("Customer Name") and row.get("Country"):
+                res = {}
+                for k, v in row.items():
+                    val = str(v).strip() if v is not None else ""
+                    if val.endswith(".0") and val[:-2].isdigit():
+                        val = val[:-2]
+                    res[k] = val
+                return res
+    except Exception as exc:
+        log.warning(f"Could not load baseline customer from Excel: {exc}")
+    return {}
 
 
 class FormExecutor:
@@ -82,18 +111,27 @@ class FormExecutor:
         FormExecutor.last_custom_screenshot = None
         tc_id = test_case_row.get("Test Case ID", "").strip()
         scenario = test_case_row.get("Scenario", "").strip()
+        excel_data = test_case_row.get("data") or {}
         raw_data = test_case_row.get("Test Data", "")
         steps = test_case_row.get("Steps", test_case_row.get("Test Steps", ""))
         expected = test_case_row.get("Expected Result", "")
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
         parsed_data = self._parse_test_data(raw_data)
-        log.info(f"Parsed test data: {parsed_data}")
+        clean_excel = {
+            k.strip(): str(v).strip()
+            for k, v in excel_data.items()
+            if v is not None and str(v).strip()
+            and k.strip().lower() not in METADATA_KEYS
+            and not k.strip().lower().startswith("col_")
+        }
+        merged_data = {**clean_excel, **parsed_data}
+        log.info(f"Parsed test data from Excel: {merged_data}")
 
         if is_positive:
-            self._execute_positive(tc_id, parsed_data, scenario, steps, expected)
+            self._execute_positive(tc_id, merged_data, scenario, steps, expected)
         else:
-            self._execute_negative(tc_id, parsed_data, scenario, steps, expected)
+            self._execute_negative(tc_id, merged_data, scenario, steps, expected)
 
     # ----------------- Positive Scenarios -----------------
 
@@ -378,7 +416,7 @@ class FormExecutor:
 
         # 2. Duplicate Code rejection
         if tc_id == "TC_CUSTOMER_NEG_02":
-            base_code = FormExecutor.last_created_customer.get("code") or "DUPCODE01"
+            base_code = data.get("Code") or FormExecutor.last_created_customer.get("code") or "APEX01"
             self.customer.open_create_customer_form()
             dup_data = self._build_customer_data(tc_id, {"Code": base_code}, is_pos=False)
             dup_data["Code"] = base_code
@@ -396,7 +434,7 @@ class FormExecutor:
 
         # 3. Duplicate GST No. rejection
         if tc_id == "TC_CUSTOMER_NEG_03":
-            base_gst = "27ABCDE1234F1Z5"
+            base_gst = data.get("GST No.") or "27ABCDE1234F1Z5"
             self.customer.open_create_customer_form()
             dup_data = self._build_customer_data(tc_id, {"GST No.": base_gst}, is_pos=False)
             dup_data["GST No."] = base_gst
@@ -414,7 +452,7 @@ class FormExecutor:
 
         # 4. Verify customer is NOT created when clicking 'No' on confirmation
         if tc_id == "TC_CUSTOMER_NEG_04":
-            unconfirmed_name = f"RejectCustomer_{int(time.time())}"
+            unconfirmed_name = data.get("Customer Name") or f"RejectCustomer_{int(time.time())}"
             self.customer.open_create_customer_form()
             reject_data = self._build_customer_data(tc_id, {"Customer Name": unconfirmed_name}, is_pos=False)
             self._fill_customer_fields(reject_data)
@@ -429,7 +467,7 @@ class FormExecutor:
 
         # 5. Non-existent customer search returns empty grid state
         if tc_id == "TC_CUSTOMER_NEG_05":
-            non_existent = "XYZ_NonExistent_99999"
+            non_existent = data.get("Customer Name") or "XYZ_NonExistent_99999"
             self.customer.open_customer_list()
             self.customer.search_customer(non_existent)
             is_empty = self.customer.is_empty_grid_displayed()
@@ -446,7 +484,7 @@ class FormExecutor:
                 temp_context = browser.new_context()
                 temp_page = temp_context.new_page()
                 try:
-                    temp_page.goto("https://swarajya-stg.corecotechnologies.com/addNewCustomer", timeout=15000)
+                    temp_page.goto(f"{BASE_URL}/addNewCustomer", timeout=15000)
                     temp_page.wait_for_load_state("domcontentloaded")
                     parsed_path = urlparse(temp_page.url).path.lower()
                     blocked = (
@@ -530,7 +568,13 @@ class FormExecutor:
     # ----------------- Helpers & Data Parsing -----------------
 
     def _parse_test_data(self, raw_data: Any) -> Dict[str, str]:
-        """Parse key-value pairs from Excel Test Data cell."""
+        """Parse key-value pairs from Excel Test Data or return dict if already structured."""
+        if isinstance(raw_data, dict):
+            return {
+                str(k).strip(): (str(v) if v is not None and str(v).lower() != "none" else "")
+                for k, v in raw_data.items()
+                if str(k).strip().lower() not in METADATA_KEYS and not str(k).lower().startswith("col_")
+            }
         if not raw_data or str(raw_data).strip().lower() in ("fetch from excel", "n/a", "none", "-"):
             return {}
 
@@ -543,12 +587,14 @@ class FormExecutor:
                 parts = line.split(":", 1)
                 k = parts[0].strip()
                 v = parts[1].strip().strip("'\"")
-                result[k] = v
+                if k.lower() not in METADATA_KEYS and not k.lower().startswith("col_"):
+                    result[k] = v
             elif "=" in line:
                 parts = line.split("=", 1)
                 k = parts[0].strip()
                 v = parts[1].strip().strip("'\"")
-                result[k] = v
+                if k.lower() not in METADATA_KEYS and not k.lower().startswith("col_"):
+                    result[k] = v
         return result
 
     def _build_customer_data(self, tc_id: str, overrides: Dict[str, str], is_pos: bool = True) -> Dict[str, str]:
@@ -568,27 +614,28 @@ class FormExecutor:
             "Currency",
         ]
 
+        baseline = dict(get_baseline_customer())
         full_template = {
-            "Customer Name": f"AutoCustomer_{num}_{ts}",
-            "Address Line 1": "Plot 102, Silver Tech Park",
-            "Address Line 2": "Opposite Metro Pillar 42, Hinjewadi Phase 1",
-            "City": "Pune",
-            "PIN": "411057",
-            "State": "Maharashtra",
-            "Country": "India",
-            "Is IGST Applicable?": "Yes",
-            "PAN/IT NO.": f"ABCDE{pan_digits:04d}F",
-            "GST No.": f"27ABCDE{pan_digits:04d}F1Z5",
-            "Code": f"C{num[-1]}",
-            "Place of Supply": "Maharashtra",
-            "Primary Person Name": "Rajesh Sharma",
-            "Finance Person Name": "Pooja Verma",
-            "Primary Person Phone": default_phone_1,
-            "Finance Person Phone": default_phone_2,
-            "Primary Person Email ID": f"primary_{num}_{ts}@example.com",
-            "Finance Person Email ID": f"finance_{num}_{ts}@example.com",
-            "Payment Terms (Days)": "30",
-            "Currency": "INR",
+            "Customer Name": baseline.get("Customer Name") or f"AutoCustomer_{num}_{ts}",
+            "Address Line 1": baseline.get("Address Line 1") or "Plot 102, Silver Tech Park",
+            "Address Line 2": baseline.get("Address Line 2") or "Opposite Metro Pillar 42, Hinjewadi Phase 1",
+            "City": baseline.get("City") or "Pune",
+            "PIN": baseline.get("PIN") or "411057",
+            "State": baseline.get("State") or "Maharashtra",
+            "Country": baseline.get("Country") or "India",
+            "Is IGST Applicable?": baseline.get("Is IGST Applicable?") or "Yes",
+            "PAN/IT NO.": baseline.get("PAN/IT NO.") or f"ABCDE{pan_digits:04d}F",
+            "GST No.": baseline.get("GST No.") or f"27ABCDE{pan_digits:04d}F1Z5",
+            "Code": baseline.get("Code") or f"C{num[-1]}",
+            "Place of Supply": baseline.get("Place of Supply") or "Maharashtra",
+            "Primary Person Name": baseline.get("Primary Person Name") or "Rajesh Sharma",
+            "Finance Person Name": baseline.get("Finance Person Name") or "Pooja Verma",
+            "Primary Person Phone": baseline.get("Primary Person Phone") or default_phone_1,
+            "Finance Person Phone": baseline.get("Finance Person Phone") or default_phone_2,
+            "Primary Person Email ID": baseline.get("Primary Person Email ID") or f"primary_{num}_{ts}@example.com",
+            "Finance Person Email ID": baseline.get("Finance Person Email ID") or f"finance_{num}_{ts}@example.com",
+            "Payment Terms (Days)": baseline.get("Payment Terms (Days)") or "30",
+            "Currency": baseline.get("Currency") or "INR",
         }
 
         # Normalize override keys
@@ -633,9 +680,12 @@ class FormExecutor:
         """Fill each field on customer form."""
         failed_fields = []
         for field, value in data.items():
-            success = self.customer.fill_field(field, value)
+            clean_field = re.sub(r"[\*:]", "", str(field)).strip()
+            if clean_field.lower() in METADATA_KEYS or clean_field.lower().startswith("col_"):
+                continue
+            success = self.customer.fill_field(clean_field, value)
             if not success:
-                failed_fields.append(field)
+                failed_fields.append(clean_field)
         if failed_fields:
             log.warning(f"Fields not matched directly on UI: {failed_fields}")
             mandatory_names = {

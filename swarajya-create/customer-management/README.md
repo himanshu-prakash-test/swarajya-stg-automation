@@ -123,7 +123,7 @@ pytest -m negative
 
 ## 📊 Reporting & Evidence
 
-- **HTML Reporter**: Integrated with `shared.reporter`, automatically generates standalone HTML reports in `reports/`.
+- **HTML Reporter**: Integrated with `shared.reporter`, automatically generates standalone HTML reports in `shared/reports/latest_report.html`.
 - **Summary Popup**: Automatically displays a desktop notification summarizing test counts, pass/fail metrics, duration, and direct report links.
 - **Excel Synchronization**: Updates `Create-Customer-Management.xlsx` with test status, timestamp, and detailed remarks.
 - **1-to-1 Evidence Screenshots**: Automatically captures full-page (`full_page=True`) screenshot evidence into `screenshots/` **strictly immediately after the test case has executed** (on both PASS and FAIL events, never before). File format: `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.

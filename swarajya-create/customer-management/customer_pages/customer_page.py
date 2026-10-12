@@ -257,6 +257,16 @@ class CustomerPage(BasePage):
         key = str(field_name).strip().lower().lstrip("•-* ").strip()
         val_str = str(value) if value is not None else ""
 
+        metadata_keys = {
+            "test case id", "tc id", "tc_id", "scenario", "test scenario",
+            "pre-condition", "test steps", "steps", "expected result",
+            "automation status", "execution type", "test status",
+            "remarks / defect observed", "remarks", "defect", "test data",
+            "data", "_sheet", "auto_id"
+        }
+        if key in metadata_keys or key.startswith("col_"):
+            return True
+
         if "active" in key or "status" in key:
             checked = val_str.lower() in ("ticked", "true", "yes", "1", "active")
             return self.set_active_checkbox(checked)
