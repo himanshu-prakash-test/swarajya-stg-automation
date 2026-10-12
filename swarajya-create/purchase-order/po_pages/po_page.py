@@ -434,7 +434,18 @@ class POPage(BasePage):
 
     def set_form_field(self, field_key: str, value: Any):
         """Set a value in the PO form."""
-        normalized_key = field_key.lower().replace(" ", "_").replace("-", "_")
+        clean_key = re.sub(r"[\*:]", "", str(field_key)).strip().lower()
+        metadata_keys = {
+            "test case id", "tc id", "tc_id", "scenario", "test scenario",
+            "pre-condition", "test steps", "steps", "expected result",
+            "automation status", "execution type", "test status",
+            "remarks / defect observed", "remarks", "defect", "test data",
+            "data", "_sheet", "auto_id"
+        }
+        if clean_key in metadata_keys or clean_key.startswith("col_"):
+            return
+
+        normalized_key = clean_key.replace(" ", "_").replace("-", "_")
         selectors = self.FIELD_SELECTORS.get(
             normalized_key,
             [f"input[formcontrolname='{field_key}']", f"input[name='{field_key}']"]

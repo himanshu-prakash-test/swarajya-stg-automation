@@ -60,7 +60,6 @@ swarajya-create/purchase-order/
 │   └── test_po_negative_flows.py        # Data-driven negative / validation test scenarios
 │
 ├── screenshots/                         # Timestamped visual evidence (PASS/FAIL/SKIP)
-├── reports/                             # Custom HTML test reports generated per run
 ├── conftest.py                          # Session fixtures, hooks, evidence capture, reporter
 ├── pytest.ini                           # Pytest configuration and markers
 ├── requirements.txt                     # Dependencies
