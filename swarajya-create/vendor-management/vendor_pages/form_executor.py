@@ -7,6 +7,34 @@ from shared.utils.logger import get_logger
 
 log = get_logger("VendorFormExecutor")
 
+METADATA_KEYS = {
+    "test case id", "tc id", "tc_id", "scenario", "test scenario",
+    "pre-condition", "pre condition", "test steps", "steps",
+    "expected result", "expected results", "automation status",
+    "execution type", "test status", "remarks / defect observed",
+    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
+    "module", "comments", "description"
+}
+
+
+def get_baseline_vendor() -> Dict[str, str]:
+    """Fetch baseline valid vendor test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        from shared.utils.excel_loader import load_test_data_sheet
+        data_map = load_test_data_sheet("createvendor-mgmt")
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and row.get("Vendor Name") and row.get("Email"):
+                res = {}
+                for k, v in row.items():
+                    val = str(v).strip() if v is not None else ""
+                    if val.endswith(".0") and val[:-2].isdigit():
+                        val = val[:-2]
+                    res[k] = val
+                return res
+    except Exception as exc:
+        log.warning(f"Could not load baseline vendor from Excel: {exc}")
+    return {}
+
 
 class FormExecutor:
     """Executes data-driven test scenarios from Create-Vendor-Management.xlsx."""
@@ -21,18 +49,27 @@ class FormExecutor:
         """Main dispatcher for Excel data-driven execution."""
         tc_id = test_case_row.get("Test Case ID", "").strip()
         scenario = test_case_row.get("Scenario", "").strip()
+        excel_data = test_case_row.get("data") or {}
         raw_data = test_case_row.get("Test Data", "")
         steps = test_case_row.get("Steps", test_case_row.get("Test Steps", ""))
         expected = test_case_row.get("Expected Result", "")
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
         parsed_data = self._parse_test_data(raw_data)
-        log.info(f"Parsed test data: {parsed_data}")
+        clean_excel = {
+            k.strip(): (str(v)[:-2] if str(v).endswith(".0") and str(v)[:-2].isdigit() else str(v).strip())
+            for k, v in excel_data.items()
+            if v is not None and str(v).strip()
+            and k.strip().lower() not in METADATA_KEYS
+            and not k.strip().lower().startswith("col_")
+        }
+        merged_data = {**clean_excel, **parsed_data}
+        log.info(f"Parsed test data from Excel: {merged_data}")
 
         if is_positive:
-            self._execute_positive(tc_id, parsed_data, scenario, steps, expected)
+            self._execute_positive(tc_id, merged_data, scenario, steps, expected)
         else:
-            self._execute_negative(tc_id, parsed_data, scenario, steps, expected)
+            self._execute_negative(tc_id, merged_data, scenario, steps, expected)
 
     # ----------------- Positive Scenarios -----------------
 
@@ -326,9 +363,17 @@ class FormExecutor:
         "vendor poc": "POC",
         "poc": "POC",
         "country": "Country",
+        "phone number": "Phone",
+        "active status": "Active",
     }
 
     def _parse_test_data(self, raw_data: Any) -> Dict[str, str]:
+        if isinstance(raw_data, dict):
+            return {
+                str(k).strip(): (str(v) if v is not None and str(v).lower() != "none" else "")
+                for k, v in raw_data.items()
+                if str(k).strip().lower() not in METADATA_KEYS and not str(k).lower().startswith("col_")
+            }
         if not raw_data or str(raw_data).strip() in ("None", "N/A", "Fetch from excel"):
             return {}
         result = {}
@@ -336,34 +381,27 @@ class FormExecutor:
             line = line.strip()
             if ":" in line:
                 key, val = line.split(":", 1)
-                clean_val = val.strip().strip("'\"")
-                result[key.strip()] = clean_val
+                clean_k = key.strip()
+                if clean_k.lower() not in METADATA_KEYS and not clean_k.lower().startswith("col_"):
+                    clean_val = val.strip().strip("'\"")
+                    result[clean_k] = clean_val
         return result
 
     def _build_vendor_data(self, tc_id: str, overrides: Dict[str, str]) -> Dict[str, str]:
-        ts = int(time.time() * 1000) % 1000000
-        num = re.search(r"(\d+)$", tc_id).group(1) if re.search(r"(\d+)$", tc_id) else "01"
         is_pos = "POS" in tc_id
-        default_phone = f"98{ts%100000000:08d}"
-        
-        data = {
-            "Vendor Name": f"AutoVendor_{num}_{ts}",
-            "Country": "India",
-            "State": "Maharashtra",
-            "Email": f"vendor_{num}_{ts}@example.com",
-            "Phone": default_phone,
-            "Address": "123 Tech Park",
-            "POC": "John Doe",
-            "TDS Percentage (%)": "10",
-            "Tax Number": "TAX12345",
-            "Active": "Ticked",
-            "Payment Terms (Days)": "30",
-        }
+        # Fetch baseline vendor data directly from Excel (0 hardcoded values)
+        data = dict(get_baseline_vendor())
+        default_phone = data.get("Phone Number") or data.get("Phone") or "9876543210"
+        num = re.sub(r"\D", "", tc_id) or "01"
+        ts = int(time.time()) % 100000
 
         # Normalize override keys
         normalized_overrides = {}
         for k, v in overrides.items():
-            norm_key = self.FIELD_NORM_MAP.get(k.strip().lower(), k.strip())
+            clean_k = re.sub(r"[\*:]", "", str(k)).strip()
+            if clean_k.lower() in METADATA_KEYS or clean_k.lower().startswith("col_"):
+                continue
+            norm_key = self.FIELD_NORM_MAP.get(clean_k.lower(), clean_k)
             normalized_overrides[norm_key] = v
 
         for k, v in normalized_overrides.items():
@@ -371,7 +409,7 @@ class FormExecutor:
             if "100 times" in str(v).lower() or ("exceed" in str(v).lower() and len(str(v)) > 50):
                 v = "A" * 120
             elif is_pos and "vendor name" in key_lower:
-                clean_name = v.strip().replace("'", "")
+                clean_name = str(v).strip().replace("'", "")
                 if "space corp" in clean_name.lower():
                     v = f"   SpaceCorp_{ts}   "
                 else:
@@ -397,30 +435,17 @@ class FormExecutor:
                     v = "India"
             data[k] = v
 
-        # Specific adjustments for defect tests:
-        # NEG_10: Test non-alphabetic in name, address, state with valid POC and phone to expose backend defect
-        if tc_id == "TC_VENDOR_NEG_10":
-            data["Vendor Name"] = "213232saadadads"
-            data["Address"] = "3232131eqeq"
-            data["State"] = "sdda223213"
-            data["POC"] = "sadasd"
-            data["Phone"] = default_phone
-
-        # NEG_11: Test non-numeric in payment terms days and tax number with valid phone and valid percentage to expose backend defect
-        if tc_id == "TC_VENDOR_NEG_11":
-            data["Tax Number"] = "weqweqe1212312"
-            data["Payment Terms (Days)"] = "wqww212eqwqeq"
-            data["TDS Percentage (%)"] = "10"
-            data["Phone"] = default_phone
-
         return data
 
     def _fill_vendor_fields(self, data: Dict[str, str]):
         failed_fields = []
         for field, value in data.items():
-            success = self.vendor.fill_field(field, value)
+            clean_field = re.sub(r"[\*:]", "", str(field)).strip()
+            if clean_field.lower() in METADATA_KEYS or clean_field.lower().startswith("col_"):
+                continue
+            success = self.vendor.fill_field(clean_field, value)
             if not success:
-                failed_fields.append(field)
+                failed_fields.append(clean_field)
         if failed_fields:
             log.warning(f"Failed to fill fields: {failed_fields}")
             # Fail the test if critical fields (Vendor Name, Country) couldn't be filled

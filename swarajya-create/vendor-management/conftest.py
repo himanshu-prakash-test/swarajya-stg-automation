@@ -17,6 +17,8 @@ from playwright.sync_api import sync_playwright
 
 from shared.pages.login_page import LoginPage
 from vendor_utils.excel_reader import build_automation_id, read_credentials, update_test_result
+from shared.pages.base_page import BASE_URL
+from shared.utils.paths import AUTH_STATE_FILE
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin
 
@@ -98,7 +100,7 @@ def browser(playwright_instance, headed, slowmo):
 
 def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
     """Poll staging URL dynamically to confirm server is healthy and not 503."""
-    url = "https://swarajya-stg.corecotechnologies.com/"
+    url = f"{BASE_URL}/"
     for attempt in range(max_retries):
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20000)
@@ -112,9 +114,20 @@ def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
 
 
 def _is_valid_auth_state(path: Optional[str]) -> bool:
-    """Validate that auth_state.json exists and contains actual auth tokens."""
+    """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
     if not path or not os.path.exists(path):
         return False
+    # Check session storage file as well (Swarajya Angular app stores auth in sessionStorage)
+    ss_file = path.replace(".json", "_session.json")
+    if os.path.exists(ss_file):
+        try:
+            import json
+            with open(ss_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data and any("token" in k.lower() or "isloggedin" in k.lower() or "currentuser" in k.lower() for k in data.keys()):
+                return True
+        except Exception:
+            pass
     try:
         import json
         with open(path, "r", encoding="utf-8") as f:
@@ -131,7 +144,7 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
 @pytest.fixture(scope="session")
 def session_storage_state(browser, tmp_path_factory):
     """Authenticate as Manager/Admin once and cache auth_state.json."""
-    storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+    storage_path = AUTH_STATE_FILE
     if _is_valid_auth_state(storage_path):
         return storage_path
 
@@ -141,7 +154,7 @@ def session_storage_state(browser, tmp_path_factory):
     _wait_until_server_healthy(page)
 
     login_page = LoginPage(page)
-    success = login_page.login(role="Manager")
+    success = login_page.login(role="Admin", sheet_name="createvendor-mgmt")
     if success:
         page.wait_for_timeout(1000)
         context.storage_state(path=storage_path)
@@ -165,18 +178,21 @@ def authenticated_page(browser, session_storage_state):
     page.set_default_timeout(15000)
     page.set_default_navigation_timeout(30000)
 
+    # Pre-inject saved sessionStorage
+    LoginPage.inject_session_storage(page)
+
     # Health check
     _wait_until_server_healthy(page, max_retries=3, delay_s=2)
 
-    # Self-healing fallback: if auth_state was missing/invalid or expired, login on-the-fly
-    if not storage:
+    # Verify session is alive
+    try:
+        page.goto(f"{BASE_URL}/default", timeout=12000, wait_until="domcontentloaded")
+        if "login" in page.url.lower() or "tfa" in page.url.lower():
+            login_page = LoginPage(page)
+            login_page.login(role="Admin", sheet_name="createvendor-mgmt")
+    except Exception:
         login_page = LoginPage(page)
-        login_page.login(role="Manager")
-        storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
-        try:
-            context.storage_state(path=storage_path)
-        except Exception:
-            pass
+        login_page.login(role="Admin", sheet_name="createvendor-mgmt")
 
     yield page
 
