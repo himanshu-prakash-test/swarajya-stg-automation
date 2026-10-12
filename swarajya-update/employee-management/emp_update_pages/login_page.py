@@ -5,13 +5,9 @@ from shared.pages.base_page import BasePage
 from emp_update_utils.excel_reader import read_credentials
 from shared.utils.logger import get_logger
 
-log = get_logger("login_page")
+from shared.utils.paths import AUTH_STATE_FILE
 
-AUTH_STORAGE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "test_data",
-    "auth_state.json",
-)
+AUTH_STORAGE = AUTH_STATE_FILE
 
 
 class LoginPage(BasePage):
