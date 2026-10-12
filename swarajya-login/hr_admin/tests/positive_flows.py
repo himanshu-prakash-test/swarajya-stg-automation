@@ -23,9 +23,9 @@ for path_dir in (_MODULE_DIR, _LOGIN_DIR, _ROOT_DIR):
     if path_dir not in sys.path:
         sys.path.insert(0, path_dir)
 
-from common.pages.login_page import LoginPage
-from common.pages.tfa_page import TfaPage
-from common.utils.excel_reader import (
+from shared.pages.login_page import LoginPage
+from shared.pages.tfa_page import TfaPage
+from shared.utils.excel_base import (
     get_base_url,
     read_credentials,
     get_test_case_by_id,

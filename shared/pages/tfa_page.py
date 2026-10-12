@@ -1,18 +1,10 @@
-"""Common Page Object for Swarajya 2FA (Google Auth Code) Page."""
-import os
-import sys
+"""Centralized Page Object for Swarajya 2FA (Google Auth Code) Page."""
 import logging
-
-_COMMON_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_LOGIN_DIR = os.path.dirname(_COMMON_DIR)
-_WS_ROOT = os.path.dirname(_LOGIN_DIR)
-for _p in (_LOGIN_DIR, _WS_ROOT):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
+from typing import Optional
+from playwright.sync_api import Page
 from shared.pages.base_page import BasePage
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("SharedTfaPage")
 
 
 class TfaPage(BasePage):
@@ -20,7 +12,7 @@ class TfaPage(BasePage):
     DEFAULT_TIMEOUT = 30_000
     SNACKBAR_TIMEOUT = 5_000
 
-    def __init__(self, page, base_url: str):
+    def __init__(self, page: Page, base_url: Optional[str] = None):
         super().__init__(page, base_url=base_url)
 
     # --- Locators ---
@@ -50,14 +42,14 @@ class TfaPage(BasePage):
     def is_on_tfa_page(self) -> bool:
         return self.TFA_URL_FRAGMENT in self.page.url
 
-    def wait_for_tfa_page(self, timeout: int = None):
-        timeout = timeout or self.DEFAULT_TIMEOUT
+    def wait_for_tfa_page(self, timeout: Optional[int] = None):
+        to = timeout or self.DEFAULT_TIMEOUT
         self.page.wait_for_url(
             lambda url: self.TFA_URL_FRAGMENT in url,
-            timeout=timeout,
+            timeout=to,
         )
         try:
-            self.auth_code_input.wait_for(state="visible", timeout=timeout)
+            self.auth_code_input.wait_for(state="visible", timeout=to)
         except Exception:
             pass
         return self
@@ -87,42 +79,42 @@ class TfaPage(BasePage):
 
     # --- Assertions ---
 
-    def is_auth_code_input_visible(self, timeout: int = None) -> bool:
-        timeout = timeout or self.DEFAULT_TIMEOUT
+    def is_auth_code_input_visible(self, timeout: Optional[int] = None) -> bool:
+        to = timeout or self.DEFAULT_TIMEOUT
         try:
-            self.auth_code_input.wait_for(state="visible", timeout=timeout)
+            self.auth_code_input.wait_for(state="visible", timeout=to)
             return True
         except Exception:
             return False
 
-    def is_submit_button_visible(self, timeout: int = None) -> bool:
-        timeout = timeout or self.DEFAULT_TIMEOUT
+    def is_submit_button_visible(self, timeout: Optional[int] = None) -> bool:
+        to = timeout or self.DEFAULT_TIMEOUT
         try:
-            self.submit_button.wait_for(state="visible", timeout=timeout)
+            self.submit_button.wait_for(state="visible", timeout=to)
             return True
         except Exception:
             return False
 
-    def is_back_to_login_visible(self, timeout: int = None) -> bool:
-        timeout = timeout or self.DEFAULT_TIMEOUT
+    def is_back_to_login_visible(self, timeout: Optional[int] = None) -> bool:
+        to = timeout or self.DEFAULT_TIMEOUT
         try:
-            self.back_to_login_link.wait_for(state="visible", timeout=timeout)
+            self.back_to_login_link.wait_for(state="visible", timeout=to)
             return True
         except Exception:
             return False
 
-    def get_error_message(self, timeout: int = None) -> str:
-        timeout = timeout or self.SNACKBAR_TIMEOUT
+    def get_error_message(self, timeout: Optional[int] = None) -> str:
+        to = timeout or self.SNACKBAR_TIMEOUT
         try:
-            self.error_snackbar.wait_for(state="visible", timeout=timeout)
+            self.error_snackbar.wait_for(state="visible", timeout=to)
             return self.error_snackbar.inner_text().strip()
         except Exception:
             return ""
 
-    def is_error_displayed(self, timeout: int = None) -> bool:
-        timeout = timeout or self.SNACKBAR_TIMEOUT
+    def is_error_displayed(self, timeout: Optional[int] = None) -> bool:
+        to = timeout or self.SNACKBAR_TIMEOUT
         try:
-            self.error_snackbar.wait_for(state="visible", timeout=timeout)
+            self.error_snackbar.wait_for(state="visible", timeout=to)
             return True
         except Exception:
             return False
