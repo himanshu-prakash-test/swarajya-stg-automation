@@ -1,5 +1,5 @@
 import pytest
-from customer_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from customer_utils.excel_reader import read_credentials
 
 
@@ -18,7 +18,7 @@ class TestCustomerLoginFlow:
         success = login_page.login(
             employee_id=creds["employee_id"],
             password=creds["password"],
-            auth_code=creds.get("auth_code", "111111"),
+            auth_code=creds.get("auth_code"),
             role=creds.get("role", "Admin"),
         )
         assert success, (
