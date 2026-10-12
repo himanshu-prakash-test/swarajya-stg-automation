@@ -136,20 +136,13 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
     return False
 
 
+from shared.utils.paths import AUTH_STATE_FILE
+
+
 @pytest.fixture(scope="session")
 def session_storage_state(browser):
     """Authenticate as Admin once and cache auth_state.json for fast session reuse."""
-    storage_path = os.path.join(_MODULE_ROOT, "test_data", "auth_state.json")
-    fallback_auth = os.path.join(_WORKSPACE_ROOT, "swarajya-create", "customer-management", "test_data", "auth_state.json")
-
-    # Reuse existing auth state if present and valid
-    if not os.path.exists(storage_path) and os.path.exists(fallback_auth):
-        os.makedirs(os.path.dirname(storage_path), exist_ok=True)
-        try:
-            shutil.copy2(fallback_auth, storage_path)
-        except Exception:
-            pass
-
+    storage_path = AUTH_STATE_FILE
     if _is_valid_auth_state(storage_path):
         return storage_path
 
@@ -188,9 +181,8 @@ def authenticated_page(browser, session_storage_state):
     if not storage:
         login_page = LoginPage(page)
         login_page.login(role="Admin")
-        storage_path = os.path.join(_MODULE_ROOT, "test_data", "auth_state.json")
         try:
-            context.storage_state(path=storage_path)
+            context.storage_state(path=AUTH_STATE_FILE)
         except Exception:
             pass
 
