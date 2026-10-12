@@ -22,9 +22,9 @@ for _p in (_PROJECT_ROOT, _LOGIN_ROOT, _WORKSPACE_ROOT):
 import pytest
 from playwright.sync_api import sync_playwright
 
-from common.pages.login_page import LoginPage
-from common.pages.tfa_page import TfaPage
-from common.utils.excel_reader import get_base_url, read_credentials, update_test_result
+from shared.pages.login_page import LoginPage
+from shared.pages.tfa_page import TfaPage
+from shared.utils.excel_base import get_base_url, read_credentials, update_test_result
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin, TestCaseResult
 

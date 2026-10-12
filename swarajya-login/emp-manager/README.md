@@ -15,7 +15,7 @@ emp-manager/
 └── screenshots/            # Automated run screenshots
 ```
 
-> **Note**: Shared page objects (`LoginPage`, `TfaPage`) and shared test data reader (`excel_reader.py`) reside centrally in `swarajya-login/common/`. All test data and test cases are strictly loaded from `shared/test_data/` (Sheet: `loginemp-manager`).
+> **Note**: Shared page objects (`LoginPage`, `TfaPage`) and shared test data reader (`excel_base.py`) reside centrally in root `shared/`. All test data and test cases are strictly loaded from `shared/test_data/` (Sheet: `loginemp-manager`).
 
 ## 🚀 Execution
 ```bash

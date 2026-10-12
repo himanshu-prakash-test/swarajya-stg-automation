@@ -1,1 +1,0 @@
-# swarajya-create common pages

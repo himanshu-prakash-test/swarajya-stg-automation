@@ -1,5 +1,5 @@
 import pytest
-from common.pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from vendor_utils.excel_reader import read_credentials
 
 

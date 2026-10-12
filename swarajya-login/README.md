@@ -9,15 +9,6 @@ An enterprise-grade, data-driven test automation framework for the **Authenticat
 ```
 swarajya-login/
 │
-├── common/                              # Shared Layer for Login Modules
-│   ├── pages/                           # Page Object Model (POM) Layer
-│   │   ├── __init__.py
-│   │   ├── login_page.py                # Login form interactions, error toasts, resilient waits
-│   │   └── tfa_page.py                  # Google Authenticator 2FA code submission & validation
-│   └── utils/                           # Utilities Layer
-│       ├── __init__.py
-│       └── excel_reader.py              # Dynamic reader & live Excel result updater for shared test data
-│
 ├── hr_admin/                            # Admin & HR Authentication Sub-module
 │   ├── conftest.py                      # Admin & HR fixtures and lifecycle hooks
 │   ├── pytest.ini                       # Sub-module test runner settings
@@ -48,9 +39,9 @@ swarajya-login/
 
 ## ⚡ Core Engineering & Design Standards
 
-### 1. Single Source of Truth (`common/`)
-- Page Objects (`LoginPage`, `TfaPage`) and Excel Utilities (`excel_reader.py`) exist centrally in `common/`.
-- Both `hr_admin` and `emp-manager` sub-modules consume directly from `common.pages` and `common.utils`.
+### 1. Single Source of Truth (`shared/`)
+- Page Objects (`LoginPage`, `TfaPage`) and Excel Utilities (`excel_base.py`) exist centrally in root `shared/`.
+- Both `hr_admin` and `emp-manager` sub-modules consume directly from `shared.pages` and `shared.utils`.
 
 ### 2. Strictly Zero Hardcoded Values
 - Credentials, URLs, and test assertions are loaded dynamically from:

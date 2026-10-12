@@ -196,7 +196,7 @@ class FormExecutor:
 
         # 6. Non-admin access check — login as Employee and verify access is denied
         if tc_id == "TC_VENDOR_NEG_08":
-            from common.pages.login_page import LoginPage
+            from shared.pages.login_page import LoginPage
             # Open a fresh context to test as a non-admin role
             context = self.page.context.browser.new_context(
                 viewport={"width": 1920, "height": 1080}
