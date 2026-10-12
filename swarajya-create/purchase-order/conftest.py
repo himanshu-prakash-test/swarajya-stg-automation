@@ -3,6 +3,7 @@ import os
 import sys
 import re
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 _CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
@@ -14,8 +15,10 @@ for _p in (_PROJECT_ROOT, _CREATE_ROOT, _WORKSPACE_ROOT):
 import pytest
 from playwright.sync_api import sync_playwright
 
-from po_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from po_utils.excel_reader import build_automation_id, read_credentials, update_test_result
+from shared.pages.base_page import BASE_URL
+from shared.utils.paths import AUTH_STATE_FILE
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin
 
@@ -97,7 +100,7 @@ def browser(playwright_instance, headed, slowmo):
 
 def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
     """Poll staging URL dynamically to confirm server is healthy and not 503."""
-    url = "https://swarajya-stg.corecotechnologies.com/"
+    url = f"{BASE_URL}/"
     for _ in range(max_retries):
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20000)
@@ -110,17 +113,48 @@ def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
     return False
 
 
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
+    if not path or not os.path.exists(path):
+        return False
+    # Check session storage file as well (Swarajya Angular app stores auth in sessionStorage)
+    ss_file = path.replace(".json", "_session.json")
+    if os.path.exists(ss_file):
+        try:
+            import json
+            with open(ss_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data and any("token" in k.lower() or "isloggedin" in k.lower() or "currentuser" in k.lower() for k in data.keys()):
+                return True
+        except Exception:
+            pass
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
+    return False
+
+
 @pytest.fixture(scope="session")
 def session_storage_state(browser):
     """Authenticate as Admin once and cache auth_state.json."""
-    storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+    storage_path = AUTH_STATE_FILE
+    if _is_valid_auth_state(storage_path):
+        return storage_path
+
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
     _wait_until_server_healthy(page)
 
     login_page = LoginPage(page)
-    success = login_page.login(role="Admin")
+    success = login_page.login(role="Admin", sheet_name="createpurchase_order")
     if success:
         context.storage_state(path=storage_path)
         log.info(f"Saved authenticated session state to {storage_path}")
@@ -128,7 +162,7 @@ def session_storage_state(browser):
         log.warning("Initial login failed; tests will authenticate per-test")
 
     context.close()
-    return storage_path if os.path.exists(storage_path) else None
+    return storage_path if _is_valid_auth_state(storage_path) else None
 
 
 @pytest.fixture(scope="function")
@@ -141,9 +175,18 @@ def authenticated_page(browser, session_storage_state):
     context = browser.new_context(**kwargs)
     page = context.new_page()
 
-    if not session_storage_state or not os.path.exists(session_storage_state):
+    # Pre-inject saved sessionStorage
+    LoginPage.inject_session_storage(page)
+
+    # Verify session is alive
+    try:
+        page.goto(f"{BASE_URL}/default", timeout=12000, wait_until="domcontentloaded")
+        if "login" in page.url.lower() or "tfa" in page.url.lower():
+            login_page = LoginPage(page)
+            login_page.login(role="Admin", sheet_name="createpurchase_order")
+    except Exception:
         login_page = LoginPage(page)
-        login_page.login(role="Admin")
+        login_page.login(role="Admin", sheet_name="createpurchase_order")
 
     yield page
     context.close()

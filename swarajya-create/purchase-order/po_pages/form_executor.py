@@ -13,8 +13,23 @@ log = get_logger("POFormExecutor")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCREENSHOT_DIR = os.path.join(ROOT, "screenshots")
-SAMPLE_PDF = os.path.join(ROOT, "test_data", "sample_po.pdf")
+try:
+    from shared.utils.paths import BASE_URL, TEST_DATA_DIR, SAMPLE_PO_FILE
+    SAMPLE_PDF = SAMPLE_PO_FILE if os.path.exists(SAMPLE_PO_FILE) else os.path.join(TEST_DATA_DIR, "sample_po.pdf")
+except ImportError:
+    from shared.pages.base_page import BASE_URL
+    SAMPLE_PDF = os.path.join(ROOT, "test_data", "sample_po.pdf")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+
+
+METADATA_KEYS = {
+    "test case id", "tc id", "tc_id", "scenario", "test scenario",
+    "pre-condition", "pre condition", "test steps", "steps",
+    "expected result", "expected results", "automation status",
+    "execution type", "test status", "remarks / defect observed",
+    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
+    "module", "comments", "description"
+}
 
 
 class FormExecutor:
@@ -35,11 +50,22 @@ class FormExecutor:
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
 
+        excel_data = test_case_row.get("data") or {}
+        raw_test_data = test_case_row.get("Test Data") or {}
+        raw_dict = raw_test_data if isinstance(raw_test_data, dict) else {}
+        row_data = {
+            k.strip(): str(v).strip()
+            for k, v in {**excel_data, **raw_dict}.items()
+            if v is not None and str(v).strip()
+            and k.strip().lower() not in METADATA_KEYS
+            and not k.strip().lower().startswith("col_")
+        }
+
         try:
             if is_positive:
-                self._execute_positive(tc_id, scenario, steps, expected)
+                self._execute_positive(tc_id, scenario, steps, expected, row_data)
             else:
-                self._execute_negative(tc_id, scenario, steps, expected)
+                self._execute_negative(tc_id, scenario, steps, expected, row_data)
 
             scr_path = os.path.join(SCREENSHOT_DIR, f"PASS_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
             try:
@@ -69,7 +95,8 @@ class FormExecutor:
 
     # ----------------- Positive Scenarios -----------------
 
-    def _execute_positive(self, tc_id: str, scenario: str, steps: str, expected: str):
+    def _execute_positive(self, tc_id: str, scenario: str, steps: str, expected: str, row_data: Dict[str, Any] = None):
+        row_data = row_data or {}
         po_page = self.po
 
         if tc_id == "TC_CPO_POS_01":
@@ -124,15 +151,18 @@ class FormExecutor:
             po_page.click_cancel()
 
         elif tc_id == "TC_CPO_POS_06":
-            # Verify Total Amount auto-calculates as Base Amount + Tax Amount
+            # Verify Total Amount auto-calculates as Base Amount + Tax Amount (from Excel)
+            base_amt = str(row_data.get("Base Amount") or "2000").strip()
+            tax_amt = str(row_data.get("Tax Amount") or "360").strip()
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            po_page.set_form_field("base_amount", "1000")
-            po_page.set_form_field("tax_amount", "180")
+            po_page.set_form_field("base_amount", base_amt)
+            po_page.set_form_field("tax_amount", tax_amt)
             self.page.wait_for_timeout(500)
             tot_val = po_page.get_form_field_value("total_amount")
             if not tot_val:
-                po_page.set_form_field("total_amount", "1180")
+                expected_tot = str(row_data.get("Total Amount") or "2360").strip()
+                po_page.set_form_field("total_amount", expected_tot)
                 tot_val = po_page.get_form_field_value("total_amount")
             assert len(tot_val) > 0, "Total Amount field should hold calculated or entered total amount."
             po_page.click_cancel()
@@ -150,21 +180,29 @@ class FormExecutor:
             po_page.click_cancel()
 
         elif tc_id == "TC_CPO_POS_08":
-            # Verify creating a PO with all fields filled displays green success snackbar
+            # Verify creating a PO with all fields filled displays green success snackbar (from Excel)
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            ref_no = f"PO_AUTO_{int(time.time()) % 100000}"
-            today_str = datetime.now().strftime("%d-%m-%Y")
-            po_page.set_form_field("po_date", today_str)
+            ref_no = str(row_data.get("PO Reference No.") or f"PO_AUTO_{int(time.time()) % 100000}").strip()
+            po_date = str(row_data.get("PO Date") or datetime.now().strftime("%d-%m-%Y")).strip()
+            auth_by = str(row_data.get("Authorized By") or "Admin").strip()
+            details = str(row_data.get("PO Details") or "Automated PO Creation Details").strip()
+            base_amt = str(row_data.get("Base Amount") or "5000").strip()
+            tax_amt = str(row_data.get("Tax Amount") or "900").strip()
+            tot_amt = str(row_data.get("Total Amount") or "5900").strip()
+            curr = str(row_data.get("Currency") or "INR").strip()
+            status = str(row_data.get("Status") or "ACTIVE").strip()
+
+            po_page.set_form_field("po_date", po_date)
             po_page.set_form_field("po_ref_no", ref_no)
             po_page.select_customer()
-            po_page.set_form_field("authorized_by", "Test Admin")
-            po_page.set_form_field("po_details", "test@1234 Automated PO Creation")
-            po_page.set_form_field("base_amount", "5000")
-            po_page.set_form_field("tax_amount", "900")
-            po_page.set_form_field("total_amount", "5900")
-            po_page.select_currency("INR")
-            po_page.select_status("ACTIVE")
+            po_page.set_form_field("authorized_by", auth_by)
+            po_page.set_form_field("po_details", details)
+            po_page.set_form_field("base_amount", base_amt)
+            po_page.set_form_field("tax_amount", tax_amt)
+            po_page.set_form_field("total_amount", tot_amt)
+            po_page.select_currency(curr)
+            po_page.select_status(status)
             po_page.upload_po_document(SAMPLE_PDF)
             po_page.click_submit()
             snackbar = po_page.get_snackbar_info(timeout_ms=5000)
@@ -277,14 +315,15 @@ class FormExecutor:
 
     # ----------------- Negative Scenarios -----------------
 
-    def _execute_negative(self, tc_id: str, scenario: str, steps: str, expected: str):
+    def _execute_negative(self, tc_id: str, scenario: str, steps: str, expected: str, row_data: Dict[str, Any] = None):
+        row_data = row_data or {}
         po_page = self.po
 
         if tc_id == "TC_CPO_NEG_01":
             # Verify Cancel button dismisses create form without creating a PO
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            temp_ref = f"TEMP_CANCEL_{int(time.time()) % 100000}"
+            temp_ref = str(row_data.get("PO Reference No.") or f"TEMP_CANCEL_{int(time.time()) % 100000}").strip()
             po_page.set_form_field("po_ref_no", temp_ref)
             po_page.click_cancel()
             assert not po_page.is_create_form_visible(), "Modal was expected to close on clicking Cancel."
@@ -296,7 +335,7 @@ class FormExecutor:
             # Verify modal close icon ('X') dismisses create form without saving
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            temp_ref = f"TEMP_CLOSE_{int(time.time()) % 100000}"
+            temp_ref = str(row_data.get("PO Reference No.") or f"TEMP_CLOSE_{int(time.time()) % 100000}").strip()
             po_page.set_form_field("po_ref_no", temp_ref)
             po_page.click_close_icon()
             assert not po_page.is_create_form_visible(), "Modal was expected to close on clicking close icon."
@@ -305,17 +344,18 @@ class FormExecutor:
             # Verify reopening Create form after cancel shows blank fields
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            po_page.set_form_field("authorized_by", "Dirty Author Value")
+            dirty_auth = str(row_data.get("Authorized By") or row_data.get("PO Details") or "Dirty Author Value").strip()
+            po_page.set_form_field("authorized_by", dirty_auth)
             po_page.click_cancel()
             po_page.open_create_po_form()
             auth_val = po_page.get_form_field_value("authorized_by")
-            assert auth_val != "Dirty Author Value", "Reopened form retained dirty field values from canceled session."
+            assert auth_val != dirty_auth, "Reopened form retained dirty field values from canceled session."
             po_page.click_cancel()
 
         elif tc_id == "TC_CPO_NEG_04":
             # Verify search with non-existent PO Ref No shows no records
             po_page.open_purchase_order_list(direct=True)
-            query = "INVALID_PO_99999999"
+            query = str(row_data.get("PO Reference No.") or "INVALID_PO_99999999").strip()
             count = po_page.search_purchase_order(query)
             rows = self.page.locator("tbody tr").all()
             for r in rows:
@@ -358,7 +398,8 @@ class FormExecutor:
                 po_page.open_create_po_form()
                 po_page.set_form_field("po_ref_no", existing_ref)
                 po_page.select_customer()
-                po_page.set_form_field("po_details", "Duplicate ref check")
+                dup_details = str(row_data.get("PO Details") or "Duplicate ref check").strip()
+                po_page.set_form_field("po_details", dup_details)
                 po_page.click_submit()
                 snackbar = po_page.get_snackbar_info(timeout_ms=4000)
                 log.info(f"Duplicate PO attempt snackbar: {snackbar}")
@@ -368,7 +409,8 @@ class FormExecutor:
             # Verify browser refresh on Create form discards entered data
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            po_page.set_form_field("po_ref_no", "TEMP_REFRESH_999")
+            temp_ref = str(row_data.get("PO Reference No.") or "TEMP_REFRESH_999").strip()
+            po_page.set_form_field("po_ref_no", temp_ref)
             self.page.reload()
             self.page.wait_for_timeout(2000)
             assert "purchaseorder" in self.page.url.lower(), "Browser refresh failed to reload /purchaseOrder."
@@ -377,7 +419,8 @@ class FormExecutor:
             # Verify browser Back button from Create form does not create a PO
             po_page.open_purchase_order_list(direct=True)
             po_page.open_create_po_form()
-            po_page.set_form_field("po_ref_no", "TEMP_BACK_999")
+            temp_ref = str(row_data.get("PO Reference No.") or "TEMP_BACK_999").strip()
+            po_page.set_form_field("po_ref_no", temp_ref)
             po_page.click_cancel()
             assert not po_page.is_create_form_visible(), "Modal was expected to close."
 
@@ -385,7 +428,7 @@ class FormExecutor:
             # Verify Create PO screen is not accessible without login
             context = self.page.context.browser.new_context()
             unauth_page = context.new_page()
-            unauth_page.goto("https://swarajya-stg.corecotechnologies.com/purchaseOrder", wait_until="domcontentloaded")
+            unauth_page.goto(f"{BASE_URL}/purchaseOrder", wait_until="domcontentloaded")
             unauth_page.wait_for_timeout(2000)
             current_url = unauth_page.url.lower()
             context.close()
