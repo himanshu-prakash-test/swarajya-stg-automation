@@ -21,8 +21,8 @@ env/
 *.env
 test_data/credentials.xlsx
 ~$*.xlsx
-**/test_data/auth_state.json
-auth_state.json
+**/test_data/auth_state*.json
+auth_state*.json
 *Bug_Report*.xlsx
 *bug_report*.xlsx
 

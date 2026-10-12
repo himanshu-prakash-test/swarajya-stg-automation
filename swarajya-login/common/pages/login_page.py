@@ -1,11 +1,14 @@
-"""Page object for the Swarajya login page."""
+"""Common Page Object for Swarajya Login Page."""
 import os
 import sys
 import logging
 
-_WS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-if _WS_ROOT not in sys.path:
-    sys.path.insert(0, _WS_ROOT)
+_COMMON_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_LOGIN_DIR = os.path.dirname(_COMMON_DIR)
+_WS_ROOT = os.path.dirname(_LOGIN_DIR)
+for _p in (_LOGIN_DIR, _WS_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from shared.pages.base_page import BasePage
 
