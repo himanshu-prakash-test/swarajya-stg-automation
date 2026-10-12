@@ -445,6 +445,7 @@ def update_test_result(
     status: str,
     remarks: Optional[str] = None,
     sheet_name: Optional[str] = None,
+    **kwargs: Any,
 ) -> bool:
     """
     Update Test Status, Automation Status, Auto Script ID, and Remarks in Swarajya-test-cases.xlsx.
@@ -452,6 +453,14 @@ def update_test_result(
     """
     if not os.path.exists(TEST_CASES_FILE):
         return False
+
+    dur = kwargs.get("duration_s") or kwargs.get("duration")
+    if dur and remarks:
+        remarks = f"{remarks} ({dur:.2f}s)"
+
+    if not sheet_name and "module_key" in kwargs:
+        mod = kwargs["module_key"]
+        sheet_name = MODULE_SHEET_MAP.get(mod, (mod, mod))[0]
 
     auto_id = build_automation_id(tc_id)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
