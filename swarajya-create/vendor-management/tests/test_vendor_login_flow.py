@@ -14,7 +14,7 @@ class TestLoginFlow:
         success = login_page.login(
             employee_id=creds["employee_id"],
             password=creds["password"],
-            auth_code=creds.get("auth_code", "111111"),
+            auth_code=creds.get("auth_code"),
         )
         assert success, "Manager login failed to authenticate"
         assert not ("login" in page.url.lower() or "tfa" in page.url.lower()), f"User did not reach authenticated dashboard: {page.url}"
