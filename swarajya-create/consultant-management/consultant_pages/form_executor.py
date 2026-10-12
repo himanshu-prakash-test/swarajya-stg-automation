@@ -11,19 +11,34 @@ log = get_logger("ConsultantFormExecutor")
 SCREENSHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")
 os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
-DEFAULT_VALID_CONSULTANT = {
-    "First Name": "ValidFirst",
-    "Last Name": "ValidLast",
-    "Phone": "9822334455",
-    "Personal Email": "valid.consultant@example.com",
-    "Monthly Fees": "35000",
-    "TDS Percentage": "2",
-    "Bank Name": "HDFC Bank",
-    "Account Number": "50100234567890",
-    "IFSC Code": "HDFC0001234",
-    "Account Type": "Savings",
-    "Active": "Ticked",
+METADATA_KEYS = {
+    "test case id", "tc id", "tc_id", "scenario", "test scenario",
+    "pre-condition", "pre condition", "test steps", "steps",
+    "expected result", "expected results", "automation status",
+    "execution type", "test status", "remarks / defect observed",
+    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
+    "module", "comments", "description"
 }
+
+def _clean_str(val: Any) -> str:
+    s = str(val).strip() if val is not None else ""
+    if s.endswith(".0") and s[:-2].isdigit():
+        return s[:-2]
+    return s
+
+
+def get_baseline_consultant() -> Dict[str, str]:
+    """Fetch baseline valid consultant test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        from shared.utils.excel_loader import load_test_data_sheet
+        data_map = load_test_data_sheet("createconsultant_mgmt")
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and row.get("First Name") and row.get("Phone"):
+                return {k: _clean_str(v) for k, v in row.items() if v is not None and str(v).strip()}
+    except Exception as exc:
+        log.warning(f"Could not load baseline consultant from Excel: {exc}")
+    return {}
+
 
 
 class FormExecutor:
@@ -36,6 +51,12 @@ class FormExecutor:
         self.consultant = ConsultantPage(page)
 
     def _parse_test_data(self, raw_text: Any) -> Dict[str, str]:
+        if isinstance(raw_text, dict):
+            return {
+                str(k).strip(): (str(v) if v is not None and str(v).lower() != "none" else "")
+                for k, v in raw_text.items()
+                if str(k).strip().lower() not in METADATA_KEYS and not str(k).lower().startswith("col_")
+            }
         if not raw_text:
             return {}
         data = {}
@@ -47,30 +68,40 @@ class FormExecutor:
             match = re.search(pattern, line)
             if match:
                 key = match.group(1).strip().lstrip("•-* ").strip()
-                val = match.group(3) if match.group(3) is not None else (
-                    match.group(4) if match.group(4) is not None else match.group(5)
-                )
-                if val is not None:
-                    val = val.strip().strip("'\"")
-                data[key] = val
+                if key.lower() not in METADATA_KEYS and not key.lower().startswith("col_"):
+                    val = match.group(3) if match.group(3) is not None else (
+                        match.group(4) if match.group(4) is not None else match.group(5)
+                    )
+                    if val is not None:
+                        val = val.strip().strip("'\"")
+                    data[key] = val
         return data
 
     def execute_test_case(self, test_case_row: Dict[str, Any], is_positive: bool = True):
         tc_id = str(test_case_row.get("Test Case ID", "")).strip()
         scenario = str(test_case_row.get("Scenario", "")).strip()
+        excel_data = test_case_row.get("data") or {}
         raw_data = test_case_row.get("Test Data", "")
         steps = str(test_case_row.get("Steps", test_case_row.get("Test Steps", ""))).strip()
         expected = str(test_case_row.get("Expected Result", "")).strip()
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
         parsed_data = self._parse_test_data(raw_data)
-        log.info(f"Parsed test data: {parsed_data}")
+        clean_excel = {
+            k.strip(): _clean_str(v)
+            for k, v in excel_data.items()
+            if v is not None and str(v).strip()
+            and k.strip().lower() not in METADATA_KEYS
+            and not k.strip().lower().startswith("col_")
+        }
+        merged_data = {**clean_excel, **parsed_data}
+        log.info(f"Parsed test data from Excel: {merged_data}")
 
         try:
             if is_positive:
-                self._execute_positive(tc_id, parsed_data, scenario, steps, expected)
+                self._execute_positive(tc_id, merged_data, scenario, steps, expected)
             else:
-                self._execute_negative(tc_id, parsed_data, scenario, steps, expected)
+                self._execute_negative(tc_id, merged_data, scenario, steps, expected)
 
             self.page.screenshot(path=os.path.join(SCREENSHOT_DIR, f"PASS_{tc_id}.png"))
         except pytest.skip.Exception:
@@ -107,7 +138,7 @@ class FormExecutor:
 
         # 4. Search for consultant
         if tc_id == "TC_CONSULTANT_POS_06" or (tc_id not in ("TC_CONSULTANT_POS_11",) and "search" in scenario.lower()):
-            search_term = data.get("Search Term", data.get("First Name", "Rohan"))
+            search_term = data.get("Search Term") or data.get("First Name", "")
             self.consultant.search_consultant(search_term)
             assert self.consultant.is_visible("input[placeholder*='Search' i]"), "Search input not visible"
             return
@@ -132,7 +163,7 @@ class FormExecutor:
         # 7. Inactive consultant search with include inactive filter
         if tc_id == "TC_CONSULTANT_POS_11" or "inactive" in scenario.lower():
             self.consultant.toggle_include_inactive(True)
-            search_term = data.get("Search Term", data.get("First Name", "Inactive"))
+            search_term = data.get("Search Term") or data.get("First Name", "")
             self.consultant.search_consultant(search_term)
             return
 
@@ -194,7 +225,7 @@ class FormExecutor:
 
         # 4. Failed consultant not listed
         if tc_id == "TC_CONSULTANT_NEG_18":
-            search_term = data.get("Search Term", "Timeout Consultant")
+            search_term = data.get("Search Term") or data.get("First Name", "")
             self.consultant.search_consultant(search_term)
             assert not self.consultant.is_consultant_in_list(search_term), "Failed consultant unexpectedly found in list"
             return
@@ -205,8 +236,8 @@ class FormExecutor:
             return
 
         # 6. Negative creation flows
-        # Build baseline payload to ensure all non-tested mandatory fields are valid
-        payload = dict(DEFAULT_VALID_CONSULTANT)
+        # Build baseline payload from Excel to ensure all non-tested mandatory fields are valid
+        payload = dict(get_baseline_consultant())
         payload.update(data)
 
         # Handle specific field clearances

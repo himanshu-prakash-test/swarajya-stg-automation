@@ -1,96 +1,65 @@
-import glob
+"""
+Excel reader for Consultant Management (Create).
+Loads test cases from Swarajya-test-cases.xlsx [Sheet: createconsultant_mgmt]
+and test data from Swarajya-test-data.xlsx [Sheet: createconsultant_mgmt].
+Strictly zero hardcoded values.
+"""
+
 import os
-import time
-from datetime import datetime
+import sys
 from typing import Any, Dict, List, Optional
 
-import openpyxl
+_MODULE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_WS_ROOT = os.path.dirname(os.path.dirname(_MODULE_ROOT))
+for _p in (_WS_ROOT, _MODULE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
+from shared.utils.excel_loader import (
+    build_automation_id,
+    load_cases_and_data,
+    read_base_url,
+    read_credentials as _central_read_credentials,
+    update_test_result as _central_update_test_result,
+)
 from shared.utils.logger import get_logger
 
-logger = get_logger("excel_reader")
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEST_DATA_DIR = os.path.join(ROOT, "test_data")
-CREDENTIALS_FILE = os.path.join(TEST_DATA_DIR, "credentials.xlsx")
+logger = get_logger("consultant_excel_reader")
+MODULE_KEY = "consultant"
+SHEET_NAME = "createconsultant_mgmt"
 
 
 def get_test_cases_filepath() -> str:
-    """Find Create-Consultant-Management.xlsx in test_data directory."""
-    target = os.path.join(TEST_DATA_DIR, "Create-Consultant-Management.xlsx")
-    if os.path.exists(target):
-        return target
-    candidates = glob.glob(os.path.join(TEST_DATA_DIR, "*consultant*.xlsx"))
-    if candidates:
-        return candidates[0]
-    raise FileNotFoundError(f"No consultant test cases Excel file found in: {TEST_DATA_DIR}")
+    """Return path to Swarajya-test-cases.xlsx."""
+    from shared.utils.paths import TEST_CASES_FILE
+    return TEST_CASES_FILE
 
 
 def read_credentials(role: str = "Admin") -> Dict[str, str]:
-    """Read login credentials for the given role from credentials.xlsx."""
-    if not os.path.exists(CREDENTIALS_FILE):
-        raise FileNotFoundError(f"Credentials file not found: {CREDENTIALS_FILE}")
-
-    wb = openpyxl.load_workbook(CREDENTIALS_FILE, data_only=True)
-    ws = wb["Credentials"] if "Credentials" in wb.sheetnames else wb.active
-    headers = [cell.value for cell in ws[1]]
-
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if not any(row):
-            continue
-        row_dict = dict(zip(headers, row))
-        row_role = str(row_dict.get("Role", "")).strip().lower()
-        if row_role == role.strip().lower() or (role.lower() in ("admin", "manager") and row_role in ("admin", "manager")):
-            wb.close()
-            return {
-                "role": str(row_dict.get("Role", "")).strip(),
-                "employee_id": str(row_dict.get("Employee_ID", "")).strip(),
-                "password": str(row_dict.get("Password", "")).strip(),
-                "auth_code": str(row_dict.get("Auth_Code", "111111")).strip(),
-            }
-
-    wb.close()
-    return {"role": "Admin", "employee_id": "332", "password": "test@1234", "auth_code": "111111"}
+    """Dynamically read credentials from Swarajya-test-data.xlsx banner/sheets or environment."""
+    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
 
 
-def read_test_cases(sheet_name: str) -> List[Dict[str, Any]]:
-    """Read test case rows from specified sheet in Create-Consultant-Management.xlsx."""
-    file_path = get_test_cases_filepath()
-    wb = openpyxl.load_workbook(file_path, data_only=True)
-
-    if sheet_name not in wb.sheetnames:
-        wb.close()
-        raise ValueError(f"Sheet '{sheet_name}' not found in {file_path}. Available: {wb.sheetnames}")
-
-    ws = wb[sheet_name]
-    headers = [cell.value for cell in ws[1]]
-
-    test_cases = []
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if not any(row):
-            continue
-        row_dict = dict(zip(headers, row))
-        tc_id = row_dict.get("Test Case ID")
-        if tc_id and str(tc_id).strip().startswith("TC_CONSULTANT"):
-            row_dict["_sheet"] = sheet_name
-            if "Test Steps" in row_dict and "Steps" not in row_dict:
-                row_dict["Steps"] = row_dict["Test Steps"]
-            test_cases.append(row_dict)
-
-    wb.close()
-    logger.info("Loaded %d test cases from '%s'", len(test_cases), sheet_name)
-    return test_cases
+def read_test_cases(sheet_name: str = "createconsultant_mgmt") -> List[Dict[str, Any]]:
+    """Read test case rows merged with input test data from Swarajya-test-cases/data workbooks."""
+    filter_type = None
+    sn_upper = str(sheet_name).upper()
+    if "POS" in sn_upper:
+        filter_type = "POS"
+    elif "NEG" in sn_upper:
+        filter_type = "NEG"
+    cases = load_cases_and_data(MODULE_KEY, filter_type=filter_type)
+    for tc in cases:
+        if "_sheet" not in tc:
+            tc["_sheet"] = SHEET_NAME
+    return cases
 
 
 def is_ui_case(tc: Dict[str, Any]) -> bool:
-    """Check if test case execution type is UI."""
+    """Check if test case is an active UI test case."""
     exec_type = str(tc.get("Execution Type", "UI")).strip().upper()
-    return "API" not in exec_type
-
-
-def build_automation_id(tc_id: str) -> str:
-    """Generate automation script ID from test case ID (e.g. TC_CONSULTANT_POS_01 -> AUT_CONSULTANT_POS_01)."""
-    return tc_id.replace("TC_", "AUT_")
+    auto_status = str(tc.get("Automation Status", "Automated")).strip().lower()
+    return exec_type == "UI" and auto_status not in ("excluded", "not automated", "manual", "deferred")
 
 
 def update_test_result(
@@ -98,38 +67,6 @@ def update_test_result(
     status: str,
     error_message: Optional[str] = None,
     execution_time: Optional[float] = None,
-):
-    """Write test execution result back to Create-Consultant-Management.xlsx."""
-    file_path = get_test_cases_filepath()
-    for attempt in range(3):
-        try:
-            wb = openpyxl.load_workbook(file_path)
-            for sheet_name in ["Positive_Tests", "Negative_Tests"]:
-                if sheet_name not in wb.sheetnames:
-                    continue
-                ws = wb[sheet_name]
-                headers = [cell.value for cell in ws[1]]
-                id_col = headers.index("Test Case ID") + 1 if "Test Case ID" in headers else 1
-
-                for row_idx in range(2, ws.max_row + 1):
-                    cell_val = ws.cell(row=row_idx, column=id_col).value
-                    if cell_val and str(cell_val).strip() == tc_id.strip():
-                        def set_col(col_name, val):
-                            if col_name in headers:
-                                c = headers.index(col_name) + 1
-                                ws.cell(row=row_idx, column=c, value=val)
-
-                        set_col("Status", status)
-                        set_col("Test Status", status)
-                        set_col("Automation Status", "Automated")
-                        set_col("Auto Script ID", build_automation_id(tc_id))
-                        set_col("Remarks", error_message or "Execution Completed Successfully")
-                        if execution_time is not None:
-                            set_col("Execution Time (s)", round(execution_time, 2))
-                        wb.save(file_path)
-                        wb.close()
-                        return
-            wb.close()
-            return
-        except Exception:
-            time.sleep(0.5)
+) -> bool:
+    """Update test status in Swarajya-test-cases.xlsx."""
+    return _central_update_test_result(tc_id, status, error_message, SHEET_NAME)
