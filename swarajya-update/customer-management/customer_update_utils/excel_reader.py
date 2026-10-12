@@ -1,9 +1,14 @@
-import glob
+"""
+Excel reader and test data utility for Customer Update module.
+Loads test cases from shared/test_data/Swarajya-test-cases.xlsx [Sheet: updatecustomer_mgmt]
+and test data from shared/test_data/Swarajya-test-data.xlsx [Sheet: updatecustomer_mgmt].
+Zero hardcoding.
+"""
+
 import os
 import re
 import sys
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 _MODULE_ROOT = os.path.dirname(_DIR)
@@ -14,156 +19,49 @@ for _p in (_MODULE_ROOT, _UPDATE_ROOT, _WORKSPACE_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import openpyxl
-from openpyxl.styles import Font, PatternFill
-
+from shared.utils.excel_loader import (
+    build_automation_id,
+    load_cases_and_data,
+    read_base_url,
+    read_credentials as _central_read_credentials,
+    update_test_result as _central_update_test_result,
+)
 from shared.utils.logger import get_logger
+from shared.utils.paths import TEST_CASES_FILE
 
 log = get_logger("customer_excel_reader")
-TEST_DATA_DIR = os.path.join(_MODULE_ROOT, "test_data")
-DEFAULT_EXCEL_PATH = os.path.join(TEST_DATA_DIR, "Update-Customer-Management.xlsx")
-CREDENTIALS_PATH = os.path.join(TEST_DATA_DIR, "credentials.xlsx")
-
-_GREEN = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
-_RED = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
-_YELLOW = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+MODULE_KEY = "update_customer"
+SHEET_NAME = "updatecustomer_mgmt"
 
 
-def build_automation_id(tc_id: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", tc_id.strip()).strip("_")
-    cleaned = re.sub(r"^TC_", "", cleaned, flags=re.IGNORECASE)
-    return f"AUT_{cleaned.upper()}"
+def resolve_excel_path() -> str:
+    """Return central test cases workbook path."""
+    return TEST_CASES_FILE
 
 
-def resolve_excel_path() -> Optional[str]:
-    """Find test case workbook path from env, explicit default, or test_data discovery."""
-    custom_path = os.environ.get("CUSTOMER_UPDATE_WORKBOOK")
-    if custom_path and os.path.exists(custom_path):
-        return custom_path
-
-    if os.path.exists(DEFAULT_EXCEL_PATH):
-        return DEFAULT_EXCEL_PATH
-
-    # Search for any candidate Excel workbook in test_data
-    if os.path.exists(TEST_DATA_DIR):
-        candidates = [
-            f for f in glob.glob(os.path.join(TEST_DATA_DIR, "*.xlsx"))
-            if not os.path.basename(f).startswith("~$") and "credential" not in os.path.basename(f).lower()
-        ]
-        if candidates:
-            return candidates[0]
-
-    return None
-
-
-def load_test_cases(sheet_name: str) -> List[Dict]:
+def load_test_cases(sheet_name: str = "updatecustomer_mgmt") -> List[Dict[str, Any]]:
     """
-    Read all test case rows from given sheet in Excel workbook.
-    Returns empty list gracefully if workbook or sheet is not yet present.
+    Read all test case rows for customer update module.
+    Automatically filters POS/NEG if specified in sheet_name.
     """
-    file_path = resolve_excel_path()
-    if not file_path or not os.path.exists(file_path):
-        log.info(f"No test case Excel file found in {TEST_DATA_DIR}. Awaiting user-added workbook.")
-        return []
+    filter_type = None
+    sn_upper = str(sheet_name).upper()
+    if "NEG" in sn_upper:
+        filter_type = "NEG"
+    elif "POS" in sn_upper:
+        filter_type = "POS"
 
-    try:
-        wb = openpyxl.load_workbook(file_path, data_only=True, read_only=True)
-    except Exception as exc:
-        log.warning(f"Could not open workbook {file_path}: {exc}")
-        return []
-
-    target_sheet = None
-    if sheet_name in wb.sheetnames:
-        target_sheet = sheet_name
-    else:
-        # Case-insensitive or substring match
-        for s in wb.sheetnames:
-            if sheet_name.lower() in s.lower() or s.lower() in sheet_name.lower():
-                target_sheet = s
-                break
-
-    if not target_sheet:
-        log.info(f"Sheet '{sheet_name}' not found in {file_path} (Available: {wb.sheetnames})")
-        wb.close()
-        return []
-
-    ws = wb[target_sheet]
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-
-    if not rows:
-        return []
-
-    headers = [str(cell).strip() if cell is not None else f"col_{idx}" for idx, cell in enumerate(rows[0])]
-    cases = []
-    for row_idx, row in enumerate(rows[1:], start=2):
-        if not any(row):
-            continue
-        row_dict = dict(zip(headers, row))
-        tc_id = str(row_dict.get("Test Case ID", "") or "").strip()
-        if not tc_id or tc_id.lower() == "none":
-            continue
-        row_dict["_row_idx"] = row_idx
-        row_dict["_sheet"] = target_sheet
-        cases.append(row_dict)
-
-    log.info(f"Loaded {len(cases)} test cases from '{target_sheet}' ({os.path.basename(file_path)})")
+    cases = load_cases_and_data(MODULE_KEY, filter_type=filter_type)
+    for tc in cases:
+        if "_sheet" not in tc:
+            tc["_sheet"] = SHEET_NAME
+    log.info(f"Loaded {len(cases)} test cases for '{sheet_name}' from central shared workbooks")
     return cases
 
 
 def read_credentials(role: str = "Admin") -> Dict[str, str]:
-    """Read user credentials from credentials.xlsx."""
-    candidates = [
-        CREDENTIALS_PATH,
-        os.path.join(_MODULE_ROOT, "..", "employee-management", "test_data", "credentials.xlsx"),
-        os.path.join(_MODULE_ROOT, "..", "..", "swarajya-create", "customer-management", "test_data", "credentials.xlsx"),
-    ]
-
-    target_path = next((p for p in candidates if os.path.exists(p)), None)
-    if not target_path:
-        return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
-
-    try:
-        wb = openpyxl.load_workbook(target_path, data_only=True, read_only=True)
-        ws = wb.active
-        rows = list(ws.iter_rows(values_only=True))
-        wb.close()
-
-        if not rows or len(rows) < 2:
-            return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
-
-        headers = [str(h or "").strip().lower() for h in rows[0]]
-        role_idx = headers.index("role") if "role" in headers else 0
-        id_idx = next((i for i, h in enumerate(headers) if "id" in h), 1)
-        pwd_idx = next((i for i, h in enumerate(headers) if "pass" in h), 2)
-        code_idx = next((i for i, h in enumerate(headers) if "code" in h), 3)
-
-        target_role = role.strip().upper()
-        fallback_row = None
-        for r in rows[1:]:
-            if not r or not any(r):
-                continue
-            if fallback_row is None:
-                fallback_row = r
-            if str(r[role_idx] or "").strip().upper() == target_role:
-                return {
-                    "role": str(r[role_idx] or ""),
-                    "employee_id": str(r[id_idx] or "").strip(),
-                    "password": str(r[pwd_idx] or "").strip(),
-                    "auth_code": str(r[code_idx] or "").strip(),
-                }
-
-        if fallback_row:
-            return {
-                "role": str(fallback_row[role_idx] or ""),
-                "employee_id": str(fallback_row[id_idx] or "").strip(),
-                "password": str(fallback_row[pwd_idx] or "").strip(),
-                "auth_code": str(fallback_row[code_idx] or "").strip(),
-            }
-    except Exception as exc:
-        log.warning(f"Could not read credentials from {target_path}: {exc}")
-
-    return {"employee_id": "332", "password": "test@1234", "auth_code": "111111"}
+    """Dynamically read credentials from shared test data workbooks or environment."""
+    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
 
 
 def update_test_result(
@@ -172,51 +70,17 @@ def update_test_result(
     remarks: str = "",
     duration_s: float = 0.0,
     sheet_name: Optional[str] = None,
-):
-    """Update execution results in the Excel workbook."""
-    file_path = resolve_excel_path()
-    if not file_path or not os.path.exists(file_path):
-        return
+) -> bool:
+    """Update execution results in the central test cases workbook."""
+    return _central_update_test_result(
+        tc_id=tc_id,
+        status=status,
+        remarks=remarks,
+        duration_s=duration_s,
+        module_key=MODULE_KEY,
+    )
 
-    try:
-        wb = openpyxl.load_workbook(file_path)
-        sheets_to_search = [wb[sheet_name]] if (sheet_name and sheet_name in wb.sheetnames) else wb.worksheets
 
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        clean_status = status.upper().strip()
-        fill = _GREEN if clean_status == "PASS" else _RED if clean_status == "FAIL" else _YELLOW
-
-        for ws in sheets_to_search:
-            headers = [str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]]
-            if "Test Case ID" not in headers:
-                continue
-
-            tc_col = headers.index("Test Case ID") + 1
-            status_col = headers.index("Test Status") + 1 if "Test Status" in headers else None
-            auto_id_col = headers.index("Auto Script ID") + 1 if "Auto Script ID" in headers else None
-            auto_stat_col = headers.index("Automation Status") + 1 if "Automation Status" in headers else None
-            time_col = headers.index("Execution_Timestamp") + 1 if "Execution_Timestamp" in headers else None
-            remarks_col = headers.index("Remarks") + 1 if "Remarks" in headers else None
-
-            for row in range(2, ws.max_row + 1):
-                val = ws.cell(row=row, column=tc_col).value
-                if val and str(val).strip() == tc_id.strip():
-                    if status_col:
-                        cell = ws.cell(row=row, column=status_col, value=clean_status)
-                        cell.fill = fill
-                        cell.font = Font(bold=True)
-                    if auto_id_col:
-                        ws.cell(row=row, column=auto_id_col, value=build_automation_id(tc_id))
-                    if auto_stat_col:
-                        ws.cell(row=row, column=auto_stat_col, value="Automated")
-                    if time_col:
-                        ws.cell(row=row, column=time_col, value=now_str)
-                    if remarks_col and remarks:
-                        rem_val = f"{remarks[:250]} ({duration_s:.1f}s)" if duration_s else remarks[:250]
-                        ws.cell(row=row, column=remarks_col, value=rem_val)
-                    break
-
-        wb.save(file_path)
-        wb.close()
-    except Exception as exc:
-        log.warning(f"Could not update Excel for {tc_id}: {exc}")
+def get_base_url() -> str:
+    """Fetch base URL dynamically."""
+    return read_base_url(SHEET_NAME)
