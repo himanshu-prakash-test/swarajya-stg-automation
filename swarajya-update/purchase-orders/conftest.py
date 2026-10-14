@@ -1,9 +1,10 @@
 import logging
 import os
 import sys
-import shutil
+import re
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
+
 _MODULE_ROOT = os.path.dirname(os.path.abspath(__file__))
 _UPDATE_ROOT = os.path.dirname(_MODULE_ROOT)
 _WORKSPACE_ROOT = os.path.dirname(_UPDATE_ROOT)
@@ -11,15 +12,19 @@ for _p in (_MODULE_ROOT, _UPDATE_ROOT, _WORKSPACE_ROOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import re
 import pytest
 from playwright.sync_api import sync_playwright
 from shared.reporter import PytestReporterPlugin
 from shared.utils.popup import show_summary_popup
-
 from shared.pages.login_page import LoginPage
-from po_update_utils.excel_reader import build_automation_id, read_credentials, update_test_result
 from shared.utils.paths import AUTH_STATE_FILE
+from po_update_utils.excel_reader import (
+    build_automation_id,
+    read_base_url,
+    read_credentials,
+    update_test_result,
+    SHEET_NAME,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,24 +36,33 @@ log = logging.getLogger("po_conftest")
 SCREENSHOTS_DIR = os.path.join(_MODULE_ROOT, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
-_session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now(), "failed_tests": []}
-_html_reporter = PytestReporterPlugin(suite_title="Purchase Order Update Management")
-
 
 def pytest_addoption(parser):
     """Add CLI flags for headed mode and slow motion."""
-    try:
-        parser.addoption("--headed", action="store_true", default=False, help="Run tests in visible headed browser")
-    except Exception:
-        pass
-    try:
-        parser.addoption("--headless", action="store_true", default=False, help="Run tests headless")
-    except Exception:
-        pass
-    try:
-        parser.addoption("--slowmo", type=int, default=0, help="Slow down Playwright actions by milliseconds")
-    except Exception:
-        pass
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        try:
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode")
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless")
+        except ValueError:
+            pass
+    if "--slowmo" not in existing:
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slow down Playwright actions (ms)")
+        except ValueError:
+            pass
 
 
 def is_headless(config) -> bool:
@@ -63,29 +77,65 @@ def is_headless(config) -> bool:
 
 
 @pytest.fixture(scope="session")
+def headed(request) -> bool:
+    return not is_headless(request.config)
+
+
+@pytest.fixture(scope="session")
+def slowmo(request) -> int:
+    try:
+        return request.config.getoption("--slowmo") or 0
+    except Exception:
+        return 0
+
+
+@pytest.fixture(scope="session")
 def playwright_instance():
     with sync_playwright() as p:
         yield p
 
 
 @pytest.fixture(scope="session")
-def browser(request, playwright_instance):
-    """Launch shared Playwright browser instance."""
-    headless = is_headless(request.config)
-    slow_mo = request.config.getoption("--slowmo", default=0)
-
-    browser = playwright_instance.chromium.launch(
-        headless=headless,
-        slow_mo=slow_mo,
+def browser(playwright_instance, headed, slowmo):
+    log.info(f"Launching Chromium browser (headless={not headed}, slow_mo={slowmo})")
+    br = playwright_instance.chromium.launch(
+        headless=not headed,
+        slow_mo=slowmo,
         args=["--start-maximized", "--disable-dev-shm-usage"],
     )
-    yield browser
-    browser.close()
+    yield br
+    br.close()
+
+
+def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
+    """Poll staging URL dynamically to confirm server is healthy and not 503."""
+    url = f"{read_base_url()}/"
+    for attempt in range(max_retries):
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            content = page.content().lower()
+            if "service unavailable" not in content and "503" not in content:
+                return True
+        except Exception:
+            pass
+        page.wait_for_timeout(delay_s * 1000)
+    return False
 
 
 def _is_valid_auth_state(path: Optional[str]) -> bool:
+    """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
     if not path or not os.path.exists(path):
         return False
+    ss_file = path.replace(".json", "_session.json")
+    if os.path.exists(ss_file):
+        try:
+            import json
+            with open(ss_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data and any("token" in k.lower() or "isloggedin" in k.lower() or "currentuser" in k.lower() for k in data.keys()):
+                return True
+        except Exception:
+            pass
     try:
         import json
         with open(path, "r", encoding="utf-8") as f:
@@ -101,39 +151,57 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
 
 @pytest.fixture(scope="session")
 def session_storage_state(browser):
-    """Authenticate and cache auth_state.json for fast session reuse."""
+    """Authenticate as Admin once dynamically and cache auth_state.json."""
     storage_path = AUTH_STATE_FILE
-
     if _is_valid_auth_state(storage_path):
         return storage_path
 
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
+    _wait_until_server_healthy(page)
+
     login_page = LoginPage(page)
-    success = login_page.login(role="Admin")
+    success = login_page.login(role="Admin", sheet_name=SHEET_NAME)
     if success:
-        os.makedirs(os.path.dirname(storage_path), exist_ok=True)
+        page.wait_for_timeout(1000)
         context.storage_state(path=storage_path)
         log.info(f"Saved authenticated session state to {storage_path}")
+    else:
+        log.warning("Initial login failed; tests will authenticate per-test")
 
     context.close()
-    return storage_path if os.path.exists(storage_path) and _is_valid_auth_state(storage_path) else None
+    return storage_path if _is_valid_auth_state(storage_path) else None
 
 
 @pytest.fixture(scope="function")
 def authenticated_page(browser, session_storage_state):
-    """Provide an authenticated Playwright page context."""
-    kwargs = {"viewport": {"width": 1920, "height": 1080}}
-    if session_storage_state and os.path.exists(session_storage_state):
-        kwargs["storage_state"] = session_storage_state
-
-    context = browser.new_context(**kwargs)
+    """Provides an authenticated Playwright page fixture with auto-login fallback."""
+    storage = session_storage_state if _is_valid_auth_state(session_storage_state) else None
+    context = browser.new_context(
+        viewport={"width": 1920, "height": 1080},
+        storage_state=storage,
+    )
     page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
 
-    if not session_storage_state or not os.path.exists(session_storage_state):
+    # Pre-inject saved sessionStorage
+    LoginPage.inject_session_storage(page)
+
+    # Health check
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
+    # Verify session is alive
+    base_url = read_base_url()
+    try:
+        page.goto(f"{base_url}/default", timeout=12000, wait_until="domcontentloaded")
+        if "login" in page.url.lower() or "tfa" in page.url.lower():
+            login_page = LoginPage(page)
+            login_page.login(role="Admin", sheet_name=SHEET_NAME)
+    except Exception:
         login_page = LoginPage(page)
-        login_page.login(role="Admin")
+        login_page.login(role="Admin", sheet_name=SHEET_NAME)
 
     yield page
     context.close()
@@ -141,133 +209,223 @@ def authenticated_page(browser, session_storage_state):
 
 @pytest.fixture(scope="function")
 def unauthenticated_page(browser):
-    """Provide a fresh, clean Playwright page."""
+    """Provides a fresh unauthenticated Playwright page fixture."""
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
+
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
     yield page
     context.close()
+
+
+@pytest.fixture
+def admin_creds():
+    """Dynamically read Admin credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Admin")
+
+
+@pytest.fixture
+def employee_creds():
+    """Dynamically read Employee credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Employee")
+
+
+@pytest.fixture
+def base_url():
+    """Dynamically read Base URL from Swarajya-test-data.xlsx."""
+    return read_base_url()
+
+
+# ----------------- Reporting & Metrics Tracking -----------------
+
+_metrics = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
+_failures: List[str] = []
+_recorded_nodes = set()
+_SESSION_START = None
+_html_reporter = PytestReporterPlugin(suite_title="Purchase Order Update Management")
+
+
+def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 80):
+    """Automatically purge screenshots older than max_age_hours or if count exceeds max_files."""
+    if not os.path.exists(directory):
+        return
+    import time
+    now = time.time()
+    cutoff = now - (max_age_hours * 3600)
+    files = []
+    for f in os.listdir(directory):
+        if f.lower().endswith(".png"):
+            full_path = os.path.join(directory, f)
+            try:
+                mtime = os.path.getmtime(full_path)
+                if mtime < cutoff:
+                    os.remove(full_path)
+                else:
+                    files.append((mtime, full_path))
+            except Exception:
+                pass
+    if len(files) > max_files:
+        files.sort(key=lambda x: x[0])
+        for _, old_path in files[:len(files) - max_files]:
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
+
+
+def _extract_tc_id(item) -> str:
+    """Extract standard test case ID from markers, params, or nodeid."""
+    for marker in item.iter_markers(name="tc_id"):
+        if marker.args:
+            return str(marker.args[0])
+    if hasattr(item, "callspec"):
+        for param_val in item.callspec.params.values():
+            if isinstance(param_val, dict) and "Test Case ID" in param_val:
+                return str(param_val["Test Case ID"])
+    m = re.search(r"(TC_PO_[A-Za-z0-9_]+)", item.name) or re.search(r"(TC_PO_[A-Za-z0-9_]+)", getattr(item, "nodeid", ""))
+    if m:
+        return m.group(1)
+    if "admin_login" in item.name or "login" in item.name:
+        return "TC_PO_AUTH_01"
+    if "navigation_path" in item.name:
+        return "TC_PO_NAV_01"
+    if "form_controls" in item.name:
+        return "TC_PO_FORM_01"
+    return re.sub(r"[^\w\-]", "_", item.name)[:50]
+
+
+def pytest_sessionstart(session):
+    global _SESSION_START
+    _SESSION_START = datetime.now()
+    _clean_old_screenshots(SCREENSHOTS_DIR, max_age_hours=24, max_files=80)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
 
-    if report.when != "call":
-        return
+    if report.when == "call" or (report.when == "setup" and (report.skipped or report.failed)):
+        if getattr(report, "nodeid", "") in _recorded_nodes:
+            return
+        _recorded_nodes.add(report.nodeid)
 
-    tc_id = "UNKNOWN"
-    for marker in item.iter_markers(name="tc_id"):
-        if marker.args:
-            tc_id = marker.args[0]
-            break
+        tc_id = _extract_tc_id(item) or "UNKNOWN"
+        page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
+        status = "PASS" if report.passed else "FAIL" if report.failed else "SKIPPED"
+        auto_id = build_automation_id(tc_id) if tc_id != "UNKNOWN" else ""
+        duration = getattr(report, "duration", 0.0)
 
-    if tc_id == "UNKNOWN" and hasattr(item, "callspec"):
-        for param_val in item.callspec.params.values():
-            if isinstance(param_val, dict) and "Test Case ID" in param_val:
-                tc_id = param_val["Test Case ID"]
-                break
+        if status == "PASS":
+            _metrics["passed"] += 1
+            is_pos = "pos" in report.nodeid.lower() or "positive" in report.nodeid.lower()
+            remarks = (
+                "Validation successful: Purchase Order updated and verified in listing table."
+                if is_pos
+                else "Validation successful: Form rejected invalid update input."
+            )
+        elif status == "FAIL":
+            _metrics["failed"] += 1
+            remarks = str(report.longrepr).splitlines()[-1].strip()[:240] if report.longrepr else "Test Assertion Error"
+            _failures.append(f"{tc_id}: {remarks}")
+        else:
+            _metrics["skipped"] += 1
+            remarks = "Skipped: Scenario excluded or pre-requisite not met"
+        _metrics["total"] += 1
 
-    if tc_id == "UNKNOWN":
-        m = re.search(r"TC_PO_(?:POS|NEG|AUTH|NAV|FORM)_\d+", item.name)
-        if m:
-            tc_id = m.group(0)
-
-    page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
-    scr = None
-
-    if report.passed:
-        _session_stats["passed"] += 1
-        if page:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            clean_name = tc_id if tc_id != "UNKNOWN" else item.name.replace("[", "_").replace("]", "_")
-            scr = os.path.join(SCREENSHOTS_DIR, f"PASS_{clean_name}_{ts}.png")
+        # Capture 1-to-1 screenshot on PASS/FAIL
+        shot_path = None
+        if page and status in ("PASS", "FAIL"):
             try:
-                page.screenshot(path=scr)
-            except Exception as e:
-                log.warning(f"Could not capture pass screenshot: {e}")
-                scr = None
-        remarks = "Execution Passed Successfully"
+                label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                shot_filename = f"{status}_{label}__{ts}.png"
+                shot_path = os.path.join(SCREENSHOTS_DIR, shot_filename)
+                page.screenshot(path=shot_path, timeout=5000)
+                log.info(f"Captured test screenshot ({status}): {shot_filename}")
+            except Exception as exc:
+                log.warning(f"Could not capture screenshot for {item.name}: {exc}")
+                shot_path = None
+
         if tc_id != "UNKNOWN":
-            update_test_result(tc_id, "PASS", remarks, report.duration)
-        _html_reporter.record_test(
-            item=item,
-            report=report,
-            status="PASS",
-            remarks=remarks,
-            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
-            screenshot_path=scr,
-            duration=report.duration,
-        )
-    elif report.failed:
-        _session_stats["failed"] += 1
-        fail_label = tc_id if tc_id != "UNKNOWN" else item.name
-        _session_stats["failed_tests"].append(fail_label)
-        if page:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            clean_name = item.name.replace("[", "_").replace("]", "_")
-            scr = os.path.join(SCREENSHOTS_DIR, f"FAIL_{clean_name}_{ts}.png")
             try:
-                page.screenshot(path=scr, full_page=True)
-                log.info(f"Failure screenshot captured: {scr}")
-            except Exception as e:
-                log.warning(f"Could not capture screenshot: {e}")
-                scr = None
-        err_msg = str(report.longrepr) if report.longrepr else "Test Assertion / Execution Failure"
-        remarks = err_msg[:250]
-        if tc_id != "UNKNOWN":
-            update_test_result(tc_id, "FAIL", remarks, report.duration)
+                update_test_result(
+                    tc_id=tc_id,
+                    status=status,
+                    remarks=remarks,
+                    duration_s=duration,
+                    sheet_name=SHEET_NAME,
+                )
+            except Exception as exc:
+                log.warning(f"Excel result update failed for {tc_id}: {exc}")
+
         _html_reporter.record_test(
             item=item,
             report=report,
-            status="FAIL",
+            status=status,
             remarks=remarks,
-            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
-            screenshot_path=scr,
-            duration=report.duration,
-        )
-    elif report.skipped:
-        _session_stats["skipped"] += 1
-        remarks = "Scenario Skipped"
-        if tc_id != "UNKNOWN":
-            update_test_result(tc_id, "SKIPPED", remarks, report.duration)
-        _html_reporter.record_test(
-            item=item,
-            report=report,
-            status="SKIPPED",
-            remarks=remarks,
-            auto_id=build_automation_id(tc_id) if tc_id != "UNKNOWN" else "",
-            duration=report.duration,
+            auto_id=auto_id,
+            screenshot_path=shot_path,
+            duration=duration,
         )
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Generate HTML report and display desktop summary popup dialog."""
     if getattr(session.config.option, "collectonly", False):
         return
 
-    dur = (datetime.now() - _session_stats["start_time"]).total_seconds()
-    dur_str = f"{int(dur // 60)}m {int(dur % 60)}s"
-    total = _session_stats["passed"] + _session_stats["failed"] + _session_stats["skipped"]
+    elapsed = str(datetime.now() - _SESSION_START).split(".")[0] if _SESSION_START else "0:00:00"
+    passed = _metrics["passed"]
+    failed = _metrics["failed"]
+    skipped = _metrics["skipped"]
+    total = _metrics["total"]
+    tag = "ALL PASSED" if failed == 0 and total > 0 else f"{failed} FAILED" if failed > 0 else "SESSION COMPLETE"
+
+    print(f"\n{'=' * 60}")
+    print(f"  SWARAJYA PURCHASE ORDER UPDATE EXCEL AUTOMATION - {tag}")
+    print(f"{'=' * 60}")
+    print(f"  Total : {total:<4} Passed : {passed:<4} Failed : {failed:<4} Skipped : {skipped}")
+    print(f"  Time  : {elapsed}")
+    if _failures:
+        print("  Failed / observed defects:")
+        for failure in _failures[:10]:
+            print(f"    - {failure}")
+    print(f"{'=' * 60}\n")
+
+    if total == 0:
+        return
 
     report_path = None
-    if total > 0:
-        try:
-            report_path = _html_reporter.finalize_report(filename_prefix="po_update")
-        except Exception as exc:
-            log.warning(f"Could not finalize HTML report: {exc}")
-
     try:
-        if os.environ.get("PYTEST_NO_POPUP") != "1":
-            show_summary_popup(
-                total=total,
-                passed=_session_stats["passed"],
-                failed=_session_stats["failed"],
-                skipped=_session_stats["skipped"],
-                duration_str=dur_str,
-                failed_tests=_session_stats["failed_tests"],
-                suite_title="Purchase Order Update Management",
-                report_path=report_path,
-            )
-    except Exception as e:
-        log.warning(f"Could not display summary popup: {e}")
+        report_path = _html_reporter.finalize_report(filename_prefix="po_update")
+    except Exception as exc:
+        log.warning(f"Could not finalize HTML report: {exc}")
+
+    # Open report only if explicitly requested via OPEN_REPORT env var
+    if report_path and os.path.exists(report_path) and os.environ.get("OPEN_REPORT") == "1":
+        try:
+            from shared.reporter.html_reporter import PlaywrightHTMLReporter
+            PlaywrightHTMLReporter.open_in_browser(report_path)
+            log.info(f"Opened HTML report in default browser: {report_path}")
+        except Exception as exc:
+            log.warning(f"Could not open HTML report: {exc}")
+
+    # Display styled execution summary desktop popup
+    try:
+        show_summary_popup(
+            total=total,
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=elapsed,
+            failures=_failures,
+            report_path=report_path,
+            suite_title="Purchase Order Update Management",
+        )
+    except Exception as exc:
+        log.warning(f"Popup display note: {exc}")
+

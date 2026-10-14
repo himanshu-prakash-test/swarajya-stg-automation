@@ -3,7 +3,7 @@
 import pytest
 from shared.pages.login_page import LoginPage
 from po_update_pages.po_update_page import POUpdatePage
-from po_update_utils.excel_reader import read_credentials
+from po_update_utils.excel_reader import read_credentials, SHEET_NAME
 
 
 @pytest.mark.login
@@ -27,8 +27,9 @@ class TestPurchaseOrderLoginAndNavFlow:
         success = login_page.login(
             employee_id=creds["employee_id"],
             password=creds["password"],
-            auth_code=creds.get("auth_code", "111111"),
+            auth_code=creds.get("auth_code"),
             role=creds.get("role", "Admin"),
+            sheet_name=SHEET_NAME,
         )
         assert success, (
             f"Expected Result NOT satisfied: '{expected_result}'. "

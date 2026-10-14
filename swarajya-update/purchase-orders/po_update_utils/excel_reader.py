@@ -2,7 +2,7 @@
 Excel reader and test data utility for Purchase Order Update module.
 Loads test cases from shared/test_data/Swarajya-test-cases.xlsx [Sheet: updatepurchase-order]
 and test data from shared/test_data/Swarajya-test-data.xlsx [Sheet: updatepurchase-order].
-Zero hardcoding.
+Strictly zero hardcoded values.
 """
 
 import os
@@ -22,9 +22,10 @@ for _p in (_MODULE_ROOT, _UPDATE_ROOT, _WORKSPACE_ROOT):
 from shared.utils.excel_loader import (
     build_automation_id,
     load_cases_and_data,
-    read_base_url,
+    read_base_url as _central_read_base_url,
     read_credentials as _central_read_credentials,
     update_test_result as _central_update_test_result,
+    read_data_sheet,
 )
 from shared.utils.logger import get_logger
 from shared.utils.paths import TEST_CASES_FILE
@@ -39,7 +40,20 @@ def resolve_excel_path() -> str:
     return TEST_CASES_FILE
 
 
-def load_test_cases(sheet_name: str = "updatepurchase-order") -> List[Dict[str, Any]]:
+def read_base_url() -> str:
+    """Dynamically read the staging Base URL from Swarajya-test-data.xlsx."""
+    return _central_read_base_url(SHEET_NAME)
+
+
+get_base_url = read_base_url
+
+
+def read_credentials(role: str = "Admin") -> Dict[str, str]:
+    """Dynamically read credentials from shared test data workbooks or environment."""
+    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
+
+
+def load_test_cases(sheet_name: str = SHEET_NAME) -> List[Dict[str, Any]]:
     """
     Read all test case rows for purchase order update module.
     Automatically filters POS/NEG if specified in sheet_name.
@@ -59,30 +73,57 @@ def load_test_cases(sheet_name: str = "updatepurchase-order") -> List[Dict[str, 
     return cases
 
 
-def read_credentials(role: str = "Admin") -> Dict[str, str]:
-    """Dynamically read credentials from shared test data workbooks or environment."""
-    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
+read_test_cases = load_test_cases
+
+
+def is_ui_case(tc: Dict[str, Any]) -> bool:
+    """Check if test case is an active UI test case."""
+    exec_type = str(tc.get("Execution Type", "UI")).strip().upper()
+    auto_status = str(tc.get("Automation Status", "Automated")).strip().lower()
+    return exec_type in ("UI", "AUTOMATED", "") and auto_status not in ("excluded", "not automated", "manual", "deferred")
+
+
+def get_baseline_po() -> Dict[str, Any]:
+    """Fetch baseline valid purchase order test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        data_map = read_data_sheet(SHEET_NAME)
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and (row.get("Customer Name") or row.get("PO Reference No.")):
+                res = {}
+                for k, v in row.items():
+                    val = str(v).strip() if v is not None else ""
+                    if val.endswith(".0") and val[:-2].isdigit():
+                        val = val[:-2]
+                    res[k] = val
+                return res
+    except Exception as exc:
+        log.warning(f"Could not load baseline PO from Excel: {exc}")
+    return {}
 
 
 def update_test_result(
     tc_id: str,
     status: str = "Passed",
-    remarks: str = "",
+    remarks: Optional[str] = None,
+    error_message: Optional[str] = None,
+    duration_s: Optional[float] = None,
+    execution_time: Optional[float] = None,
     duration: Optional[float] = None,
     file_path: Optional[str] = None,
-    sheet_name: Optional[str] = None,
+    sheet_name: str = SHEET_NAME,
+    **kwargs,
 ) -> bool:
     """Update execution results in the central test cases workbook."""
+    rem = remarks or error_message or kwargs.get("remark") or ""
+    dur = duration_s or execution_time or duration
+    if dur:
+        rem = f"{rem} ({dur:.2f}s)" if rem else f"({dur:.2f}s)"
     return _central_update_test_result(
         tc_id=tc_id,
         status=status,
-        remarks=remarks,
-        duration=duration,
+        remarks=rem,
+        duration=dur,
         module_key=MODULE_KEY,
         sheet_name=sheet_name or SHEET_NAME,
     )
 
-
-def get_base_url() -> str:
-    """Fetch base URL dynamically."""
-    return read_base_url(SHEET_NAME)

@@ -2,16 +2,17 @@
 
 import pytest
 from po_update_pages.form_executor import POUpdateFormExecutor
-from po_update_utils.excel_reader import load_test_cases
+from po_update_utils.excel_reader import load_test_cases, is_ui_case
 
-positive_cases = load_test_cases("Positive_Tests") or load_test_cases("Update_Positive_Flows")
+positive_cases = [tc for tc in load_test_cases("Positive_Tests") if is_ui_case(tc)]
 
 if not positive_cases:
-    param_cases = [pytest.param(None, marks=pytest.mark.skip(reason="Awaiting test cases in Update-Purchase-Order.xlsx"))]
+    param_cases = [pytest.param(None, marks=pytest.mark.skip(reason="No positive UI test cases found in Swarajya-test-cases.xlsx"))]
     param_ids = ["NO_TEST_CASES_YET"]
 else:
     param_cases = positive_cases
     param_ids = [c.get("Test Case ID", f"TC_PO_POS_{i+1}") for i, c in enumerate(positive_cases)]
+
 
 
 @pytest.mark.positive
