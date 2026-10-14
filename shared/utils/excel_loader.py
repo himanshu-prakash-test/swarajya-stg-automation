@@ -64,6 +64,8 @@ MODULE_SHEET_MAP = {
     "create/emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "create/emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "createemp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
+    "create-emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
+    "create_emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     # Invoice
     "invoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
     "createinvoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
