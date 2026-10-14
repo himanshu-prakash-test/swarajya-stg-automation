@@ -18,9 +18,10 @@ for _p in (_WS_ROOT, _MODULE_ROOT):
 from shared.utils.excel_loader import (
     build_automation_id,
     load_cases_and_data,
-    read_base_url,
+    read_base_url as _central_read_base_url,
     read_credentials as _central_read_credentials,
     update_test_result as _central_update_test_result,
+    read_data_sheet,
 )
 from shared.utils.logger import get_logger
 
@@ -33,6 +34,11 @@ def get_test_cases_filepath() -> str:
     """Return path to Swarajya-test-cases.xlsx."""
     from shared.utils.paths import TEST_CASES_FILE
     return TEST_CASES_FILE
+
+
+def read_base_url() -> str:
+    """Dynamically read the staging Base URL from Swarajya-test-data.xlsx."""
+    return _central_read_base_url()
 
 
 def read_credentials(role: str = "Admin") -> Dict[str, str]:
@@ -62,11 +68,37 @@ def is_ui_case(tc: Dict[str, Any]) -> bool:
     return exec_type == "UI" and auto_status not in ("excluded", "not automated", "manual", "deferred")
 
 
+def get_baseline_vendor() -> Dict[str, str]:
+    """Fetch baseline valid vendor test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        data_map = read_data_sheet(SHEET_NAME)
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and (row.get("Vendor Name") or row.get("name")):
+                res = {}
+                for k, v in row.items():
+                    val = str(v).strip() if v is not None else ""
+                    if val.endswith(".0") and val[:-2].isdigit():
+                        val = val[:-2]
+                    res[k] = val
+                return res
+    except Exception as exc:
+        logger.warning(f"Could not load baseline vendor from Excel: {exc}")
+    return {}
+
+
 def update_test_result(
     tc_id: str,
     status: str,
+    remarks: Optional[str] = None,
     error_message: Optional[str] = None,
+    duration_s: Optional[float] = None,
     execution_time: Optional[float] = None,
+    sheet_name: str = SHEET_NAME,
+    **kwargs,
 ) -> bool:
     """Update test status in Swarajya-test-cases.xlsx."""
-    return _central_update_test_result(tc_id, status, error_message, SHEET_NAME)
+    rem = remarks or error_message or kwargs.get("remark") or ""
+    dur = duration_s or execution_time
+    if dur:
+        rem = f"{rem} ({dur:.2f}s)" if rem else f"({dur:.2f}s)"
+    return _central_update_test_result(tc_id, status, rem, sheet_name)
