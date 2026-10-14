@@ -1,6 +1,7 @@
 # 👥 Swarajya Customer Management Automation Suite
 
 End-to-end automated test suite for **Customer Management** in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), covering customer onboarding, form field validations, tax/GSTIN handling, and grid searches.
+Integrated with the centralized Excel test data architecture with **strictly zero hardcoded values**.
 
 ---
 
@@ -51,19 +52,12 @@ customer-management/
 │
 ├── customer_pages/                      # Page Object Model & Execution Layer
 │   ├── __init__.py                      # Package exports (CustomerPage, FormExecutor, LoginPage)
-│   ├── base_page.py                     # Inherited from shared.pages.base_page
 │   ├── customer_page.py                 # Customer listing, forms, modals, dropdowns, switches, search
-│   ├── form_executor.py                 # Data-driven test dispatcher & strict assertion engine
-│   └── login_page.py                    # 2FA-compliant authentication
+│   └── form_executor.py                 # Data-driven test dispatcher & assertion engine (Zero hardcoding)
 │
 ├── customer_utils/                      # Utilities & Data Parsers
 │   ├── __init__.py                      # Package exports
-│   └── excel_reader.py                  # Excel parser & live result reporter
-│
-├── test_data/                           # Test Data Workbooks
-│   ├── credentials.xlsx                 # Role-based credentials (Admin, Manager)
-│   ├── Create-Customer-Management.xlsx  # Master Positive (26) & Negative (8) test scenarios
-│   └── auth_state.json                  # Cached browser session state (auto-generated)
+│   └── excel_reader.py                  # Dynamic loader & test case writeback
 │
 ├── tests/                               # Pytest Test Suites
 │   ├── __init__.py
@@ -79,18 +73,15 @@ customer-management/
 
 ---
 
-## 🚀 Key Functional Capabilities Automated
+## 📊 Centralized Data Source & Excel Synchronization
 
-1. **Confirmation Snackbar / Modal Dialog Handling**:
-   - **Clicking 'Yes'**: Submits the customer record, automatically navigates to Customer Details (`/customerDetails`), executes a grid search for the customer name, and verifies that the new customer is visible in the table.
-   - **Clicking 'No'**: Cancels the confirmation prompt without submitting; asserts that the form state remains intact and verifies that the customer was not created in the database or table listing.
-2. **Dropdown Selection Validation**:
-   - **Country Dropdown (`TC_CUSTOMER_POS_24`)**: Verifies that the Country dropdown opens cleanly, lists available countries, and permits selection.
-   - **Currency Dropdown (`TC_CUSTOMER_POS_25`)**: Verifies that operational currencies (`INR`, `USD`, `EUR`) open cleanly and are selectable.
-3. **GST / IGST Toggle Switch Validation (`TC_CUSTOMER_POS_26`)**:
-   - Verifies that the "Is IGST Applicable?" slide toggle switch responds cleanly to toggle events (switches between enabled and disabled states).
-4. **Session Timeout & Security Negative Testing (`TC_CUSTOMER_NEG_08`)**:
-   - Simulates session expiration during customer creation and verifies that the application intercepts unauthorized submissions with redirection to authentication.
+- **Test Scenarios**: Sourced from `shared/test_data/Swarajya-test-cases.xlsx` [Sheet: `createcutomer-mgmt`].
+- **Input Test Data**: Sourced from `shared/test_data/Swarajya-test-data.xlsx` [Sheet: `createcustomer-mgmt`].
+- **Authentication Credentials & Base URL**: Dynamically loaded from header banner rows in `Swarajya-test-data.xlsx`.
+- **Live Excel Writeback**: Automatically syncs test status (`PASS`, `FAIL`, `SKIP`), `Automation Status`, and error remarks back to `Swarajya-test-cases.xlsx`.
+- **HTML Report Generation**: Finalized into `shared/reports/customer_mgmt_*.html`.
+- **Interactive Popup**: Styled desktop execution popup summarizing total, passed, failed, skipped, and direct report link without auto-opening the browser.
+- **1-to-1 Evidence Screenshots**: Automatically captures visual evidence on PASS and FAIL into `screenshots/` using `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.
 
 ---
 
@@ -119,11 +110,3 @@ pytest -m positive
 pytest -m negative
 ```
 
----
-
-## 📊 Reporting & Evidence
-
-- **HTML Reporter**: Integrated with `shared.reporter`, automatically generates standalone HTML reports in `shared/reports/latest_report.html`.
-- **Summary Popup**: Automatically displays a desktop notification summarizing test counts, pass/fail metrics, duration, and direct report links.
-- **Excel Synchronization**: Updates `Create-Customer-Management.xlsx` with test status, timestamp, and detailed remarks.
-- **1-to-1 Evidence Screenshots**: Automatically captures full-page (`full_page=True`) screenshot evidence into `screenshots/` **strictly immediately after the test case has executed** (on both PASS and FAIL events, never before). File format: `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.
