@@ -294,14 +294,14 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
-    # Auto-open HTML report in system default browser if not running in CI
-    if report_path and os.path.exists(report_path) and not os.environ.get("CI"):
+    # Open report only if explicitly requested via OPEN_REPORT env var
+    if report_path and os.path.exists(report_path) and os.environ.get("OPEN_REPORT") == "1":
         try:
             from shared.reporter.html_reporter import PlaywrightHTMLReporter
             PlaywrightHTMLReporter.open_in_browser(report_path)
             log.info(f"Opened HTML report in default browser: {report_path}")
         except Exception as exc:
-            log.warning(f"Could not auto-open HTML report: {exc}")
+            log.warning(f"Could not open HTML report: {exc}")
 
     show_summary_popup(
         total=total,
