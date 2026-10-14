@@ -382,7 +382,7 @@ def pytest_runtest_makereport(item, call):
     report = outcome.get_result()
     setattr(item, f"rep_{report.when}", report)
 
-    if report.when == "call" or (report.when == "setup" and report.skipped):
+    if report.when == "call" or (report.when == "setup" and (report.skipped or report.failed)):
         if report.nodeid in _recorded_nodes:
             return
         _recorded_nodes.add(report.nodeid)
@@ -467,24 +467,35 @@ def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
 
-    report_path = None
-    if total > 0:
-        try:
-            report_path = _html_reporter.finalize_report(filename_prefix="employee_mgmt")
-        except Exception as exc:
-            log.warning(f"Could not finalize HTML report: {exc}")
+    if total == 0:
+        return
 
-    if not is_headless(session.config) and os.environ.get("PYTEST_NO_POPUP") != "1" and not os.environ.get("CI"):
+    report_path = None
+    try:
+        report_path = _html_reporter.finalize_report(filename_prefix="employee_mgmt")
+    except Exception as exc:
+        log.warning(f"Could not finalize HTML report: {exc}")
+
+    # Auto-open HTML report in system default browser if not running in CI
+    if report_path and os.path.exists(report_path) and not os.environ.get("CI"):
         try:
-            show_summary_popup(
-                passed=passed,
-                failed=failed,
-                skipped=skipped,
-                total=total,
-                duration=elapsed,
-                failures=_failures,
-                report_path=report_path,
-                suite_title="Employee Management Create",
-            )
+            from shared.reporter.html_reporter import PlaywrightHTMLReporter
+            PlaywrightHTMLReporter.open_in_browser(report_path)
+            log.info(f"Opened HTML report in default browser: {report_path}")
         except Exception as exc:
-            log.warning(f"Popup display note: {exc}")
+            log.warning(f"Could not auto-open HTML report: {exc}")
+
+    # Display styled execution summary desktop popup
+    try:
+        show_summary_popup(
+            total=total,
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=elapsed,
+            failures=_failures,
+            report_path=report_path,
+            suite_title="Employee Management Create",
+        )
+    except Exception as exc:
+        log.warning(f"Popup display note: {exc}")
