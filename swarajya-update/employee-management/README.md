@@ -1,89 +1,99 @@
-# 📝 Swarajya Employee Update Automation Suite
+# 👥 Employee Update Management Automation Module
 
-Production-grade automated test suite for the **Employee Profile Update Operations** in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), powered by **Playwright (Python)** and **Pytest**.
+Automated test suite for **Employee Update** operations in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), integrated with centralized Excel test workbooks with **strictly zero hardcoded values** and **dynamic wait times**.
 
 ---
 
-## 🏛️ Module Architecture
+## 🧭 Navigation Workflow
+
+The Employee Update operation follows a standard lifecycle path from the portal dashboard:
+
+1. **Authentication / Default Landing**: User logs in with valid Admin credentials & OTP -> lands on [`/default`](https://swarajya-stg.corecotechnologies.com/default).
+2. **Employee Listing**: Navigates from landing screen -> [`/employeeList`](https://swarajya-stg.corecotechnologies.com/employeeList) via sidebar navigation or direct path.
+3. **Open Employee Profile**: On the listing table, clicks the profile action icon (`button[mattooltip='Profile']` / `i.icofont-user`) on the target employee's row -> opens the Employee Profile update view at [`/empProfile/<id>`](https://swarajya-stg.corecotechnologies.com/empProfile).
+
+---
+
+## 📋 Update Form Specification & Lifecycle Features
+
+| Field / Action Label | Form Control | Type | Constraints & Behaviors |
+| :--- | :--- | :--- | :--- |
+| **Employee ID \*** | `id` | Text Input | **Strictly Disabled / Read-only** (Immutable during edit) |
+| **First Name \*** | `emp_first_name` | Text Input | Mandatory. Letters, length limits, whitespace trimmed |
+| **Middle Name** | `emp_middle_name` | Text Input | Optional middle name |
+| **Last Name \*** | `emp_last_name` | Text Input | Mandatory. Supports valid hyphens and apostrophes |
+| **Gender \*** | `emp_gender` | Radio Button | Male (`value=1`) / Female (`value=0`) |
+| **Date of Birth \*** | `emp_dob` | Date Input | Mandatory. Date picker toggle, age validation |
+| **Official Email \*** | `emp_email` | Text Input | Mandatory. Valid email format, uniqueness check |
+| **Personal Email** | `emp_personal_email` | Text Input | Optional. Valid email format validation |
+| **Mobile Number \*** | `emp_mobile_number` | Text Input | Mandatory. Exactly 10 digits, numeric validation |
+| **Date of Joining \***| `emp_doj` | Date Input | Mandatory. Must be after DOB, future limit check |
+| **Marital Status** | `emp_maritalStatus`| Dropdown | `Married`, `Unmarried` options |
+| **Emergency Contact** | `emp_emergency_contact_name` | Text Input | Name of emergency contact person |
+| **Emergency Number** | `emp_emergency_contact_number` | Text Input | Exactly 10 digits numeric format |
+| **Correspondence Addr**| `emp_correspondance_address1` | Text Input | Address Line 1 |
+| **Address Line 2** | `emp_correspondance_address2` | Text Input | Address Line 2 |
+| **City** | `emp_correspondance_city` | Text Input | City of correspondence |
+| **PIN** | `emp_correspondance_pin` | Text Input | 6-digit postal code |
+| **Dietary Switches** | `Is Egg?`, `Is Non-Veg?` | Slide Toggle | Toggle ON/OFF state persistence |
+
+**Form Actions**:
+- **Save / Update** (`button[type='submit']`): Submits profile updates, validates fields, shows success confirmation.
+- **Cancel / Discard** (`button:has-text('Cancel')`): Reverts unsaved changes and retains current profile state.
+
+---
+
+## 📊 Centralized Data Source & Excel Synchronization
+
+- **Test Scenarios**: Sourced from `shared/test_data/Swarajya-test-cases.xlsx` [Sheet: `update/emp_mgmt` / `updateemp_mgmt`].
+- **Input Test Data**: Sourced from `shared/test_data/Swarajya-test-data.xlsx` [Sheet: `update/emp_mgmt` / `updateemp_mgmt`].
+- **Authentication Credentials & Base URL**: Dynamically loaded from header banner rows in `Swarajya-test-data.xlsx`.
+- **Live Excel Writeback**: Automatically syncs test status (`PASS`, `FAIL`, `SKIP`), `Automation Status`, and duration/remarks back to `Swarajya-test-cases.xlsx`.
+- **HTML Report Generation**: Finalized into `shared/reports/employee_update_*.html`.
+- **Desktop Execution Summary Popup**: Displays interactive results summary without unsolicited browser popups.
+- **1-to-1 Evidence Screenshots**: Automatically captures visual evidence on PASS and FAIL into `screenshots/` using `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.
+
+---
+
+## 🏛️ Directory Structure
 
 ```
-update/emp_mgmt/
-├── emp_update_pages/                    # Page Object Model (POM) Layer
+employee-management/
+├── emp_update_pages/          # Page Object Models & Form Executor (Zero Hardcoding)
 │   ├── __init__.py
-│   ├── base_page.py                     # Base wrapper with dynamic waits & tutorial dismissal
-│   ├── login_page.py                    # Session authentication, 2FA OTP, role-based login
-│   ├── employee_update_page.py          # Profile field mapping, dropdowns, radios, validations
-│   └── form_executor.py                 # Data-driven workflow engine for positive & negative updates
-│
-├── emp_update_utils/                    # Framework Utilities
+│   ├── form_executor.py
+│   └── employee_update_page.py
+├── emp_update_utils/          # Centralized Excel Parsers & Writeback
 │   ├── __init__.py
-│   ├── excel_reader.py                  # OpenPyXL test loader & real-time Excel reporting engine
-│   ├── logger.py                        # Standardized colored console & file logging
-│   └── popup.py                         # Desktop Tkinter execution summary popup
-│
-├── test_data/                           # Test Data & Session Cache
-│   ├── Swarajya-Update-Employee-test-cases.xlsx # Master Excel test suite (Positive & Negative sheets)
-│   ├── credentials.xlsx                 # Role-based credentials (HR / Admin)
-│   └── auth_state.json                  # Cached Playwright browser authentication state
-│
-├── tests/                               # Test Execution Suites
+│   └── excel_reader.py
+├── tests/                    # Pytest test suites
 │   ├── __init__.py
-│   ├── test_emp_update_login_flow.py    # Authentication & employee profile navigation sanity
-│   ├── test_emp_update_positive_flows.py # Parametrized positive update tests (15 active)
-│   └── test_emp_update_negative_flows.py # Parametrized negative validation tests (13 active)
-│
-├── screenshots/                         # 1-to-1 Test Evidence Screenshots
-├── pytest.ini                           # Pytest execution configuration & test markers
-├── requirements.txt                     # Python dependencies
-└── README.md                            # Comprehensive Module Manual
+│   ├── test_emp_update_login_flow.py      # Session & navigation verification (3 tests)
+│   ├── test_emp_update_positive_flows.py  # Parameterized positive scenarios from Excel (15 tests)
+│   └── test_emp_update_negative_flows.py  # Parameterized negative validation scenarios (13 tests)
+├── screenshots/              # Automated 1-to-1 test execution evidence
+├── conftest.py               # Playwright fixtures & dynamic wait hooks
+├── pytest.ini                # Module execution settings
+└── README.md                 # Complete execution & specification manual
 ```
 
 ---
 
-## 📊 Test Coverage Breakdown
+## 🚀 Execution Guide
 
-| Category | Sheet Name | Total Tests | Description |
-| :--- | :--- | :---: | :--- |
-| **Authentication & Nav** | — | **1** | HR login and landing on employee profile |
-| **Positive Update Flows** | `Update_Positive_Flows` | **15** | Mandatory fields, gender switch, marital status, DOB picker, personal email, switches, emergency contacts, addresses, partial updates, read-only verification, multi-section updates |
-| **Negative Validation Flows** | `Update_Negative_Flows` | **13** | Cleared mandatory fields, invalid mobile, bad email format, special characters, bad PIN, invalid DOJ/DOB sequence, duplicate mobile, leading/trailing space names, underage DOB, invalid emergency numbers |
-| **Total Test Suite** | — | **29** | Complete Employee Update Test Suite |
-
----
-
-## 🚀 Execution Commands
-
-### 1. Run Complete Employee Update Suite
 ```bash
-cd update/emp_mgmt
-pytest
+# Run all Employee update tests (31 tests)
+pytest swarajya-update/employee-management/tests -v --headless
+
+# Run authentication and navigation path tests
+pytest swarajya-update/employee-management/tests/test_emp_update_login_flow.py -v --headless
+
+# Run only positive flow test cases (15 tests)
+pytest swarajya-update/employee-management/tests/test_emp_update_positive_flows.py -v --headless
+
+# Run only negative flow test cases (13 tests)
+pytest swarajya-update/employee-management/tests/test_emp_update_negative_flows.py -v --headless
+
+# Run in headed mode
+pytest swarajya-update/employee-management/tests -v --headed
 ```
-
-### 2. Run Only Positive Update Scenarios
-```bash
-pytest tests/test_emp_update_positive_flows.py
-```
-
-### 3. Run Only Negative Validation Scenarios
-```bash
-pytest tests/test_emp_update_negative_flows.py
-```
-
-### 4. Run in Headed Mode
-```bash
-pytest --headed
-```
-
-### 5. Run a Specific Test Case
-```bash
-pytest -k "TC_POS_UPD_001"
-```
-
----
-
-## ⚡ Core Features
-
-- **Bi-Directional Excel Reporting**: Reads inputs dynamically from `Swarajya-Update-Employee-test-cases.xlsx` and writes back execution results (`PASS` / `FAIL` / `SKIPPED`), `AUT_*` IDs, timestamps, and remarks.
-- **Session Caching**: Authenticates once via `LoginPage` and reuses `auth_state.json` across tests for ultra-fast execution.
-- **1-to-1 Screenshot Retention**: Automatically captures full-page evidence screenshots per test case.
-- **Desktop Summary Popup**: Displays execution statistics (Total, Passed, Failed, Skipped, Duration) upon session completion.
