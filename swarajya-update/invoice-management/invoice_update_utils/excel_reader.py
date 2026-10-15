@@ -6,7 +6,6 @@ Strictly zero hardcoded values.
 """
 
 import os
-import re
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -21,7 +20,7 @@ for _p in (_MODULE_ROOT, _UPDATE_ROOT, _WORKSPACE_ROOT):
 
 import shared.utils.excel_loader as _central_loader
 from shared.utils.excel_loader import (
-    build_automation_id,
+    build_automation_id as build_automation_id,
     load_cases_and_data,
     read_base_url as _central_read_base_url,
     read_credentials as _central_read_credentials,
@@ -34,6 +33,21 @@ from shared.utils.paths import TEST_CASES_FILE
 log = get_logger("invoice_update_excel_reader")
 MODULE_KEY = "update_invoice"
 SHEET_NAME = "updateinvoice_mgmt"
+
+__all__ = [
+    "build_automation_id",
+    "read_base_url",
+    "get_base_url",
+    "read_credentials",
+    "load_test_cases",
+    "read_test_cases",
+    "is_ui_case",
+    "get_baseline_invoice",
+    "update_test_result",
+    "resolve_excel_path",
+    "SHEET_NAME",
+    "MODULE_KEY",
+]
 
 # Self-register module mappings dynamically in shared loader
 if hasattr(_central_loader, "MODULE_SHEET_MAP"):
