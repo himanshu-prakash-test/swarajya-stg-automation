@@ -189,11 +189,27 @@ def show_summary_popup(
         close_btn.pack(side="left")
 
         root.update_idletasks()
-        w = max(root.winfo_reqwidth(), 380)
+        w = max(root.winfo_reqwidth(), 420)
         h = root.winfo_reqheight()
         x = (root.winfo_screenwidth() - w) // 2
         y = (root.winfo_screenheight() - h) // 2
         root.geometry(f"{w}x{h}+{x}+{y}")
+
+        # Ensure the popup is brought to the absolute foreground on macOS/Windows/Linux
+        root.lift()
+        root.attributes("-topmost", True)
+        root.focus_force()
+
+        # Try to activate macOS window to foreground
+        if sys.platform == "darwin":
+            try:
+                os.system('''/usr/bin/osascript -e 'tell application "System Events" to set frontmost of first process whose unix id is %d to true' &''' % os.getpid())
+            except Exception:
+                pass
+
+        # Auto-close only if explicitly requested by CI or AUTO_CLOSE_POPUP=1
+        if os.environ.get("AUTO_CLOSE_POPUP") == "1":
+            root.after(5000, root.destroy)
 
         root.mainloop()
     except Exception as exc:
