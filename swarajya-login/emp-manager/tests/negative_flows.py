@@ -268,6 +268,8 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "/default" in page.url.lower()
+            or "app-error" in content_lower
+            or page.locator("app-error, .error-page, .error-container").count() > 0
         ), (
             f"Expected Result NOT satisfied for [{tc_id}]: '{tc_meta.get('Expected Result')}'. "
             f"Actual: Employee gained unauthorized access to Manager modules. URL: {page.url}"

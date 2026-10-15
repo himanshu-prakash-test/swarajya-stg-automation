@@ -44,14 +44,47 @@ SCREENSHOTS_DIR = os.path.join(MODULE_DIR, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 
-# --- Browser fixtures ---
+# --- CLI options ---
+
+def pytest_addoption(parser):
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        try:
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode.")
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless.")
+        except ValueError:
+            pass
+    if "--slowmo" not in existing:
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms).")
+        except ValueError:
+            pass
+
 
 def _is_headless(config):
-    if config.getoption("--headed", default=False):
-        return False
-    if config.getoption("--headless", default=False):
-        return True
-    return os.environ.get("HEADLESS", "0").strip().lower() in ("1", "true", "yes")
+    try:
+        if config.getoption("--headed"):
+            return False
+        if config.getoption("--headless"):
+            return True
+    except (ValueError, AttributeError):
+        pass
+    env = os.environ.get("HEADLESS")
+    if env is not None:
+        return env.lower() in ("true", "1", "yes")
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -66,7 +99,7 @@ def playwright_instance():
 def browser(playwright_instance, request):
     headless = _is_headless(request.config)
     log.info("Launching Chromium (headless=%s)", headless)
-    args = (["--start-maximized"] if not headless
+    args = (["--start-maximized"] if (not headless and sys.platform.startswith("win"))
             else ["--no-sandbox", "--disable-dev-shm-usage",
                   "--disable-gpu", "--window-size=1920,1080"])
     b = playwright_instance.chromium.launch(headless=headless, slow_mo=0, args=args)
@@ -286,16 +319,18 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
-    try:
-        show_summary_popup(
-            passed=passed,
-            failed=failed,
-            skipped=skipped,
-            total=total,
-            duration_str=str(dur_str),
-            failed_tests=_failed_tests,
-            title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
-            report_path=report_path,
-        )
-    except Exception:
-        pass
+    if not _is_headless(session.config) and not os.environ.get("CI") and os.environ.get("PYTEST_NO_POPUP") != "1":
+        try:
+            show_summary_popup(
+                passed=passed,
+                failed=failed,
+                skipped=skipped,
+                total=total,
+                duration_str=str(dur_str),
+                failed_tests=_failed_tests,
+                title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
+                report_path=report_path,
+            )
+        except Exception:
+            pass
+
