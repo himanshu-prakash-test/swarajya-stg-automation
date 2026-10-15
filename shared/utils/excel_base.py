@@ -210,12 +210,7 @@ def load_test_data(sheet_name: str, file_path: Optional[str] = None) -> List[Dic
         raise FileNotFoundError(f"Test data workbook not found at: {path}")
 
     wb = openpyxl.load_workbook(path, data_only=True)
-    matched_sheet = None
-    target_clean = sheet_name.lower().replace("-", "").replace("_", "")
-    for name in wb.sheetnames:
-        if name.lower().replace("-", "").replace("_", "") == target_clean:
-            matched_sheet = name
-            break
+    matched_sheet = _find_sheet(wb, sheet_name)
 
     if not matched_sheet:
         wb.close()
@@ -266,12 +261,7 @@ def load_test_cases(sheet_name: str, file_path: Optional[str] = None) -> List[Di
         raise FileNotFoundError(f"Test cases workbook not found at: {path}")
 
     wb = openpyxl.load_workbook(path, data_only=True)
-    matched_sheet = None
-    target_clean = sheet_name.lower().replace("-", "").replace("_", "")
-    for name in wb.sheetnames:
-        if name.lower().replace("-", "").replace("_", "") == target_clean:
-            matched_sheet = name
-            break
+    matched_sheet = _find_sheet(wb, sheet_name)
 
     if not matched_sheet:
         wb.close()

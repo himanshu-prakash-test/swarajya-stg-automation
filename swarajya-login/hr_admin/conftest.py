@@ -35,7 +35,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("hr_admin_conftest")
 
-SHEET_NAME = "loginhr_admin"
+SHEET_NAME = "login/hr_admin"
 BASE_URL = os.environ.get("SWARAJYA_BASE_URL") or get_base_url(SHEET_NAME)
 SCREENSHOTS_DIR = os.path.join(_PROJECT_ROOT, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
@@ -296,7 +296,7 @@ def pytest_runtest_logreport(report):
                 break
 
     try:
-        update_test_result(tc_id, result, remarks)
+        update_test_result(tc_id, result, remarks, sheet_name=SHEET_NAME)
     except Exception as exc:
         log.warning("Excel update failed for %s: %s", tc_id, exc)
 
@@ -318,6 +318,9 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    if getattr(session.config.option, "collectonly", False):
+        return
+
     duration = datetime.now() - _start_time if _start_time else None
     dur_str = str(duration).split(".")[0] if duration else "N/A"
 
@@ -325,6 +328,9 @@ def pytest_sessionfinish(session, exitstatus):
     failed = _results["failed"]
     skipped = _results["skipped"]
     total = _results["total"]
+
+    if total == 0:
+        return
 
     status = "ALL PASSED" if failed == 0 else f"{failed} FAILED"
 
@@ -345,9 +351,6 @@ def pytest_sessionfinish(session, exitstatus):
         print("\n" + "\n".join(lines) + "\n")
     except UnicodeEncodeError:
         print("\n" + "\n".join(lines).encode("ascii", "replace").decode() + "\n")
-
-    if getattr(session.config.option, "collectonly", False):
-        return
 
     report_path = None
     if total > 0:
