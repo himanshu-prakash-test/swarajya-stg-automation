@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Any, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
 from shared.pages.base_page import BasePage
 from shared.utils.excel_base import read_credentials
@@ -51,11 +51,11 @@ class LoginPage(BasePage):
 
     @property
     def tfa_input(self):
-        return self.page.locator("input#mat-input-2, input[name='authCode'], input[placeholder*='OTP'], input[placeholder*='code'], input[type='text']").first
+        return self.page.locator("input#mat-input-2, input[name='authCode'], input[name='authcode'], input[formcontrolname='authcode'], input[placeholder*='OTP'], input[placeholder*='code'], input[placeholder*='Google']").first
 
     @property
     def tfa_submit_button(self):
-        return self.page.locator("button:has-text('Submit'), button[type='submit'], button.btn-primary").first
+        return self.page.locator("button:has-text('Submit'), button[type='submit']").first
 
     # ---------------------------------------------------------
     # Navigation & State Checks
@@ -154,6 +154,17 @@ class LoginPage(BasePage):
         self.wait_for_dom_ready()
         return self
 
+    def submit_credentials(self, employee_id: str, password: str):
+        """
+        Fill credentials and click Sign In if enabled, without full happy-path 2FA orchestration.
+        Ideal for negative and boundary test flows.
+        """
+        self.enter_employee_id(employee_id)
+        self.enter_password(password)
+        if self.is_sign_in_button_enabled():
+            self.click_sign_in()
+        return self
+
     # ---------------------------------------------------------
     # Assertions / Inspections
     # ---------------------------------------------------------
@@ -239,6 +250,8 @@ class LoginPage(BasePage):
         pwd: Optional[str] = None,
         expected_landing: Optional[str] = None,
         save_state_path: Optional[str] = None,
+        sheet_name: Optional[str] = None,
+        **kwargs: Any,
     ) -> bool:
         """
         Authenticate user and complete 2FA OTP.
@@ -249,10 +262,14 @@ class LoginPage(BasePage):
 
         # Fetch credentials from Excel when not explicitly passed
         if not resolved_id or not resolved_pwd:
-            creds = read_credentials(role=role)
+            try:
+                from shared.utils.excel_loader import read_credentials as loader_read_credentials
+                creds = loader_read_credentials(role=role, sheet_name=sheet_name)
+            except Exception:
+                creds = read_credentials(role=role)
             resolved_id = creds["employee_id"]
             resolved_pwd = creds["password"]
-            auth_code = auth_code or creds.get("auth_code", "111111")
+            auth_code = auth_code or creds.get("auth_code", "123456")
 
         if self.is_on_dashboard():
             log.info("Already on authenticated dashboard.")
@@ -308,6 +325,36 @@ class LoginPage(BasePage):
             )
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             self.page.context.storage_state(path=target_path)
+            # Also capture sessionStorage if present
+            try:
+                import json
+                ss_data = self.page.evaluate("() => ({...sessionStorage})")
+                if ss_data:
+                    ss_file = target_path.replace(".json", "_session.json")
+                    with open(ss_file, "w", encoding="utf-8") as f:
+                        json.dump(ss_data, f)
+            except Exception:
+                pass
             log.info(f"Saved auth state to {target_path}")
         except Exception as exc:
             log.warning(f"Could not save storage state: {exc}")
+
+    @staticmethod
+    def inject_session_storage(page, storage_path: Optional[str] = None):
+        """Inject saved sessionStorage items before navigation if available."""
+        try:
+            from shared.utils.paths import AUTH_STATE_FILE
+            target_path = storage_path or AUTH_STATE_FILE
+            ss_file = target_path.replace(".json", "_session.json")
+            if os.path.exists(ss_file):
+                import json
+                with open(ss_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data:
+                    page.add_init_script(f"""
+                        for (const [key, value] of Object.entries({json.dumps(data)})) {{
+                            window.sessionStorage.setItem(key, value);
+                        }}
+                    """)
+        except Exception:
+            pass

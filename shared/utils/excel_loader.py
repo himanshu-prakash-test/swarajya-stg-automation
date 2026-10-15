@@ -64,6 +64,8 @@ MODULE_SHEET_MAP = {
     "create/emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "create/emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "createemp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
+    "create-emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
+    "create_emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     # Invoice
     "invoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
     "createinvoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
@@ -73,6 +75,8 @@ MODULE_SHEET_MAP = {
     # Login modules
     "login_hr_admin": ("loginhr_admin", "loginhr_admin"),
     "loginhr_admin": ("loginhr_admin", "loginhr_admin"),
+    "login/hr_admin": ("loginhr_admin", "loginhr_admin"),
+    "login/hr-admin": ("loginhr_admin", "loginhr_admin"),
     "login_emp_manager": ("loginemp-manager", "loginemp-manager"),
     "loginemp-manager": ("loginemp-manager", "loginemp-manager"),
     # Update modules

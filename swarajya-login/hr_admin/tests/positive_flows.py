@@ -31,7 +31,7 @@ from shared.utils.excel_base import (
     get_test_case_by_id,
 )
 
-SHEET_NAME = "loginhr_admin"
+SHEET_NAME = "login/hr_admin"
 
 
 def _login_to_tfa(page, base_url, role="Admin"):
@@ -39,7 +39,7 @@ def _login_to_tfa(page, base_url, role="Admin"):
     creds = read_credentials(role, sheet_name=SHEET_NAME)
     login = LoginPage(page, base_url)
     login.navigate()
-    login.login(creds["employee_id"], creds["password"])
+    login.submit_credentials(creds["employee_id"], creds["password"])
     tfa = TfaPage(page, base_url)
     tfa.wait_for_tfa_page()
     return login, tfa, creds
@@ -63,7 +63,7 @@ class TestAdminHrPositiveFlows:
 
         login = LoginPage(page, base_url)
         login.navigate()
-        login.login(creds["employee_id"], creds["password"])
+        login.submit_credentials(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
         tfa.wait_for_tfa_page()
@@ -91,7 +91,7 @@ class TestAdminHrPositiveFlows:
 
         login = LoginPage(page, base_url)
         login.navigate()
-        login.login(creds["employee_id"], creds["password"])
+        login.submit_credentials(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
         tfa.wait_for_tfa_page()
@@ -134,7 +134,7 @@ class TestAdminHrPositiveFlows:
         creds = read_credentials("Admin", sheet_name=SHEET_NAME)
         login = LoginPage(page, base_url)
         login.navigate()
-        login.login(creds["employee_id"], creds["password"])
+        login.submit_credentials(creds["employee_id"], creds["password"])
 
         tfa = TfaPage(page, base_url)
         tfa.wait_for_tfa_page()
@@ -173,6 +173,7 @@ class TestAdminHrPositiveFlows:
 
         page.goto(f"{base_url}/logout", wait_until="domcontentloaded")
         login = LoginPage(page, base_url)
+        login.navigate()
         assert login.is_employee_id_field_visible(), (
             f"Logout did not return user to login page. Current URL: {page.url}"
         )

@@ -1,4 +1,21 @@
+"""
+Data-driven negative flow tests for Customer Management (Create Module).
+Loads test definitions and boundary test data dynamically from Swarajya-test-cases/data workbooks.
+Zero hardcoding.
+"""
+
+import os
+import sys
 import pytest
+
+_TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+_MODULE_DIR = os.path.dirname(_TEST_DIR)
+_ROOT_DIR = os.path.dirname(os.path.dirname(_MODULE_DIR))
+
+for _p in (_MODULE_DIR, _ROOT_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from customer_pages.form_executor import FormExecutor
 from customer_utils.excel_reader import read_test_cases, is_ui_case
 
@@ -9,15 +26,16 @@ except Exception:
     NEG_TEST_CASES = []
     NEG_IDS = []
 
+
 @pytest.mark.negative
 @pytest.mark.customer
 class TestNegativeFlows:
-    """Data-driven negative flow tests from Create-Customer-Management.xlsx."""
+    """Data-driven negative flow tests from Swarajya-test-cases.xlsx."""
 
     if not NEG_TEST_CASES:
         def test_no_input_validation_negative_flows(self):
-            """Input validation test cases are excluded per policy (values entered by adult users)."""
-            pytest.skip("Input validation test cases are excluded for Customer Management (values entered by adult users).")
+            """Skip scenario if no UI negative test cases are present in Excel."""
+            pytest.skip("No negative UI test cases found or enabled in Swarajya-test-cases.xlsx.")
     else:
         @pytest.mark.parametrize("test_case", NEG_TEST_CASES, ids=NEG_IDS)
         def test_negative_scenario(self, authenticated_page, test_case):

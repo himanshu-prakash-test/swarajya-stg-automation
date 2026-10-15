@@ -1,5 +1,5 @@
 import pytest
-from customer_update_pages.login_page import LoginPage
+from shared.pages.login_page import LoginPage
 from customer_update_pages.customer_update_page import CustomerUpdatePage
 from shared.utils.logger import get_logger
 

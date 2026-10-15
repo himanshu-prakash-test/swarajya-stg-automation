@@ -1,6 +1,6 @@
 # 📦 Purchase Order Update Automation Module
 
-Automated test suite for **Purchase Order Update** operations in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/).
+Automated test suite for **Purchase Order Update** operations in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), integrated with centralized Excel test workbooks with **strictly zero hardcoded values**.
 
 ---
 
@@ -38,71 +38,35 @@ The Purchase Order Update operation follows a 4-step path from the portal dashbo
 
 ---
 
-## 🧪 Automated Test Suite Matrix (`Update-Purchase-Order.xlsx`)
+## 📊 Centralized Data Source & Excel Synchronization
 
-### Positive Test Scenarios (`Positive_Tests` - 17 Cases)
-
-| Test Case ID | Scenario | Verification Focus | Status |
-| :--- | :--- | :--- | :---: |
-| **`TC_PO_POS_01`** | Pre-populated Edit Form | Modal opens with existing values across all form controls | **Passed** |
-| **`TC_PO_POS_02`** | Immutable Customer Name | Customer Name is disabled/read-only and uneditable | **Passed** |
-| **`TC_PO_POS_03`** | Calendar Picker Toggle | PO Date calendar button opens `mat-calendar` popup | **Passed** |
-| **`TC_PO_POS_04`** | Currency Dropdown Options | All 7 currency codes (`INR`, `USD`, `SAR`, `EUR`, `GBP`, `NZD`, `JYN`) are selectable | **Passed** |
-| **`TC_PO_POS_05`** | Status Dropdown Options | All 4 statuses (`ACTIVE`, `FULLY_USED`, `PARTIALLY_USED`, `CANCELLED`) are selectable | **Passed** |
-| **`TC_PO_POS_06`** | File Upload & Document Link | "Choose File" attaches document and provides "View Current Document" link | **Passed** |
-| **`TC_PO_POS_07`** | Cancel Button Retraction | Cancel button retracts back to `/purchaseOrder` discarding edits | **Passed** |
-| **`TC_PO_POS_08`** | Valid Update & Green Snackbar | Update button shows `Purchase Order Updated Successfully!` (class `snackbar-success`) | **Passed** |
-| **`TC_PO_POS_09`** | Search by ID or Name | Grid search filters rows matching PO Ref No or Name | **Passed** |
-| **`TC_PO_POS_10`** | Include Fully Used PO Filter | Checkbox toggle dynamically filters/shows `FULLY_USED` records | **Passed** |
-| **`TC_PO_POS_11`** | Status Transition: PARTIALLY_USED | Updates status to `PARTIALLY_USED`; verifies table row reflects status | **Passed** |
-| **`TC_PO_POS_12`** | Status Transition: CANCELLED | Updates status to `CANCELLED`; verifies table row reflects status | **Passed** |
-| **`TC_PO_POS_13`** | Status Transition: FULLY_USED & Filter | Sets status to `FULLY_USED`; verifies visibility interplay with checkbox filter | **Passed** |
-| **`TC_PO_POS_14`** | Currency Update Persistence | Changes Currency to `USD`; verifies listing row Currency column update | **Passed** |
-| **`TC_PO_POS_15`** | PO Reference Update & Search Sync | Modifies PO Reference No; verifies search retrieves updated record | **Passed** |
-| **`TC_PO_POS_16`** | Amount Fields Update Reflection | Updates Base Amount and Total Amount; verifies listing column update | **Passed** |
-| **`TC_PO_POS_17`** | Document Replacement Re-upload | Re-attaches replacement document, validates persistence of document link | **Passed** |
-
-### Negative Test Scenarios (`Negative_Tests` - 11 Cases)
-
-| Test Case ID | Scenario | Verification Focus | Status |
-| :--- | :--- | :--- | :---: |
-| **`TC_PO_NEG_01`** | Empty Mandatory PO Details | Cleared PO Details blocks update and triggers error snackbar `Please Enter PO Details..!` | **Passed** |
-| **`TC_PO_NEG_02`** | Rejection of Customer Modification | Direct click/select on disabled Customer Name rejects alterations | **Passed** |
-| **`TC_PO_NEG_03`** | Non-existent Record Search | Search for invalid PO Ref yields empty state gracefully without crash | **Passed** |
-| **`TC_PO_NEG_04`** | Unauthorized File Extension Block | File input strictly enforces `accept` filter blocking dangerous files (`.exe`, `.sh`) | **Passed** |
-| **`TC_PO_NEG_05`** | Unsaved Changes Discard on Cancel | Dirty form cancellation preserves original unmodified table record | **Passed** |
-| **`TC_PO_NEG_06`** | Modal Close Icon Dismissal | Top-right 'X' icon button cleanly dismisses modal and discards uncommitted changes | **Passed** |
-| **`TC_PO_NEG_07`** | Search Clear Grid Restoration | Clearing search query automatically restores full table records without reload | **Passed** |
-| **`TC_PO_NEG_08`** | Mandatory Field Asterisk Indicators | Asserts red asterisk (`*`) indicators are present strictly on required fields | **Passed** |
-| **`TC_PO_NEG_09`** | Duplicate PO Reference Number Collision | Asserts application rejects duplicate PO Reference Number assignment matching an existing PO | **Defect / Validation** |
-| **`TC_PO_NEG_10`** | Financial Calculation Consistency | Asserts application validates mathematical consistency when Total Amount != Base Amount + Tax Amount | **Defect / Validation** |
-| **`TC_PO_NEG_11`** | Cancelled PO Financial Immutability | Asserts lifecycle rules restrict modifying financial terms and amounts on CANCELLED Purchase Orders | **Defect / Validation** |
+- **Test Scenarios**: Sourced from `shared/test_data/Swarajya-test-cases.xlsx` [Sheet: `updatepurchase-order`].
+- **Input Test Data**: Sourced from `shared/test_data/Swarajya-test-data.xlsx` [Sheet: `updatepurchase-order`].
+- **Authentication Credentials & Base URL**: Dynamically loaded from header banner rows in `Swarajya-test-data.xlsx`.
+- **Live Excel Writeback**: Automatically syncs test status (`PASS`, `FAIL`, `SKIP`), `Automation Status`, and error remarks back to `Swarajya-test-cases.xlsx`.
+- **HTML Report Generation**: Finalized into `shared/reports/po_update_*.html`.
+- **Interactive Popup**: Styled desktop execution popup summarizing total, passed, failed, skipped, and direct report link without auto-opening the browser.
+- **1-to-1 Evidence Screenshots**: Automatically captures visual evidence on PASS and FAIL into `screenshots/` using `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.
 
 ---
 
 ## 🏛️ Directory Structure
 
 ```
-purchase-order/
-├── po_update_pages/        # Page Object Models & Form Executor
+purchase-orders/
+├── po_update_pages/        # Page Object Models & Form Executor (Zero Hardcoding)
 │   ├── __init__.py
 │   ├── form_executor.py
-│   ├── po_update_page.py
-│   └── login_page.py
-├── po_update_utils/        # Utilities & Excel Parsers
+│   └── po_update_page.py
+├── po_update_utils/        # Centralized Excel Parsers & Writeback
 │   ├── __init__.py
 │   └── excel_reader.py
-├── test_data/              # Test credentials & Master Excel Workbook
-│   ├── credentials.xlsx
-│   ├── Update-Purchase-Order.xlsx
-│   ├── sample_po.pdf
-│   └── auth_state.json
 ├── tests/                  # Pytest test suites
 │   ├── __init__.py
-│   ├── test_po_update_login_flow.py
-│   ├── test_po_update_positive_flows.py
-│   └── test_po_update_negative_flows.py
-├── screenshots/            # Failure and audit screenshots
+│   ├── test_po_update_login_flow.py      # Session & navigation verification (3 tests)
+│   ├── test_po_update_positive_flows.py  # Parameterized positive scenarios from Excel (17 tests)
+│   └── test_po_update_negative_flows.py  # Parameterized negative validation scenarios (11 tests)
+├── screenshots/            # Automated 1-to-1 test execution evidence
 ├── conftest.py             # Playwright fixtures & hooks
 ├── pytest.ini              # Module execution settings
 └── README.md               # Complete execution & specification manual

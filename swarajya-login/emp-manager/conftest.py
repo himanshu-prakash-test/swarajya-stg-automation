@@ -46,6 +46,36 @@ os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 # --- Browser fixtures ---
 
+def pytest_addoption(parser):
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        try:
+            parser.addoption("--headed", action="store_true", default=False,
+                             help="Run browser in headed mode.")
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False,
+                             help="Run browser headless (default).")
+        except ValueError:
+            pass
+    if "--slowmo" not in existing:
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int,
+                             help="Slow down Playwright actions (ms).")
+        except ValueError:
+            pass
+
+
 def _is_headless(config):
     if config.getoption("--headed", default=False):
         return False

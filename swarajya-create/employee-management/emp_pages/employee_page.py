@@ -1,6 +1,6 @@
 import datetime
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from playwright.sync_api import Page
 
@@ -10,10 +10,14 @@ from shared.utils.logger import get_logger
 log = get_logger("EmployeePage")
 
 
-def format_date_for_adapter(date_str: str) -> str:
-    """Convert Excel dates to a stable browser input value."""
-    clean = str(date_str).strip()
-    for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d", "%m/%d/%Y"):
+def format_date_for_adapter(date_val: Any) -> str:
+    """Convert Excel dates (strings, date, or datetime objects) to a stable browser input value."""
+    if not date_val:
+        return ""
+    if isinstance(date_val, (datetime.date, datetime.datetime)):
+        return f"{date_val.month}/{date_val.day}/{date_val.year}"
+    clean = str(date_val).strip()
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%m/%d/%Y"):
         try:
             parsed = datetime.datetime.strptime(clean, fmt)
             return f"{parsed.month}/{parsed.day}/{parsed.year}"

@@ -1,178 +1,129 @@
-"""Excel reader and test data utility for Purchase Order Update module."""
+"""
+Excel reader and test data utility for Purchase Order Update module.
+Loads test cases from shared/test_data/Swarajya-test-cases.xlsx [Sheet: updatepurchase-order]
+and test data from shared/test_data/Swarajya-test-data.xlsx [Sheet: updatepurchase-order].
+Strictly zero hardcoded values.
+"""
 
 import os
-import openpyxl
-from openpyxl.styles import Font, PatternFill
+import re
+import sys
 from typing import Any, Dict, List, Optional
 
-_MODULE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CREDENTIALS_PATH = os.path.join(_MODULE_ROOT, "test_data", "credentials.xlsx")
-TEST_WORKBOOK_PATH = os.path.join(_MODULE_ROOT, "test_data", "Update-Purchase-Order.xlsx")
+_DIR = os.path.dirname(os.path.abspath(__file__))
+_MODULE_ROOT = os.path.dirname(_DIR)
+_UPDATE_ROOT = os.path.dirname(_MODULE_ROOT)
+_WORKSPACE_ROOT = os.path.dirname(_UPDATE_ROOT)
+
+for _p in (_MODULE_ROOT, _UPDATE_ROOT, _WORKSPACE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from shared.utils.excel_loader import (
+    build_automation_id,
+    load_cases_and_data,
+    read_base_url as _central_read_base_url,
+    read_credentials as _central_read_credentials,
+    update_test_result as _central_update_test_result,
+    read_data_sheet,
+)
+from shared.utils.logger import get_logger
+from shared.utils.paths import TEST_CASES_FILE
+
+log = get_logger("po_update_excel_reader")
+MODULE_KEY = "update_po"
+SHEET_NAME = "updatepurchase-order"
 
 
-def read_credentials(role: str = "Admin", path: Optional[str] = None) -> Dict[str, Any]:
-    """Read user credentials from credentials.xlsx by role."""
-    file_path = path or CREDENTIALS_PATH
-    if not os.path.exists(file_path):
-        fallback = os.path.join(
-            os.path.dirname(os.path.dirname(_MODULE_ROOT)),
-            "swarajya-create",
-            "customer-management",
-            "test_data",
-            "credentials.xlsx",
-        )
-        if os.path.exists(fallback):
-            file_path = fallback
-        else:
-            return {
-                "employee_id": "332",
-                "password": "test@1234",
-                "auth_code": "111111",
-                "role": role,
-            }
-
-    wb = openpyxl.load_workbook(file_path, data_only=True)
-    sheet = wb["Credentials"] if "Credentials" in wb.sheetnames else wb.active
-
-    headers = [str(cell.value).strip().lower() if cell.value else "" for cell in sheet[1]]
-    role_idx = headers.index("role") if "role" in headers else 0
-    emp_idx = headers.index("employee_id") if "employee_id" in headers else 1
-    pass_idx = headers.index("password") if "password" in headers else 2
-    auth_idx = headers.index("auth_code") if "auth_code" in headers else 3
-
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if not any(row):
-            continue
-        row_role = str(row[role_idx]).strip() if row[role_idx] else ""
-        if row_role.lower() == role.lower():
-            return {
-                "employee_id": str(row[emp_idx]).strip() if row[emp_idx] else "332",
-                "password": str(row[pass_idx]).strip() if row[pass_idx] else "test@1234",
-                "auth_code": str(row[auth_idx]).strip() if len(row) > auth_idx and row[auth_idx] else "111111",
-                "role": row_role,
-            }
-
-    return {
-        "employee_id": "332",
-        "password": "test@1234",
-        "auth_code": "111111",
-        "role": role,
-    }
+def resolve_excel_path() -> str:
+    """Return central test cases workbook path."""
+    return TEST_CASES_FILE
 
 
-def load_test_cases(sheet_name: str, file_path: Optional[str] = None) -> List[Dict[str, Any]]:
+def read_base_url() -> str:
+    """Dynamically read the staging Base URL from Swarajya-test-data.xlsx."""
+    return _central_read_base_url(SHEET_NAME)
+
+
+get_base_url = read_base_url
+
+
+def read_credentials(role: str = "Admin") -> Dict[str, str]:
+    """Dynamically read credentials from shared test data workbooks or environment."""
+    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
+
+
+def load_test_cases(sheet_name: str = SHEET_NAME) -> List[Dict[str, Any]]:
     """
-    Read all test case rows from given sheet in Update-Purchase-Order.xlsx.
-    Returns empty list if file or sheet does not exist.
+    Read all test case rows for purchase order update module.
+    Automatically filters POS/NEG if specified in sheet_name.
     """
-    path = file_path or TEST_WORKBOOK_PATH
-    if not os.path.exists(path):
-        return []
+    filter_type = None
+    sn_upper = str(sheet_name).upper()
+    if "NEG" in sn_upper:
+        filter_type = "NEG"
+    elif "POS" in sn_upper:
+        filter_type = "POS"
 
-    try:
-        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
-    except Exception:
-        return []
-
-    target_sheet = None
-    if sheet_name in wb.sheetnames:
-        target_sheet = sheet_name
-    else:
-        for s in wb.sheetnames:
-            if sheet_name.lower() in s.lower() or s.lower() in sheet_name.lower():
-                target_sheet = s
-                break
-
-    if not target_sheet:
-        wb.close()
-        return []
-
-    ws = wb[target_sheet]
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-
-    if not rows:
-        return []
-
-    headers = [str(cell).strip() if cell is not None else f"col_{idx}" for idx, cell in enumerate(rows[0])]
-    cases = []
-    for row_idx, row in enumerate(rows[1:], start=2):
-        if not any(row):
-            continue
-        row_dict = dict(zip(headers, row))
-        tc_id = str(row_dict.get("Test Case ID", "") or "").strip()
-        if not tc_id or tc_id.lower() == "none":
-            continue
-        row_dict["_row_idx"] = row_idx
-        row_dict["_sheet"] = target_sheet
-        cases.append(row_dict)
-
+    cases = load_cases_and_data(MODULE_KEY, filter_type=filter_type)
+    for tc in cases:
+        if "_sheet" not in tc:
+            tc["_sheet"] = SHEET_NAME
+    log.info(f"Loaded {len(cases)} test cases for '{sheet_name}' from central shared workbooks")
     return cases
 
 
-def build_automation_id(tc_id: str) -> str:
-    """Generate standardized automation test ID."""
-    return f"AUTO_{tc_id.upper()}"
+read_test_cases = load_test_cases
+
+
+def is_ui_case(tc: Dict[str, Any]) -> bool:
+    """Check if test case is an active UI test case."""
+    exec_type = str(tc.get("Execution Type", "UI")).strip().upper()
+    auto_status = str(tc.get("Automation Status", "Automated")).strip().lower()
+    return exec_type in ("UI", "AUTOMATED", "") and auto_status not in ("excluded", "not automated", "manual", "deferred")
+
+
+def get_baseline_po() -> Dict[str, Any]:
+    """Fetch baseline valid purchase order test data dynamically from Swarajya-test-data.xlsx."""
+    try:
+        data_map = read_data_sheet(SHEET_NAME)
+        for tc_id, row in data_map.items():
+            if "POS" in tc_id.upper() and (row.get("Customer Name") or row.get("PO Reference No.")):
+                res = {}
+                for k, v in row.items():
+                    val = str(v).strip() if v is not None else ""
+                    if val.endswith(".0") and val[:-2].isdigit():
+                        val = val[:-2]
+                    res[k] = val
+                return res
+    except Exception as exc:
+        log.warning(f"Could not load baseline PO from Excel: {exc}")
+    return {}
 
 
 def update_test_result(
     tc_id: str,
     status: str = "Passed",
-    remarks: str = "",
+    remarks: Optional[str] = None,
+    error_message: Optional[str] = None,
+    duration_s: Optional[float] = None,
+    execution_time: Optional[float] = None,
     duration: Optional[float] = None,
     file_path: Optional[str] = None,
+    sheet_name: str = SHEET_NAME,
+    **kwargs,
 ) -> bool:
-    """Update execution status and remarks in Update-Purchase-Order.xlsx."""
-    path = file_path or TEST_WORKBOOK_PATH
-    if not os.path.exists(path):
-        return False
+    """Update execution results in the central test cases workbook."""
+    rem = remarks or error_message or kwargs.get("remark") or ""
+    dur = duration_s or execution_time or duration
+    if dur:
+        rem = f"{rem} ({dur:.2f}s)" if rem else f"({dur:.2f}s)"
+    return _central_update_test_result(
+        tc_id=tc_id,
+        status=status,
+        remarks=rem,
+        duration=dur,
+        module_key=MODULE_KEY,
+        sheet_name=sheet_name or SHEET_NAME,
+    )
 
-    try:
-        wb = openpyxl.load_workbook(path)
-        updated = False
-
-        for sheet_name in ["Positive_Tests", "Negative_Tests"]:
-            if sheet_name not in wb.sheetnames:
-                continue
-            ws = wb[sheet_name]
-
-            # Find columns
-            headers = [str(c.value).strip().lower() if c.value else "" for c in ws[1]]
-            tc_col = headers.index("test case id") + 1 if "test case id" in headers else 1
-            status_col = headers.index("test status") + 1 if "test status" in headers else 9
-            remarks_col = headers.index("remarks") + 1 if "remarks" in headers else 11
-
-            for row in range(2, ws.max_row + 1):
-                cell_val = str(ws.cell(row=row, column=tc_col).value or "").strip()
-                if cell_val.upper() == tc_id.strip().upper():
-                    status_cell = ws.cell(row=row, column=status_col)
-                    st_lower = status.strip().lower()
-
-                    if st_lower in ["passed", "pass"]:
-                        status_cell.value = "Passed"
-                        status_cell.fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
-                        status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="006100")
-                    elif st_lower in ["failed", "fail"]:
-                        status_cell.value = "Failed"
-                        status_cell.fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
-                        status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="9C0006")
-                    elif st_lower in ["skipped", "skip"]:
-                        status_cell.value = "Skipped"
-                        status_cell.fill = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
-                        status_cell.font = Font(name="Segoe UI", size=10, bold=True, color="9C6500")
-                    else:
-                        status_cell.value = status.capitalize()
-
-                    if remarks:
-                        remark_text = remarks
-                        if duration:
-                            remark_text = f"{remarks} ({duration:.2f}s)"
-                        ws.cell(row=row, column=remarks_col).value = remark_text
-                    updated = True
-                    break
-
-        if updated:
-            wb.save(path)
-        return updated
-    except Exception:
-        return False

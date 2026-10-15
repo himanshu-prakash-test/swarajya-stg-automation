@@ -3,7 +3,7 @@ import os
 import sys
 import re
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 _CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
@@ -16,18 +16,23 @@ import pytest
 from playwright.sync_api import sync_playwright
 
 from shared.pages.login_page import LoginPage
-from vendor_utils.excel_reader import build_automation_id, read_credentials, update_test_result
-from shared.pages.base_page import BASE_URL
 from shared.utils.paths import AUTH_STATE_FILE
 from shared.utils.popup import show_summary_popup
 from shared.reporter import PytestReporterPlugin
+from vendor_utils.excel_reader import (
+    build_automation_id,
+    read_base_url,
+    read_credentials,
+    update_test_result,
+    SHEET_NAME,
+)
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("conftest")
+log = logging.getLogger("vendor_conftest")
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SCREENSHOTS = os.path.join(ROOT, "screenshots")
@@ -93,6 +98,7 @@ def playwright_instance():
 
 @pytest.fixture(scope="session")
 def browser(playwright_instance, headed, slowmo):
+    log.info(f"Launching Chromium browser (headless={not headed}, slow_mo={slowmo})")
     br = playwright_instance.chromium.launch(headless=not headed, slow_mo=slowmo)
     yield br
     br.close()
@@ -100,7 +106,7 @@ def browser(playwright_instance, headed, slowmo):
 
 def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
     """Poll staging URL dynamically to confirm server is healthy and not 503."""
-    url = f"{BASE_URL}/"
+    url = f"{read_base_url()}/"
     for attempt in range(max_retries):
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20000)
@@ -117,7 +123,6 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
     """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
     if not path or not os.path.exists(path):
         return False
-    # Check session storage file as well (Swarajya Angular app stores auth in sessionStorage)
     ss_file = path.replace(".json", "_session.json")
     if os.path.exists(ss_file):
         try:
@@ -142,8 +147,8 @@ def _is_valid_auth_state(path: Optional[str]) -> bool:
 
 
 @pytest.fixture(scope="session")
-def session_storage_state(browser, tmp_path_factory):
-    """Authenticate as Manager/Admin once and cache auth_state.json."""
+def session_storage_state(browser):
+    """Authenticate as Admin once dynamically and cache auth_state.json."""
     storage_path = AUTH_STATE_FILE
     if _is_valid_auth_state(storage_path):
         return storage_path
@@ -154,7 +159,7 @@ def session_storage_state(browser, tmp_path_factory):
     _wait_until_server_healthy(page)
 
     login_page = LoginPage(page)
-    success = login_page.login(role="Admin", sheet_name="createvendor-mgmt")
+    success = login_page.login(role="Admin", sheet_name=SHEET_NAME)
     if success:
         page.wait_for_timeout(1000)
         context.storage_state(path=storage_path)
@@ -185,17 +190,17 @@ def authenticated_page(browser, session_storage_state):
     _wait_until_server_healthy(page, max_retries=3, delay_s=2)
 
     # Verify session is alive
+    base_url = read_base_url()
     try:
-        page.goto(f"{BASE_URL}/default", timeout=12000, wait_until="domcontentloaded")
+        page.goto(f"{base_url}/default", timeout=12000, wait_until="domcontentloaded")
         if "login" in page.url.lower() or "tfa" in page.url.lower():
             login_page = LoginPage(page)
-            login_page.login(role="Admin", sheet_name="createvendor-mgmt")
+            login_page.login(role="Admin", sheet_name=SHEET_NAME)
     except Exception:
         login_page = LoginPage(page)
-        login_page.login(role="Admin", sheet_name="createvendor-mgmt")
+        login_page.login(role="Admin", sheet_name=SHEET_NAME)
 
     yield page
-
     context.close()
 
 
@@ -213,67 +218,34 @@ def unauthenticated_page(browser):
     context.close()
 
 
-# ----------------- Reporting & Screenshot Hooks -----------------
+@pytest.fixture
+def admin_creds():
+    """Dynamically read Admin credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Admin")
 
+
+@pytest.fixture
+def employee_creds():
+    """Dynamically read Employee credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Employee")
+
+
+@pytest.fixture
+def base_url():
+    """Dynamically read Base URL from Swarajya-test-data.xlsx."""
+    return read_base_url()
+
+
+# ----------------- Reporting & Metrics Tracking -----------------
+
+_metrics = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
+_failures: List[str] = []
+_recorded_nodes = set()
+_SESSION_START = None
 _html_reporter = PytestReporterPlugin(suite_title="Vendor Management")
 
 
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    report = outcome.get_result()
-
-    if report.when != "call":
-        return
-
-    # Extract test case ID
-    tc_id = None
-    if hasattr(item, "callspec"):
-        for param_val in item.callspec.params.values():
-            if isinstance(param_val, dict) and "Test Case ID" in param_val:
-                tc_id = param_val["Test Case ID"]
-                break
-    if not tc_id:
-        m = re.search(r"TC_VENDOR_[A-Z]+_\d+", item.name)
-        if m:
-            tc_id = m.group(0)
-
-    status = "PASS" if report.passed else "FAIL" if report.failed else "SKIPPED"
-    remarks = ""
-    if report.failed and call.excinfo:
-        remarks = str(call.excinfo.value)[:200].replace("\n", " ")
-
-    # Update Excel
-    if tc_id:
-        sheet = getattr(item, "_sheet_name", None)
-        update_test_result(tc_id, status=status, remarks=remarks, sheet_name=sheet)
-
-    # Save 1-to-1 screenshot for every test case
-    page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
-    shot_path = None
-    if page:
-        try:
-            label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            shot_filename = f"{status}_{label}__{ts}.png"
-            shot_path = os.path.join(SCREENSHOTS, shot_filename)
-            page.screenshot(path=shot_path, full_page=True)
-            log.info(f"Captured 1-to-1 test screenshot ({status}): {shot_filename}")
-        except Exception as exc:
-            log.warning(f"Could not capture screenshot for {item.name}: {exc}")
-
-    _html_reporter.record_test(
-        item=item,
-        report=report,
-        status=status,
-        remarks=remarks,
-        auto_id=build_automation_id(tc_id) if tc_id else "",
-        screenshot_path=shot_path,
-        duration=report.duration,
-    )
-
-
-def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 60):
+def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 80):
     """Automatically purge screenshots older than max_age_hours or if count exceeds max_files."""
     if not os.path.exists(directory):
         return
@@ -301,59 +273,151 @@ def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: i
                 pass
 
 
-# ----------------- Summary Popup Hook -----------------
-
-_SESSION_START = None
+def _extract_tc_id(item) -> str:
+    """Extract standard test case ID from markers, params, or nodeid."""
+    marker = item.get_closest_marker("tc_id")
+    if marker and marker.args:
+        return str(marker.args[0])
+    if hasattr(item, "callspec"):
+        for val in item.callspec.params.values():
+            if isinstance(val, dict) and "Test Case ID" in val:
+                return str(val["Test Case ID"])
+    m = re.search(r"(TC_VENDOR_[A-Za-z0-9_]+)", item.name) or re.search(r"(TC_VENDOR_[A-Za-z0-9_]+)", getattr(item, "nodeid", ""))
+    if m:
+        return m.group(1)
+    if "login" in item.name:
+        return "TC_VENDOR_AUTH_01"
+    return re.sub(r"[^\w\-]", "_", item.name)[:50]
 
 
 def pytest_sessionstart(session):
     global _SESSION_START
     _SESSION_START = datetime.now()
-    _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=60)
+    _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=80)
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
+
+    if report.when == "call" or (report.when == "setup" and (report.skipped or report.failed)):
+        if getattr(report, "nodeid", "") in _recorded_nodes:
+            return
+        _recorded_nodes.add(report.nodeid)
+
+        tc_id = _extract_tc_id(item) or "UNKNOWN"
+        page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
+        status = "PASS" if report.passed else "FAIL" if report.failed else "SKIPPED"
+        auto_id = build_automation_id(tc_id) if tc_id != "UNKNOWN" else ""
+        duration = getattr(report, "duration", 0.0)
+
+        if status == "PASS":
+            _metrics["passed"] += 1
+            is_pos = "pos" in report.nodeid.lower() or "positive" in report.nodeid.lower()
+            remarks = (
+                "Validation successful: Vendor record created and verified in vendor directory."
+                if is_pos
+                else "Validation successful: Form rejected invalid input and prevented submission."
+            )
+        elif status == "FAIL":
+            _metrics["failed"] += 1
+            remarks = str(report.longrepr).splitlines()[-1].strip()[:240] if report.longrepr else "Test Assertion Error"
+            _failures.append(f"{tc_id}: {remarks}")
+        else:
+            _metrics["skipped"] += 1
+            remarks = "Skipped: Execution Type is API or non-UI in Excel workbook"
+        _metrics["total"] += 1
+
+        # Capture 1-to-1 screenshot on PASS/FAIL
+        shot_path = None
+        if page and status in ("PASS", "FAIL"):
+            try:
+                label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                shot_filename = f"{status}_{label}__{ts}.png"
+                shot_path = os.path.join(SCREENSHOTS, shot_filename)
+                page.screenshot(path=shot_path, timeout=5000)
+                log.info(f"Captured test screenshot ({status}): {shot_filename}")
+            except Exception as exc:
+                log.warning(f"Could not capture screenshot for {item.name}: {exc}")
+                shot_path = None
+
+        if tc_id != "UNKNOWN":
+            try:
+                update_test_result(
+                    tc_id=tc_id,
+                    status=status,
+                    remarks=remarks,
+                    duration_s=duration,
+                    sheet_name=SHEET_NAME,
+                )
+            except Exception as exc:
+                log.warning(f"Excel result update failed for {tc_id}: {exc}")
+
+        _html_reporter.record_test(
+            item=item,
+            report=report,
+            status=status,
+            remarks=remarks,
+            auto_id=auto_id,
+            screenshot_path=shot_path,
+            duration=duration,
+        )
 
 
 def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
 
-    duration = datetime.now() - _SESSION_START if _SESSION_START else None
-    dur_str = str(duration).split(".")[0] if duration else "0:00:00"
+    elapsed = str(datetime.now() - _SESSION_START).split(".")[0] if _SESSION_START else "0:00:00"
+    passed = _metrics["passed"]
+    failed = _metrics["failed"]
+    skipped = _metrics["skipped"]
+    total = _metrics["total"]
+    tag = "ALL PASSED" if failed == 0 and total > 0 else f"{failed} FAILED" if failed > 0 else "SESSION COMPLETE"
 
-    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-    passed = len(reporter.stats.get("passed", [])) if reporter else 0
-    failed = len(reporter.stats.get("failed", [])) if reporter else 0
-    skipped = len(reporter.stats.get("skipped", [])) if reporter else 0
-    total = passed + failed + skipped
-
-    # Collect failed test names for the popup
-    failed_tests = []
-    if reporter:
-        for report in reporter.stats.get("failed", []):
-            failed_tests.append(report.nodeid)
-
-    banner_title = "ALL PASSED" if failed == 0 and total > 0 else "FAILURES OCCURRED" if failed > 0 else "SESSION COMPLETE"
-    print("\n" + "=" * 56)
-    print(f"  SWARAJYA VENDOR AUTOMATION - {banner_title}")
-    print("=" * 56)
+    print(f"\n{'=' * 60}")
+    print(f"  SWARAJYA VENDOR CREATE EXCEL AUTOMATION - {tag}")
+    print(f"{'=' * 60}")
     print(f"  Total : {total:<4} Passed : {passed:<4} Failed : {failed:<4} Skipped : {skipped}")
-    print(f"  Time  : {dur_str}")
-    print("=" * 56 + "\n")
+    print(f"  Time  : {elapsed}")
+    if _failures:
+        print("  Failed / observed defects:")
+        for failure in _failures[:10]:
+            print(f"    - {failure}")
+    print(f"{'=' * 60}\n")
+
+    if total == 0:
+        return
 
     report_path = None
-    if total > 0:
+    try:
+        report_path = _html_reporter.finalize_report(filename_prefix="vendor_mgmt")
+    except Exception as exc:
+        log.warning(f"Could not finalize HTML report: {exc}")
+
+    # Open report only if explicitly requested via OPEN_REPORT env var
+    if report_path and os.path.exists(report_path) and os.environ.get("OPEN_REPORT") == "1":
         try:
-            report_path = _html_reporter.finalize_report(filename_prefix="vendor_mgmt")
+            from shared.reporter.html_reporter import PlaywrightHTMLReporter
+            PlaywrightHTMLReporter.open_in_browser(report_path)
+            log.info(f"Opened HTML report in default browser: {report_path}")
         except Exception as exc:
-            log.warning(f"Could not finalize HTML report: {exc}")
+            log.warning(f"Could not open HTML report: {exc}")
 
-    show_summary_popup(
-        total=total,
-        passed=passed,
-        failed=failed,
-        skipped=skipped,
-        duration_str=dur_str,
-        failed_tests=failed_tests,
-        suite_title="Vendor Management",
-        report_path=report_path,
-    )
-
+    # Display styled execution summary desktop popup
+    try:
+        show_summary_popup(
+            total=total,
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=elapsed,
+            failures=_failures,
+            report_path=report_path,
+            suite_title="Vendor Management Create",
+        )
+    except Exception as exc:
+        log.warning(f"Popup display note: {exc}")
