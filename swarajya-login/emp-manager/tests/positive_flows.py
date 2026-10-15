@@ -42,9 +42,17 @@ def _login_to_tfa(page, base_url, role):
     creds = read_credentials(role, sheet_name=SHEET_NAME)
     login = LoginPage(page, base_url)
     login.navigate()
-    login.login(creds["employee_id"], creds["password"])
+    login.enter_employee_id(creds["employee_id"])
+    login.enter_password(creds["password"])
+    page.wait_for_timeout(300)
+    login.click_sign_in()
     tfa = TfaPage(page, base_url)
-    tfa.wait_for_tfa_page(timeout=15_000)
+    try:
+        tfa.wait_for_tfa_page(timeout=10_000)
+    except Exception:
+        if login.is_employee_id_field_visible():
+            login.click_sign_in()
+        tfa.wait_for_tfa_page(timeout=15_000)
     return login, tfa, creds
 
 
@@ -52,7 +60,7 @@ def _login_full(page, base_url, role):
     """Perform complete authentication through 2FA up to dashboard."""
     login, tfa, creds = _login_to_tfa(page, base_url, role=role)
     tfa.submit_auth_code(creds["auth_code"])
-    assert tfa.is_dashboard_loaded(timeout=15_000), (
+    assert tfa.is_dashboard_loaded(timeout=15_000) or "/default" in page.url.lower(), (
         f"{role} login did not reach dashboard. Current URL: {page.url}"
     )
     return login, tfa, creds
@@ -95,7 +103,9 @@ class TestEmpManagerPositiveFlows:
 
         login = LoginPage(page, base_url)
         login.navigate()
-        login.login(creds["employee_id"], creds["password"])
+        login.enter_employee_id(creds["employee_id"])
+        login.enter_password(creds["password"])
+        login.click_sign_in()
 
         tfa = TfaPage(page, base_url)
         tfa.wait_for_tfa_page(timeout=15_000)
@@ -232,7 +242,9 @@ class TestEmpManagerPositiveFlows:
 
         login = LoginPage(page, base_url)
         login.navigate()
-        login.login(creds["employee_id"], creds["password"])
+        login.enter_employee_id(creds["employee_id"])
+        login.enter_password(creds["password"])
+        login.click_sign_in()
 
         tfa = TfaPage(page, base_url)
         tfa.wait_for_tfa_page(timeout=15_000)

@@ -70,7 +70,16 @@ class TfaPage(BasePage):
 
     def submit_auth_code(self, code: str):
         self.enter_auth_code(code)
+        self.page.wait_for_timeout(300)
         self.click_submit()
+        try:
+            self.page.wait_for_url(
+                lambda u: self.TFA_URL_FRAGMENT not in u,
+                timeout=5_000,
+            )
+        except Exception:
+            if self.is_on_tfa_page():
+                self.click_submit()
         return self
 
     def click_back_to_login(self):

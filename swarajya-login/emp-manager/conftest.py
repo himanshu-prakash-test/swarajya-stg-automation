@@ -44,6 +44,35 @@ SCREENSHOTS_DIR = os.path.join(MODULE_DIR, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 
+# --- CLI options ---
+
+def pytest_addoption(parser):
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--headed" not in existing:
+        try:
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode.")
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless.")
+        except ValueError:
+            pass
+    if "--slowmo" not in existing:
+        try:
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms).")
+        except ValueError:
+            pass
+
+
 # --- Browser fixtures ---
 
 def _is_headless(config):
@@ -286,16 +315,18 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
-    try:
-        show_summary_popup(
-            passed=passed,
-            failed=failed,
-            skipped=skipped,
-            total=total,
-            duration_str=str(dur_str),
-            failed_tests=_failed_tests,
-            title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
-            report_path=report_path,
-        )
-    except Exception:
-        pass
+    # Summary popup on suite completion (bypassed in CI)
+    if not os.environ.get("CI") and os.environ.get("PYTEST_NO_POPUP") != "1":
+        try:
+            show_summary_popup(
+                passed=passed,
+                failed=failed,
+                skipped=skipped,
+                total=total,
+                duration_str=str(dur_str),
+                failed_tests=_failed_tests,
+                title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
+                report_path=report_path,
+            )
+        except Exception:
+            pass

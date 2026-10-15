@@ -292,8 +292,8 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning("Could not finalize HTML report: %s", exc)
 
-    # Non-blocking summary popup for headed interactive runs
-    if not _is_headless(session.config) and not os.environ.get("CI") and os.environ.get("PYTEST_NO_POPUP") != "1":
+    # Summary popup on suite completion (bypassed in CI)
+    if not os.environ.get("CI") and os.environ.get("PYTEST_NO_POPUP") != "1":
         try:
             show_summary_popup(
                 passed=passed,

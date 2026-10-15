@@ -119,7 +119,11 @@ class LoginPage(BasePage):
         try:
             self.employee_id_input.wait_for(state="visible", timeout=10_000)
         except Exception:
-            pass
+            try:
+                self.page.reload(wait_until="domcontentloaded")
+                self.employee_id_input.wait_for(state="visible", timeout=10_000)
+            except Exception:
+                pass
         self.employee_id_input.fill(str(employee_id))
         return self
 
