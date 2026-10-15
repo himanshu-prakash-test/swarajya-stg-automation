@@ -75,6 +75,8 @@ MODULE_SHEET_MAP = {
     # Login modules
     "login_hr_admin": ("loginhr_admin", "loginhr_admin"),
     "loginhr_admin": ("loginhr_admin", "loginhr_admin"),
+    "login/hr_admin": ("loginhr_admin", "loginhr_admin"),
+    "login/hr-admin": ("loginhr_admin", "loginhr_admin"),
     "login_emp_manager": ("loginemp-manager", "loginemp-manager"),
     "loginemp-manager": ("loginemp-manager", "loginemp-manager"),
     # Update modules

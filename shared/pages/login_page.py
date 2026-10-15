@@ -51,11 +51,11 @@ class LoginPage(BasePage):
 
     @property
     def tfa_input(self):
-        return self.page.locator("input#mat-input-2, input[name='authCode'], input[placeholder*='OTP'], input[placeholder*='code'], input[type='text']").first
+        return self.page.locator("input#mat-input-2, input[name='authCode'], input[name='authcode'], input[formcontrolname='authcode'], input[placeholder*='OTP'], input[placeholder*='code'], input[placeholder*='Google']").first
 
     @property
     def tfa_submit_button(self):
-        return self.page.locator("button:has-text('Submit'), button[type='submit'], button.btn-primary").first
+        return self.page.locator("button:has-text('Submit'), button[type='submit']").first
 
     # ---------------------------------------------------------
     # Navigation & State Checks
@@ -152,6 +152,17 @@ class LoginPage(BasePage):
     def click_forgot_password(self):
         self.forgot_password_link.click()
         self.wait_for_dom_ready()
+        return self
+
+    def submit_credentials(self, employee_id: str, password: str):
+        """
+        Fill credentials and click Sign In if enabled, without full happy-path 2FA orchestration.
+        Ideal for negative and boundary test flows.
+        """
+        self.enter_employee_id(employee_id)
+        self.enter_password(password)
+        if self.is_sign_in_button_enabled():
+            self.click_sign_in()
         return self
 
     # ---------------------------------------------------------
