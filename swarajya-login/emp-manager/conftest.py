@@ -315,18 +315,17 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
-    # Summary popup on suite completion (bypassed in CI)
-    if not os.environ.get("CI") and os.environ.get("PYTEST_NO_POPUP") != "1":
-        try:
-            show_summary_popup(
-                passed=passed,
-                failed=failed,
-                skipped=skipped,
-                total=total,
-                duration_str=str(dur_str),
-                failed_tests=_failed_tests,
-                title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
-                report_path=report_path,
-            )
-        except Exception:
-            pass
+    # Display execution summary popup
+    try:
+        show_summary_popup(
+            total=total,
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=str(dur_str),
+            failed_tests=_failed_tests,
+            suite_title="Employee & Manager Login",
+            report_path=report_path,
+        )
+    except Exception as exc:
+        log.warning(f"Could not display summary popup: {exc}")

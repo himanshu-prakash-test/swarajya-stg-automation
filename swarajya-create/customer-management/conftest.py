@@ -325,13 +325,16 @@ def pytest_sessionfinish(session, exitstatus):
 
     _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=80)
 
-    show_summary_popup(
-        total=total,
-        passed=_session_stats["passed"],
-        failed=_session_stats["failed"],
-        skipped=_session_stats["skipped"],
-        duration_str=dur_str,
-        failed_tests=_session_stats["failed_tests"],
-        suite_title="Customer Management",
-        report_path=report_path,
-    )
+    try:
+        show_summary_popup(
+            total=total,
+            passed=_session_stats["passed"],
+            failed=_session_stats["failed"],
+            skipped=_session_stats["skipped"],
+            duration_str=dur_str,
+            failed_tests=_session_stats["failed_tests"],
+            suite_title="Customer Management",
+            report_path=report_path,
+        )
+    except Exception as exc:
+        log.warning(f"Could not display summary popup: {exc}")

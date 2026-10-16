@@ -358,14 +358,14 @@ def pytest_sessionfinish(session, exitstatus):
 
     try:
         show_summary_popup(
+            total=total,
             passed=passed,
             failed=failed,
             skipped=skipped,
-            total=total,
             duration_str=str(dur_str),
             failed_tests=_failed_tests,
-            title="SWARAJYA HR & ADMIN LOGIN",
+            suite_title="HR & Admin Login",
             report_path=report_path,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log.warning(f"Could not display summary popup: {exc}")

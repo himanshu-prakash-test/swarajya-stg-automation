@@ -410,12 +410,13 @@ def pytest_sessionfinish(session, exitstatus):
 
     try:
         show_summary_popup(
+            total=total,
             passed=passed,
             failed=failed,
             skipped=skipped,
-            total=total,
             duration=elapsed,
             failures=_failures,
+            suite_title="Create Employee Management",
             report_path=report_path,
         )
     except Exception as exc:

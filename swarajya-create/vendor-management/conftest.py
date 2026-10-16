@@ -330,14 +330,17 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
-    show_summary_popup(
-        total=total,
-        passed=passed,
-        failed=failed,
-        skipped=skipped,
-        duration_str=dur_str,
-        failed_tests=failed_tests,
-        suite_title="Vendor Management",
-        report_path=report_path,
-    )
+    try:
+        show_summary_popup(
+            total=total,
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=dur_str,
+            failed_tests=failed_tests,
+            suite_title="Vendor Management",
+            report_path=report_path,
+        )
+    except Exception as exc:
+        log.warning(f"Could not display summary popup: {exc}")
 

@@ -6,6 +6,20 @@ from tkinter import ttk
 from typing import List, Optional
 
 
+def _is_remote_ci() -> bool:
+    """Check if execution is happening in a headless remote CI/CD runner."""
+    ci_val = os.environ.get("CI", "").strip().lower()
+    if ci_val in ("true", "1", "yes"):
+        return True
+    if os.environ.get("GITHUB_ACTIONS", "").strip().lower() in ("true", "1"):
+        return True
+    if os.environ.get("TF_BUILD", "").strip().lower() == "true":
+        return True
+    if os.environ.get("BUILDKITE", "").strip().lower() == "true":
+        return True
+    return False
+
+
 def show_summary_popup(
     total: Optional[int] = None,
     passed: int = 0,
@@ -14,6 +28,7 @@ def show_summary_popup(
     duration_str: str = "0:00:00",
     failed_tests: Optional[List[str]] = None,
     suite_title: str = "SWARAJYA AUTOMATION",
+    title: Optional[str] = None,
     duration: Optional[str] = None,
     failures: Optional[List[str]] = None,
     report_path: Optional[str] = None,
@@ -21,28 +36,51 @@ def show_summary_popup(
 ):
     """
     Display a styled desktop popup showing test execution results.
-    Lists failed test case names if any.
-    Bypasses cleanly when running under CI or with PYTEST_NO_POPUP=1.
+    Brings window to the foreground with sound alert and key bindings (Esc / Enter to close).
+    Cleanly bypasses in headless remote CI/CD environments unless FORCE_POPUP=1.
     """
-    if failed_tests is None and failures is not None:
-        failed_tests = failures
-    if total is None:
-        total = passed + failed + skipped
-    if duration is not None:
-        duration_str = str(duration)
-    if os.environ.get("CI") or os.environ.get("PYTEST_NO_POPUP") == "1":
-        return
+    # Normalize inputs
+    if title:
+        suite_title = title
+    elif kwargs.get("title"):
+        suite_title = kwargs["title"]
+    elif kwargs.get("suite_title"):
+        suite_title = kwargs["suite_title"]
 
-    suite_title = kwargs.get("title", kwargs.get("suite_title", suite_title))
     if os.environ.get("SWARAJYA_POPUP_HEADER"):
         suite_title = os.environ.get("SWARAJYA_POPUP_HEADER")
     elif os.environ.get("SWARAJYA_POPUP_TITLE"):
         suite_title = os.environ.get("SWARAJYA_POPUP_TITLE")
 
+    if failed_tests is None:
+        failed_tests = failures or kwargs.get("failures") or []
+
+    if duration is not None:
+        duration_str = str(duration)
+    elif kwargs.get("duration"):
+        duration_str = str(kwargs["duration"])
+
+    if total is None:
+        total = passed + failed + skipped
+
+    # Check suppression
+    force_popup = os.environ.get("FORCE_POPUP", "").strip().lower() in ("1", "true", "yes")
+    no_popup = os.environ.get("PYTEST_NO_POPUP", "").strip().lower() in ("1", "true", "yes")
+
+    if not force_popup:
+        if no_popup:
+            print("[POPUP] Summary popup bypassed via PYTEST_NO_POPUP=1.")
+            return
+        if _is_remote_ci():
+            print("[POPUP] Remote CI environment detected. Desktop summary popup skipped.")
+            return
+
     try:
         root = tk.Tk()
         root.title(f"{suite_title} - Execution Summary")
         root.resizable(False, False)
+
+        # Force window to stay on top
         root.attributes("-topmost", True)
 
         # Visual theme
@@ -58,7 +96,7 @@ def show_summary_popup(
 
         title_lbl = tk.Label(
             root,
-            text=f"{suite_title.upper()}",
+            text=f"📊  {suite_title.upper()}",
             font=("Segoe UI", 13, "bold"),
             bg=bg_color,
             fg=accent_color,
@@ -188,12 +226,61 @@ def show_summary_popup(
         )
         close_btn.pack(side="left")
 
+        # Keyboard shortcuts to dismiss easily
+        root.bind("<Escape>", lambda e: root.destroy())
+        root.bind("<Return>", lambda e: root.destroy())
+
+        # Center on screen
         root.update_idletasks()
-        w = max(root.winfo_reqwidth(), 380)
+        w = max(root.winfo_reqwidth(), 420)
         h = root.winfo_reqheight()
         x = (root.winfo_screenwidth() - w) // 2
         y = (root.winfo_screenheight() - h) // 2
         root.geometry(f"{w}x{h}+{x}+{y}")
+
+        # Foreground activation helper
+        def _activate_foreground():
+            try:
+                root.deiconify()
+                root.lift()
+                root.attributes("-topmost", True)
+                root.focus_force()
+
+                if sys.platform == "win32":
+                    import ctypes
+                    try:
+                        hwnd = root.winfo_id()
+                        ctypes.windll.user32.SetForegroundWindow(hwnd)
+                        ctypes.windll.user32.BringWindowToTop(hwnd)
+                    except Exception:
+                        pass
+                elif sys.platform == "darwin":
+                    import subprocess
+                    try:
+                        subprocess.run(
+                            ["osascript", "-e", 'tell application "System Events" to set frontmost of (first process whose name is "python" or name is "python3" or name is "Python") to true'],
+                            check=False,
+                            capture_output=True,
+                        )
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        _activate_foreground()
+        root.after(100, _activate_foreground)
+        root.after(250, _activate_foreground)
+
+        # Sound alert to notify user
+        try:
+            root.bell()
+        except Exception:
+            pass
+
+        # Optional timeout support (e.g., SWARAJYA_POPUP_TIMEOUT=30)
+        timeout_env = os.environ.get("SWARAJYA_POPUP_TIMEOUT")
+        if timeout_env and timeout_env.isdigit() and int(timeout_env) > 0:
+            root.after(int(timeout_env) * 1000, root.destroy)
 
         root.mainloop()
     except Exception as exc:
