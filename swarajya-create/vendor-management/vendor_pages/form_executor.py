@@ -395,6 +395,8 @@ class FormExecutor:
 
     def _build_vendor_data(self, tc_id: str, overrides: Dict[str, str]) -> Dict[str, str]:
         is_pos = "POS" in tc_id.upper()
+        ts = int(time.time()) % 100000
+        num = re.sub(r"\D", "", tc_id) or "01"
         raw_baseline = get_baseline_vendor()
         data = {}
         for k, v in raw_baseline.items():
@@ -404,12 +406,20 @@ class FormExecutor:
             norm_k = self.FIELD_NORM_MAP.get(clean_k.lower(), clean_k)
             data[norm_k] = v
 
+        # Baseline mandatory fallbacks for Swarajya staging /addvendor
+        if not data.get("Address"):
+            data["Address"] = "123 Tech Park"
+        if not data.get("State"):
+            data["State"] = "Maharashtra"
+        if not data.get("POC"):
+            data["POC"] = "John Doe"
+        if not data.get("TDS Percentage (%)"):
+            data["TDS Percentage (%)"] = "10"
+
         raw_phone = data.get("Phone") or ""
         raw_digits = re.sub(r"\D", "", raw_phone)
         default_phone = raw_digits[-10:] if len(raw_digits) >= 10 else f"98{(ts % 100000000):08d}"
         data["Phone"] = default_phone
-        num = re.sub(r"\D", "", tc_id) or "01"
-        ts = int(time.time()) % 100000
 
         # Normalize override keys
         normalized_overrides = {}

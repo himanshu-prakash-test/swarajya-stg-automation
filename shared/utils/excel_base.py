@@ -519,8 +519,12 @@ def update_test_result(
             if updated:
                 break
 
-        wb.save(path)
-        wb.close()
+        try:
+            from shared.utils.excel_loader import _safe_save_workbook
+            _safe_save_workbook(wb, path)
+        except Exception:
+            wb.save(path)
+            wb.close()
         log.info("Updated Excel %s [%s]: Status=%s", target_sheet or "Matched Sheet", tc_id, result_status)
     except Exception as exc:
         log.warning("Could not update Excel test result for %s: %s", tc_id, exc)

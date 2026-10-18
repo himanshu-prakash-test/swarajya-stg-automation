@@ -53,6 +53,9 @@ class VendorPage(BasePage):
             return self.set_active_checkbox(checked)
 
         if "country" in key:
+            if not str(value).strip():
+                self.log.info("Leaving Country empty as requested")
+                return True
             return self.select_country(value)
 
         # Exact staging form field mapping
@@ -122,20 +125,23 @@ class VendorPage(BasePage):
             mat_select = self.page.locator("mat-select").first
             mat_select.wait_for(state="visible", timeout=3000)
             mat_select.click()
-            self.page.wait_for_timeout(400)
+            self.page.wait_for_timeout(300)
             
             # Match option in dropdown overlay
             opt = self.page.locator(f"mat-option:has-text('{country_name}'), .mat-mdc-option:has-text('{country_name}')").first
-            if opt.is_visible():
+            try:
+                opt.wait_for(state="visible", timeout=1500)
                 opt.click()
                 self.log.info(f"Selected country: '{country_name}'")
                 return True
+            except Exception:
+                pass
             
             # Default to first option (e.g. India) if exact country not listed
             first_opt = self.page.locator("mat-option, .mat-mdc-option").first
-            if first_opt.is_visible():
+            if first_opt.is_visible(timeout=1000):
                 first_opt.click()
-                self.log.info(f"Selected default country option")
+                self.log.info("Selected default country option")
                 return True
         except Exception as exc:
             self.log.warning(f"Failed to select country '{country_name}': {exc}")
@@ -170,38 +176,43 @@ class VendorPage(BasePage):
         # Handle confirmation dialog if present
         if not confirm:
             try:
-                no_btn = self.page.locator("button:has-text('No')").first
-                no_btn.wait_for(state="visible", timeout=2500)
-                no_btn.click()
-                self.log.info("Dismissed Save popup (clicked No)")
-                self.page.wait_for_timeout(500)
-                return "Cancelled"
-            except Exception as exc:
-                self.log.warning(f"No confirmation popup appeared after clicking Save (expected 'No' button): {exc}")
+                no_btn = self.page.locator(
+                    "mat-dialog-container button:has-text('No'), .modal-footer button:has-text('No'), button:has-text('No')"
+                ).first
+                if no_btn.is_visible(timeout=1000):
+                    no_btn.click()
+                    self.log.info("Dismissed Save popup (clicked No)")
+                    self.page.wait_for_timeout(300)
+                    return "Cancelled"
+            except Exception:
+                pass
         else:
             try:
-                yes_btn = self.page.locator("button:has-text('Yes'), button:has-text('Confirm')").first
-                yes_btn.wait_for(state="visible", timeout=2500)
-                yes_btn.click()
-                self.log.info("Confirmed Save popup (clicked Yes)")
-            except Exception as exc:
-                self.log.warning(f"No confirmation popup appeared after clicking Save (expected 'Yes' button): {exc}")
+                yes_btn = self.page.locator(
+                    "mat-dialog-container button:has-text('Yes'), mat-dialog-container button:has-text('Confirm'), button:has-text('Yes'), button:has-text('Confirm')"
+                ).first
+                if yes_btn.is_visible(timeout=1000):
+                    yes_btn.click()
+                    self.log.info("Confirmed Save popup (clicked Yes)")
+            except Exception:
+                pass
 
         # Wait for the API to respond — either a toast appears or the URL changes
-        toast = self._wait_for_post_save_response(timeout=8000)
+        toast = self._wait_for_post_save_response(timeout=4000)
         self.log.info(f"Save confirmation outcome: '{toast}'")
         return toast
 
-    def _wait_for_post_save_response(self, timeout: int = 8000) -> str:
-        """Wait for either a toast/snackbar to appear OR the URL to change from /addvendor."""
+    def _wait_for_post_save_response(self, timeout: int = 4000) -> str:
+        """Wait for either a toast/snackbar to appear, validation errors to appear, OR the URL to change from /addvendor."""
         toast_sel = "simple-snack-bar, .mat-mdc-snack-bar-container, .mat-snack-bar-container, .toast, [role='alert']"
         try:
-            # Wait for either toast OR URL navigation away from addvendor
             self.page.wait_for_function(
                 """(sel) => {
                     const toast = document.querySelector(sel);
+                    const hasToast = toast && toast.offsetParent !== null;
                     const urlChanged = !window.location.href.toLowerCase().includes('addvendor');
-                    return (toast && toast.offsetParent !== null) || urlChanged;
+                    const hasError = document.querySelector('mat-error, .mat-mdc-form-field-error, .invalid-feedback, .error-message') !== null;
+                    return hasToast || urlChanged || hasError;
                 }""",
                 arg=toast_sel,
                 timeout=timeout,
@@ -210,7 +221,7 @@ class VendorPage(BasePage):
             pass
 
         # Now try to capture the toast text
-        return self.get_toast(timeout=2000)
+        return self.get_toast(timeout=1000)
 
     def click_cancel(self) -> bool:
         """Click Cancel / Reset button."""

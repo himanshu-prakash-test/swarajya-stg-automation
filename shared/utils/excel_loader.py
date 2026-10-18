@@ -440,6 +440,30 @@ def build_automation_id(tc_id: str) -> str:
     return clean_id
 
 
+def _safe_save_workbook(wb, file_path: str):
+    """Atomically save openpyxl workbook using a temp file and replace to prevent corruption."""
+    import tempfile
+    dir_name = os.path.dirname(os.path.abspath(file_path))
+    fd, tmp_path = tempfile.mkstemp(suffix=".xlsx", dir=dir_name)
+    os.close(fd)
+    try:
+        wb.save(tmp_path)
+        wb.close()
+        for attempt in range(5):
+            try:
+                os.replace(tmp_path, file_path)
+                return True
+            except PermissionError:
+                time.sleep(0.3)
+        return False
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+
 def update_test_result(
     tc_id: str,
     status: str,
@@ -501,8 +525,7 @@ def update_test_result(
                     break
 
             if found:
-                wb.save(TEST_CASES_FILE)
-                wb.close()
+                _safe_save_workbook(wb, TEST_CASES_FILE)
                 logger.info("Updated Excel %s in %s: Status=%s", tc_id, os.path.basename(TEST_CASES_FILE), status)
                 return True
             wb.close()

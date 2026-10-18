@@ -162,7 +162,7 @@ def session_storage_state(browser):
     success = login_page.login(role="Admin", sheet_name=SHEET_NAME)
     if success:
         page.wait_for_timeout(1000)
-        context.storage_state(path=storage_path)
+        login_page.save_auth_state(path=storage_path)
         log.info(f"Saved authenticated session state to {storage_path}")
     else:
         log.warning("Initial login failed; tests will authenticate per-test")
@@ -184,7 +184,7 @@ def authenticated_page(browser, session_storage_state):
     page.set_default_navigation_timeout(30000)
 
     # Pre-inject saved sessionStorage
-    LoginPage.inject_session_storage(page)
+    LoginPage.inject_session_storage(page, storage_path=storage)
 
     # Health check
     _wait_until_server_healthy(page, max_retries=3, delay_s=2)
