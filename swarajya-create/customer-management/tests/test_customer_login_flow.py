@@ -1,6 +1,7 @@
+import os
 import pytest
-from shared.pages.login_page import LoginPage
-from customer_utils.excel_reader import read_credentials, SHEET_NAME_DATA
+from customer_pages.login_page import LoginPage
+from customer_utils.excel_reader import read_credentials
 
 
 @pytest.mark.login
@@ -18,9 +19,8 @@ class TestCustomerLoginFlow:
         success = login_page.login(
             employee_id=creds["employee_id"],
             password=creds["password"],
-            auth_code=creds.get("auth_code"),
+            auth_code=creds.get("auth_code") or os.environ.get("SWARAJYA_AUTH_CODE") or os.environ.get("AUTH_CODE"),
             role=creds.get("role", "Admin"),
-            sheet_name=SHEET_NAME_DATA,
         )
         assert success, (
             f"Expected Result NOT satisfied: '{expected_result}'. "
