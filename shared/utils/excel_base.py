@@ -34,29 +34,40 @@ def _find_sheet(wb: openpyxl.Workbook, sheet_name: str) -> Optional[str]:
 
 
 def get_base_url(sheet_name: str = "loginhr_admin", file_path: Optional[str] = None) -> str:
-    """Fetch the Base URL strictly from the test data Excel sheet."""
+    """Fetch the Base URL from environment variables or the test data Excel sheet."""
+    env_url = os.environ.get("SWARAJYA_BASE_URL") or os.environ.get("BASE_URL")
+    if env_url:
+        return env_url.rstrip("/")
+
     path = file_path or TEST_DATA_FILE
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Test data file not found at: {path}")
+        return ""
 
     wb = openpyxl.load_workbook(path, data_only=True)
     real_sheet = _find_sheet(wb, sheet_name)
-    if not real_sheet:
-        wb.close()
-        return "https://swarajya-stg.corecotechnologies.com"
+    if real_sheet:
+        ws = wb[real_sheet]
+        headers = [str(c.value).strip().lower() if c.value is not None else "" for c in ws[1]]
+        url_idx = next((i for i, h in enumerate(headers) if "url" in h), None)
+        if url_idx is not None:
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if row and len(row) > url_idx and row[url_idx]:
+                    val = str(row[url_idx]).strip()
+                    wb.close()
+                    return val.rstrip("/")
 
-    ws = wb[real_sheet]
-    headers = [str(c.value).strip().lower() if c.value is not None else "" for c in ws[1]]
-    url_idx = next((i for i, h in enumerate(headers) if "url" in h), 0)
-
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if row and row[url_idx]:
-            val = str(row[url_idx]).strip()
-            wb.close()
-            return val
+    # Search other available sheets in the workbook for a valid URL
+    for s in wb.sheetnames:
+        ws = wb[s]
+        for row in ws.iter_rows(min_row=1, max_row=4, values_only=True):
+            for cell in row:
+                if cell and str(cell).strip().lower().startswith(("http://", "https://")):
+                    val = str(cell).strip()
+                    wb.close()
+                    return val.rstrip("/")
 
     wb.close()
-    return "https://swarajya-stg.corecotechnologies.com"
+    return ""
 
 
 def get_test_data_path(filename: str = "Swarajya-test-data.xlsx") -> str:
@@ -78,9 +89,24 @@ def read_credentials(
     sheet_name: Optional[str] = None,
 ) -> Dict[str, str]:
     """
-    Strictly fetch user credentials by role from the test data Excel workbook.
+    Fetch user credentials by role from environment variables or the test data Excel workbook.
     No hardcoded credentials are used.
     """
+    default_url = get_base_url(sheet_name=sheet_name or "loginhr_admin", file_path=path)
+    env_role_prefix = role.upper().replace("-", "_").replace(" ", "_")
+    env_id = os.environ.get(f"{env_role_prefix}_EMPLOYEE_ID") or os.environ.get("SWARAJYA_EMPLOYEE_ID") or os.environ.get("EMPLOYEE_ID")
+    env_pwd = os.environ.get(f"{env_role_prefix}_PASSWORD") or os.environ.get("SWARAJYA_PASSWORD") or os.environ.get("PASSWORD")
+    env_auth = os.environ.get(f"{env_role_prefix}_AUTH_CODE") or os.environ.get("SWARAJYA_AUTH_CODE") or os.environ.get("AUTH_CODE")
+    if env_id and env_pwd:
+        return {
+            "role": role,
+            "employee_id": env_id.strip(),
+            "password": env_pwd.strip(),
+            "auth_code": (env_auth or "").strip(),
+            "base_url": default_url,
+            "is_valid": True,
+        }
+
     file_path = path or TEST_DATA_FILE
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Credentials workbook not found at: {file_path}")
@@ -124,7 +150,7 @@ def read_credentials(
                     "employee_id": emp_id_str,
                     "password": str(row[pwd_idx]).strip(),
                     "auth_code": auth_code_str,
-                    "base_url": b_url or "https://swarajya-stg.corecotechnologies.com",
+                    "base_url": b_url or default_url,
                     "is_valid": is_valid,
                 }
 
@@ -145,7 +171,7 @@ def read_credentials(
                 "employee_id": emp_id.strip(),
                 "password": pwd.strip(),
                 "auth_code": auth_code.strip(),
-                "base_url": "https://swarajya-stg.corecotechnologies.com",
+                "base_url": default_url,
                 "is_valid": True,
             }
 
@@ -211,7 +237,6 @@ def load_test_data(sheet_name: str, file_path: Optional[str] = None) -> List[Dic
 
     wb = openpyxl.load_workbook(path, data_only=True)
     matched_sheet = _find_sheet(wb, sheet_name)
-
     if not matched_sheet:
         wb.close()
         raise ValueError(f"Sheet '{sheet_name}' not found in {path}. Available sheets: {wb.sheetnames}")
@@ -223,13 +248,19 @@ def load_test_data(sheet_name: str, file_path: Optional[str] = None) -> List[Dic
     if not rows:
         return []
 
-    # Check if first row is a metadata header comment (e.g. "User ID: ...")
-    if rows[0] and rows[0][0] and "user id:" in str(rows[0][0]).lower():
-        header_row = rows[1]
-        data_rows = rows[2:]
-    else:
-        header_row = rows[0]
-        data_rows = rows[1:]
+    # Locate table header row (row containing 'Test Case ID' or first non-empty header row)
+    header_idx = 0
+    for idx, r in enumerate(rows[:10]):
+        row_str = " ".join(str(c).lower() for c in r if c is not None)
+        if "test case id" in row_str or "tc_id" in row_str or "tc id" in row_str:
+            header_idx = idx
+            break
+        elif idx == 0 and "user id:" in row_str:
+            header_idx = 1
+            break
+
+    header_row = rows[header_idx]
+    data_rows = rows[header_idx + 1:]
 
     headers = [str(c).strip() if c is not None else f"col_{i}" for i, c in enumerate(header_row)]
     results = []
@@ -246,7 +277,8 @@ def load_test_data(sheet_name: str, file_path: Optional[str] = None) -> List[Dic
             elif val is not None:
                 val = str(val).strip()
             record[h] = val
-        results.append(record)
+        if record.get("Test Case ID"):
+            results.append(record)
 
     log.info(f"Loaded {len(results)} records from sheet '{matched_sheet}'")
     return results
@@ -262,7 +294,6 @@ def load_test_cases(sheet_name: str, file_path: Optional[str] = None) -> List[Di
 
     wb = openpyxl.load_workbook(path, data_only=True)
     matched_sheet = _find_sheet(wb, sheet_name)
-
     if not matched_sheet:
         wb.close()
         raise ValueError(f"Sheet '{sheet_name}' not found in {path}. Available sheets: {wb.sheetnames}")
@@ -373,6 +404,25 @@ def get_test_case_by_id(
         except Exception:
             continue
     return None
+
+
+def get_test_data_by_id(
+    tc_id: str,
+    sheet_name: Optional[str] = None,
+    file_path: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Retrieve test data record for a specific Test Case ID."""
+    sheets = [sheet_name] if sheet_name else ["createinvoice-mgmt", "loginhr_admin", "loginemp-manager"]
+    for s in sheets:
+        try:
+            records = load_test_data(sheet_name=s, file_path=file_path)
+            for r in records:
+                if str(r.get("Test Case ID", "")).strip() == tc_id.strip():
+                    return r
+        except Exception:
+            continue
+    return None
+
 
 
 def update_test_result(

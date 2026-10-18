@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 
 import jinja2
 
+from shared.utils.excel_base import get_base_url
 from .models import SessionSummary, TestCaseResult
 from .template import REPORT_HTML_TEMPLATE
 
@@ -90,7 +91,7 @@ class PlaywrightHTMLReporter:
             "os": f"{platform.system()} {platform.release()}",
             "browser": "Chromium",
             "mode": "Headless (1920x1080)" if os.environ.get("HEADED") != "1" else "Headed (1920x1080)",
-            "base_url": "https://swarajya-stg.corecotechnologies.com/",
+            "base_url": os.environ.get("SWARAJYA_BASE_URL") or os.environ.get("BASE_URL") or get_base_url(),
         }
 
     def set_environment(self, **kwargs):

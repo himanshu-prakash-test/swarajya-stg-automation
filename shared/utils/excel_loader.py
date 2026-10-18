@@ -64,8 +64,6 @@ MODULE_SHEET_MAP = {
     "create/emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "create/emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     "createemp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
-    "create-emp-mgmt": ("createemp-mgmt", "createemp-mgmt"),
-    "create_emp_mgmt": ("createemp-mgmt", "createemp-mgmt"),
     # Invoice
     "invoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
     "createinvoice": ("createinvoice-mgmt", "createinvoice-mgmt"),
@@ -75,8 +73,6 @@ MODULE_SHEET_MAP = {
     # Login modules
     "login_hr_admin": ("loginhr_admin", "loginhr_admin"),
     "loginhr_admin": ("loginhr_admin", "loginhr_admin"),
-    "login/hr_admin": ("loginhr_admin", "loginhr_admin"),
-    "login/hr-admin": ("loginhr_admin", "loginhr_admin"),
     "login_emp_manager": ("loginemp-manager", "loginemp-manager"),
     "loginemp-manager": ("loginemp-manager", "loginemp-manager"),
     # Update modules
@@ -86,26 +82,7 @@ MODULE_SHEET_MAP = {
     "updatecustomer_mgmt": ("updatecustomer_mgmt", "updatecustomer_mgmt"),
     "update_po": ("updatepurchase-order", "updatepurchase-order"),
     "updatepurchase-order": ("updatepurchase-order", "updatepurchase-order"),
-    "update_invoice": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
-    "updateinvoice_mgmt": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
-    "update/invoice_mgmt": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
-    "update/invoice-mgmt": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
-    "invoice-management": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
-    "invoice_management": ("updateinvoice_mgmt", "updateinvoice_mgmt"),
 }
-
-
-def _resolve_sheet_name(wb: openpyxl.Workbook, sheet_name: Optional[str]) -> Optional[str]:
-    """Find sheet name in workbook with case, slash, and hyphen tolerance."""
-    if not sheet_name:
-        return None
-    if sheet_name in wb.sheetnames:
-        return sheet_name
-    clean_target = re.sub(r"[-_/\s]", "", sheet_name.lower())
-    for s in wb.sheetnames:
-        if re.sub(r"[-_/\s]", "", s.lower()) == clean_target:
-            return s
-    return None
 
 
 def read_base_url(sheet_name: Optional[str] = None) -> str:
@@ -120,8 +97,7 @@ def read_base_url(sheet_name: Optional[str] = None) -> str:
     if os.path.exists(TEST_DATA_FILE):
         try:
             wb = openpyxl.load_workbook(TEST_DATA_FILE, data_only=True)
-            resolved_s = _resolve_sheet_name(wb, sheet_name)
-            sheets_to_check = [resolved_s] if resolved_s else wb.sheetnames
+            sheets_to_check = [sheet_name] if sheet_name and sheet_name in wb.sheetnames else wb.sheetnames
             for s in sheets_to_check:
                 ws = wb[s]
                 # Check rows 1 and 2
@@ -169,9 +145,8 @@ def read_credentials(role: str = "Admin", sheet_name: Optional[str] = None) -> D
             wb = openpyxl.load_workbook(TEST_DATA_FILE, data_only=True)
 
             # A. If sheet_name is provided, check its row 1 and 2 banner
-            resolved_s = _resolve_sheet_name(wb, sheet_name)
-            if resolved_s:
-                ws = wb[resolved_s]
+            if sheet_name and sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
                 r1 = [str(c).strip().lower() if c is not None else "" for c in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
                 r2 = [c for c in next(ws.iter_rows(min_row=2, max_row=2, values_only=True))]
                 emp_id, pwd, code, base_url = None, None, None, None
@@ -320,13 +295,12 @@ def read_data_sheet(sheet_name: str) -> Dict[str, Dict[str, Any]]:
         return {}
 
     wb = openpyxl.load_workbook(TEST_DATA_FILE, data_only=True)
-    real_sheet = _resolve_sheet_name(wb, sheet_name)
-    if not real_sheet:
+    if sheet_name not in wb.sheetnames:
         wb.close()
         logger.warning("Sheet '%s' not found in %s. Available: %s", sheet_name, TEST_DATA_FILE, wb.sheetnames)
         return {}
 
-    ws = wb[real_sheet]
+    ws = wb[sheet_name]
 
     # Dynamically find header row
     header_row_idx = None
@@ -399,12 +373,11 @@ def load_cases_and_data(
     )
 
     wb = openpyxl.load_workbook(TEST_CASES_FILE, data_only=True)
-    real_cases_sheet = _resolve_sheet_name(wb, cases_sheet)
-    if not real_cases_sheet:
+    if cases_sheet not in wb.sheetnames:
         wb.close()
         raise ValueError(f"Sheet '{cases_sheet}' not found in {TEST_CASES_FILE}. Available: {wb.sheetnames}")
 
-    ws = wb[real_cases_sheet]
+    ws = wb[cases_sheet]
     headers = [str(cell.value).strip() for cell in ws[1] if cell.value is not None]
 
     # Load separate test data mapping
@@ -472,7 +445,6 @@ def update_test_result(
     status: str,
     remarks: Optional[str] = None,
     sheet_name: Optional[str] = None,
-    **kwargs: Any,
 ) -> bool:
     """
     Update Test Status, Automation Status, Auto Script ID, and Remarks in Swarajya-test-cases.xlsx.
@@ -480,14 +452,6 @@ def update_test_result(
     """
     if not os.path.exists(TEST_CASES_FILE):
         return False
-
-    dur = kwargs.get("duration_s") or kwargs.get("duration")
-    if dur and remarks:
-        remarks = f"{remarks} ({dur:.2f}s)"
-
-    if not sheet_name and "module_key" in kwargs:
-        mod = kwargs["module_key"]
-        sheet_name = MODULE_SHEET_MAP.get(mod, (mod, mod))[0]
 
     auto_id = build_automation_id(tc_id)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
