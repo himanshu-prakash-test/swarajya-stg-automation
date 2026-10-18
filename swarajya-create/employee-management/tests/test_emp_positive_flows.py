@@ -1,43 +1,26 @@
-"""
-Data-driven positive flow tests for Employee Management (Create Module).
-Loads test definitions and data dynamically from Swarajya-test-cases/data workbooks.
-"""
-
-import os
-import sys
 import pytest
-
-_TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-_MODULE_DIR = os.path.dirname(_TEST_DIR)
-_ROOT_DIR = os.path.dirname(os.path.dirname(_MODULE_DIR))
-
-for _p in (_MODULE_DIR, _ROOT_DIR):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
 
 from emp_pages.form_executor import FormExecutor
 from emp_utils.excel_reader import is_ui_case, read_test_cases
 
-POS_TEST_CASES = [tc for tc in read_test_cases("Positive_Flows") if is_ui_case(tc)]
-POS_IDS = [tc["Test Case ID"] for tc in POS_TEST_CASES]
+positive_cases = read_test_cases("Positive_Flows")
+
+
+def _excel_params(cases):
+    params = []
+    for case in cases:
+        marks = []
+        if not is_ui_case(case):
+            marks.append(pytest.mark.skip(reason="Execution Type is API in Excel workbook"))
+        params.append(pytest.param(case, marks=marks, id=case["Test Case ID"]))
+    return params
 
 
 @pytest.mark.positive
-@pytest.mark.employee
 class TestPositiveFlows:
-    """Data-driven positive flow tests from Excel workbooks."""
+    """Data-driven positive flow tests from the Excel workbook."""
 
-    @pytest.mark.parametrize("test_case", POS_TEST_CASES, ids=POS_IDS)
-    def test_positive_scenario(self, authenticated_page, test_case):
-        executor = FormExecutor(authenticated_page)
-        executor.execute_test_case(test_case, is_positive=True)
-
-
-if __name__ == "__main__":
-    config_file = os.path.join(_ROOT_DIR, "pytest.ini")
-    pytest_args = [__file__, "-c", config_file, "-o", f"rootdir={_ROOT_DIR}", "-v", "-s"]
-    extra_args = sys.argv[1:]
-    if not any(arg in extra_args for arg in ("--headed", "--headless")):
-        pytest_args.append("--headed")
-    pytest_args.extend(extra_args)
-    sys.exit(pytest.main(pytest_args))
+    @pytest.mark.parametrize("tc", _excel_params(positive_cases))
+    def test_positive_scenario(self, logged_in_page, tc):
+        executor = FormExecutor(logged_in_page)
+        executor.execute_test_case(tc, is_positive=True)
