@@ -38,13 +38,13 @@ from shared.utils.popup import show_summary_popup
 log = logging.getLogger(__name__)
 
 SHEET_NAME = "login/emp-manager"
-BASE_URL = get_base_url(sheet_name=SHEET_NAME)
+BASE_URL = os.environ.get("SWARAJYA_BASE_URL") or os.environ.get("BASE_URL") or get_base_url(sheet_name=SHEET_NAME)
 
 SCREENSHOTS_DIR = os.path.join(MODULE_DIR, "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 
-# --- Browser fixtures ---
+# --- CLI options ---
 
 def pytest_addoption(parser):
     existing = set()
@@ -58,23 +58,22 @@ def pytest_addoption(parser):
 
     if "--headed" not in existing:
         try:
-            parser.addoption("--headed", action="store_true", default=False,
-                             help="Run browser in headed mode.")
+            parser.addoption("--headed", action="store_true", default=False, help="Run browser in headed mode.")
         except ValueError:
             pass
     if "--headless" not in existing:
         try:
-            parser.addoption("--headless", action="store_true", default=False,
-                             help="Run browser headless (default).")
+            parser.addoption("--headless", action="store_true", default=False, help="Run browser headless.")
         except ValueError:
             pass
     if "--slowmo" not in existing:
         try:
-            parser.addoption("--slowmo", action="store", default=0, type=int,
-                             help="Slow down Playwright actions (ms).")
+            parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms).")
         except ValueError:
             pass
 
+
+# --- Browser fixtures ---
 
 def _is_headless(config):
     if config.getoption("--headed", default=False):
@@ -316,16 +315,17 @@ def pytest_sessionfinish(session, exitstatus):
         except Exception as exc:
             log.warning(f"Could not finalize HTML report: {exc}")
 
+    # Display execution summary popup
     try:
         show_summary_popup(
+            total=total,
             passed=passed,
             failed=failed,
             skipped=skipped,
-            total=total,
             duration_str=str(dur_str),
             failed_tests=_failed_tests,
-            title="SWARAJYA EMPLOYEE & MANAGER LOGIN",
+            suite_title="Employee & Manager Login",
             report_path=report_path,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log.warning(f"Could not display summary popup: {exc}")
