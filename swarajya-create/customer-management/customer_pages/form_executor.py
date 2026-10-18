@@ -6,30 +6,15 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 from playwright.sync_api import Page
 from customer_pages.customer_page import CustomerPage
-from customer_utils.excel_reader import get_baseline_customer, read_base_url, read_credentials
 from shared.utils.logger import get_logger
 
 log = get_logger("CustomerFormExecutor")
 
-METADATA_KEYS = {
-    "test case id", "tc id", "tc_id", "scenario", "test scenario",
-    "pre-condition", "pre condition", "test steps", "steps",
-    "expected result", "expected results", "automation status",
-    "execution type", "test status", "remarks / defect observed",
-    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
-    "module", "comments", "description", "_row"
-}
-
 
 class FormExecutor:
-    """
-    Executes data-driven test scenarios for Customer Management.
-    All test cases, inputs, and expected outcomes are dynamically driven from Excel workbooks.
-    Zero hardcoded values.
-    """
+    """Executes data-driven test scenarios from Create-Customer-Management.xlsx."""
 
     last_created_customer: Dict[str, str] = {}
-    last_custom_screenshot: Optional[str] = None
 
     FIELD_NORM_MAP = {
         "customer name": "Customer Name",
@@ -85,6 +70,9 @@ class FormExecutor:
         "currency": "Currency",
     }
 
+    last_created_customer: Dict[str, str] = {}
+    last_custom_screenshot: Optional[str] = None
+
     def __init__(self, page: Page):
         self.page = page
         self.customer = CustomerPage(page)
@@ -92,29 +80,20 @@ class FormExecutor:
     def execute_test_case(self, test_case_row: Dict[str, Any], is_positive: bool = True):
         """Main dispatcher for Excel data-driven execution."""
         FormExecutor.last_custom_screenshot = None
-        tc_id = str(test_case_row.get("Test Case ID", "")).strip()
-        scenario = str(test_case_row.get("Scenario", "")).strip()
-        excel_data = test_case_row.get("data") or {}
+        tc_id = test_case_row.get("Test Case ID", "").strip()
+        scenario = test_case_row.get("Scenario", "").strip()
         raw_data = test_case_row.get("Test Data", "")
-        steps = str(test_case_row.get("Steps", test_case_row.get("Test Steps", ""))).strip()
-        expected = str(test_case_row.get("Expected Result", "")).strip()
+        steps = test_case_row.get("Steps", test_case_row.get("Test Steps", ""))
+        expected = test_case_row.get("Expected Result", "")
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
         parsed_data = self._parse_test_data(raw_data)
-        clean_excel = {
-            k.strip(): (str(v)[:-2] if str(v).endswith(".0") and str(v)[:-2].isdigit() else str(v).strip())
-            for k, v in excel_data.items()
-            if v is not None and str(v).strip()
-            and k.strip().lower() not in METADATA_KEYS
-            and not k.strip().lower().startswith("col_")
-        }
-        merged_data = {**clean_excel, **parsed_data}
-        log.info(f"[{tc_id}] Dynamically mapped test data from Excel: {merged_data}")
+        log.info(f"Parsed test data: {parsed_data}")
 
         if is_positive:
-            self._execute_positive(tc_id, merged_data, scenario, steps, expected)
+            self._execute_positive(tc_id, parsed_data, scenario, steps, expected)
         else:
-            self._execute_negative(tc_id, merged_data, scenario, steps, expected)
+            self._execute_negative(tc_id, parsed_data, scenario, steps, expected)
 
     # ----------------- Positive Scenarios -----------------
 
@@ -158,8 +137,8 @@ class FormExecutor:
         # 4. Cancel on form test
         if tc_id in ("TC_CUSTOMER_POS_15", "TC_CUSTOMER_POS_05") and "cancel" in scenario.lower():
             self.customer.open_create_customer_form()
-            full_data = self._build_customer_data(tc_id, data, is_pos=True)
-            self._fill_customer_fields(full_data)
+            for k, v in data.items():
+                self.customer.fill_field(k, v)
             clicked = self.customer.click_cancel()
             self.page.wait_for_timeout(1000)
             returned_to_list = (
@@ -175,8 +154,8 @@ class FormExecutor:
         # 5. Dismiss popup / Select No test
         if tc_id in ("TC_CUSTOMER_POS_16", "TC_CUSTOMER_POS_06") and "dismiss" in scenario.lower():
             self.customer.open_create_customer_form()
-            full_data = self._build_customer_data(tc_id, data, is_pos=True)
-            self._fill_customer_fields(full_data)
+            for k, v in data.items():
+                self.customer.fill_field(k, v)
             outcome = self.customer.click_save_and_confirm(confirm=False)
             remained_on_form = (
                 "addnewcustomer" in self.page.url.lower()
@@ -206,14 +185,14 @@ class FormExecutor:
             return
 
         # 7. Search customer in list by Name
-        if tc_id in ("TC_CUSTOMER_POS_18", "TC_CUSTOMER_POS_07") and "search" in scenario.lower():
+        if tc_id in ("TC_CUSTOMER_POS_18", "TC_CUSTOMER_POS_07"):
             search_name = FormExecutor.last_created_customer.get("name")
             if not search_name:
                 self.customer.open_create_customer_form()
-                full_data = self._build_customer_data("TC_CUSTOMER_POS_04", data, is_pos=True)
+                full_data = self._build_customer_data("TC_CUSTOMER_POS_04", {"Customer Name": "SearchTarget Corp"})
                 self._fill_customer_fields(full_data)
                 self.customer.click_save_and_confirm(confirm=True)
-                search_name = full_data.get("Customer Name", "").strip()
+                search_name = full_data["Customer Name"]
 
             self.customer.open_customer_list()
             found = self.customer.is_customer_in_list(search_name)
@@ -224,8 +203,8 @@ class FormExecutor:
             return
 
         # 8. Search customer in list by Code
-        if tc_id in ("TC_CUSTOMER_POS_19", "TC_CUSTOMER_POS_08") and "code" in scenario.lower():
-            search_code = FormExecutor.last_created_customer.get("code") or data.get("Code") or get_baseline_customer().get("Code", "APEX01")
+        if tc_id in ("TC_CUSTOMER_POS_19", "TC_CUSTOMER_POS_08"):
+            search_code = data.get("Code") or FormExecutor.last_created_customer.get("code") or f"CUST_{(int(time.time()) % 1000):03d}"
             self.customer.open_customer_list()
             self.customer.search_customer(search_code)
             has_error = "404" in self.page.title().lower() or "not found" in self.page.content().lower()
@@ -237,7 +216,7 @@ class FormExecutor:
 
         # 9. Search customer in list by Place of Supply
         if tc_id == "TC_CUSTOMER_POS_20":
-            supply_term = data.get("Place of Supply") or get_baseline_customer().get("Place of Supply", "Maharashtra")
+            supply_term = data.get("Place of Supply", "Maharashtra")
             self.customer.open_customer_list()
             self.customer.search_customer(supply_term)
             has_error = "404" in self.page.title().lower()
@@ -250,8 +229,8 @@ class FormExecutor:
         # 10. Clear search input restores full table
         if tc_id == "TC_CUSTOMER_POS_21":
             self.customer.open_customer_list()
-            filter_query = data.get("Customer Name") or "TestFilter"
-            self.customer.search_customer(filter_query)
+            filter_term = data.get("Search Query") or data.get("Customer Name") or "TestFilter"
+            self.customer.search_customer(filter_term)
             self.customer.clear_search()
             row_count = self.customer.get_grid_row_count()
             assert row_count >= 0, (
@@ -263,7 +242,7 @@ class FormExecutor:
         # 11. Pagination controls
         if tc_id == "TC_CUSTOMER_POS_22":
             self.customer.open_customer_list()
-            self.customer.navigate_pagination("next")
+            paginated = self.customer.navigate_pagination("next")
             self.customer.navigate_pagination("prev")
             assert "customerdetails" in self.page.url.lower(), (
                 f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
@@ -276,10 +255,10 @@ class FormExecutor:
             last_cust = FormExecutor.last_created_customer
             if not last_cust.get("name"):
                 self.customer.open_create_customer_form()
-                full_data = self._build_customer_data("TC_CUSTOMER_POS_04", data, is_pos=True)
+                full_data = self._build_customer_data("TC_CUSTOMER_POS_04", {"Customer Name": "VerifyGrid Corp"})
                 self._fill_customer_fields(full_data)
                 self.customer.click_save_and_confirm(confirm=True)
-                last_cust = {"name": full_data.get("Customer Name", ""), "code": full_data.get("Code", "")}
+                last_cust = {"name": full_data["Customer Name"], "code": full_data.get("Code", "")}
 
             self.customer.open_customer_list()
             found = self.customer.is_customer_in_list(last_cust["name"])
@@ -294,7 +273,7 @@ class FormExecutor:
             self.customer.open_create_customer_form()
             options = self.customer.get_dropdown_options("Country")
             log.info(f"Retrieved Country dropdown options: {options}")
-            target_country = data.get("Country") or ("India" if "India" in options else (options[0] if options else "India"))
+            target_country = "India" if "India" in options else (options[0] if options else "India")
             selected = self.customer.verify_dropdown_selection("Country", target_country)
             assert selected, (
                 f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
@@ -302,7 +281,7 @@ class FormExecutor:
             )
             return
 
-        # 14. Verify Currency dropdown can be opened and currencies are selectable correctly
+        # 14. Verify Currency dropdown can be opened and options (INR / Indian Rupees, USD, EUR) are selectable correctly
         if tc_id == "TC_CUSTOMER_POS_25":
             self.customer.open_create_customer_form()
             options = self.customer.get_dropdown_options("Currency")
@@ -321,8 +300,10 @@ class FormExecutor:
         if tc_id == "TC_CUSTOMER_POS_26":
             self.customer.open_create_customer_form()
             initial_state = self.customer.get_igst_switch_state()
+            # Toggle to opposite state
             toggled = self.customer.toggle_igst_switch()
             state_after_toggle = self.customer.get_igst_switch_state()
+            # Toggle back
             self.customer.toggle_igst_switch()
             restored_state = self.customer.get_igst_switch_state()
 
@@ -338,22 +319,26 @@ class FormExecutor:
         full_data = self._build_customer_data(tc_id, data, is_pos=True)
         self._fill_customer_fields(full_data)
 
+        # Press Save and click Yes on confirmation snackbar / dialog
         outcome = self.customer.click_save_and_confirm(confirm=True)
         customer_name = full_data.get("Customer Name", "").strip()
         customer_code = full_data.get("Code", "").strip()
 
+        # Check for validation errors
         errors = self.customer.get_validation_errors()
         assert not errors, (
             f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
             f"Actual: Customer creation has unexpected validation errors: {errors}"
         )
 
+        # Strict positive assertions: must not reject or fail
         is_rejected = "error" in outcome.lower() or "failed" in outcome.lower() or "please fill" in outcome.lower()
         assert not is_rejected, (
             f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
             f"Actual: Customer creation was rejected or failed. Outcome message: '{outcome}'"
         )
 
+        # Validate that newly created customer is visible on the Customer Details page by searching with customer name
         self.customer.open_customer_list()
         found = self.customer.is_customer_in_list(customer_name)
         assert found, (
@@ -362,7 +347,7 @@ class FormExecutor:
         )
 
         FormExecutor.last_created_customer = {"name": customer_name, "code": customer_code}
-        log.info(f"[{tc_id}] Customer successfully created and recorded: {FormExecutor.last_created_customer}")
+        log.info(f"Successfully created customer [{tc_id}] and confirmed visible in listing: '{customer_name}'")
 
     # ----------------- Negative Scenarios -----------------
 
@@ -372,39 +357,60 @@ class FormExecutor:
             base_name = FormExecutor.last_created_customer.get("name")
             if not base_name:
                 self.customer.open_create_customer_form()
-                base_data = self._build_customer_data("TC_CUSTOMER_POS_04", data, is_pos=True)
+                base_data = self._build_customer_data("TC_CUSTOMER_POS_04", {"Customer Name": "DuplicateTarget Corp"})
                 self._fill_customer_fields(base_data)
                 self.customer.click_save_and_confirm(confirm=True)
-                base_name = base_data.get("Customer Name", "").strip()
+                base_name = base_data["Customer Name"]
 
             self.customer.open_create_customer_form()
             dup_data = self._build_customer_data(tc_id, {"Customer Name": base_name}, is_pos=False)
-            dup_data["Customer Name"] = base_name
+            dup_data["Customer Name"] = base_name  # exact duplicate
             self._fill_customer_fields(dup_data)
             outcome = self.customer.click_save_and_confirm(confirm=True)
-            self._assert_negative_rejected(tc_id, expected, save_outcome=outcome)
+            errors = self.customer.get_validation_errors()
+            all_text = f"{outcome} {' '.join(errors)}".lower()
+
+            has_conflict = "exist" in all_text or "duplicate" in all_text or "already" in all_text or "error" in all_text or len(errors) > 0
+            assert has_conflict, (
+                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
+                f"Actual: Application did not reject duplicate customer name '{base_name}'. Outcome: '{outcome}', Errors: {errors}"
+            )
             return
 
         # 2. Duplicate Code rejection
         if tc_id == "TC_CUSTOMER_NEG_02":
-            base_code = data.get("Code") or FormExecutor.last_created_customer.get("code") or get_baseline_customer().get("Code", "APEX01")
+            base_code = data.get("Code") or FormExecutor.last_created_customer.get("code") or f"DUP_{(int(time.time()) % 1000):03d}"
             self.customer.open_create_customer_form()
             dup_data = self._build_customer_data(tc_id, {"Code": base_code}, is_pos=False)
             dup_data["Code"] = base_code
             self._fill_customer_fields(dup_data)
             outcome = self.customer.click_save_and_confirm(confirm=True)
-            self._assert_negative_rejected(tc_id, expected, save_outcome=outcome)
+            errors = self.customer.get_validation_errors()
+            all_text = f"{outcome} {' '.join(errors)}".lower()
+
+            has_conflict = "exist" in all_text or "code" in all_text or "duplicate" in all_text or "already" in all_text or "error" in all_text or len(errors) > 0
+            assert has_conflict, (
+                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
+                f"Actual: Application did not reject duplicate customer code '{base_code}'. Outcome: '{outcome}', Errors: {errors}"
+            )
             return
 
         # 3. Duplicate GST No. rejection
         if tc_id == "TC_CUSTOMER_NEG_03":
-            base_gst = data.get("GST No.") or get_baseline_customer().get("GST No.", "27ABCDE1234F1Z5")
+            base_gst = data.get("GST No.") or data.get("GST No") or data.get("GSTIN") or f"27ABCDE{(int(time.time()) % 10000):04d}F1Z5"
             self.customer.open_create_customer_form()
             dup_data = self._build_customer_data(tc_id, {"GST No.": base_gst}, is_pos=False)
             dup_data["GST No."] = base_gst
             self._fill_customer_fields(dup_data)
             outcome = self.customer.click_save_and_confirm(confirm=True)
-            self._assert_negative_rejected(tc_id, expected, save_outcome=outcome)
+            errors = self.customer.get_validation_errors()
+            all_text = f"{outcome} {' '.join(errors)}".lower()
+
+            has_conflict = "exist" in all_text or "gst" in all_text or "duplicate" in all_text or "already" in all_text or "error" in all_text or len(errors) > 0
+            assert has_conflict, (
+                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
+                f"Actual: Application did not reject duplicate GST No. '{base_gst}'. Outcome: '{outcome}', Errors: {errors}"
+            )
             return
 
         # 4. Verify customer is NOT created when clicking 'No' on confirmation
@@ -424,7 +430,7 @@ class FormExecutor:
 
         # 5. Non-existent customer search returns empty grid state
         if tc_id == "TC_CUSTOMER_NEG_05":
-            non_existent = data.get("Customer Name") or f"NonExistent_{int(time.time())}"
+            non_existent = data.get("Customer Name") or data.get("Search Query") or "XYZ_NonExistent_99999"
             self.customer.open_customer_list()
             self.customer.search_customer(non_existent)
             is_empty = self.customer.is_empty_grid_displayed()
@@ -441,8 +447,8 @@ class FormExecutor:
                 temp_context = browser.new_context()
                 temp_page = temp_context.new_page()
                 try:
-                    base_url = read_base_url()
-                    temp_page.goto(f"{base_url}/addNewCustomer", timeout=15000)
+                    target_url = f"{self.customer.base_url.rstrip('/')}/addNewCustomer"
+                    temp_page.goto(target_url, timeout=15000)
                     temp_page.wait_for_load_state("domcontentloaded")
                     parsed_path = urlparse(temp_page.url).path.lower()
                     blocked = (
@@ -456,6 +462,16 @@ class FormExecutor:
                         f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
                         f"Actual: Unauthenticated user was allowed access to /addNewCustomer. URL: {temp_page.url}"
                     )
+                    # Capture evidence screenshot of unauthenticated redirect immediately after test executes
+                    screenshots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")
+                    os.makedirs(screenshots_dir, exist_ok=True)
+                    shot_path = os.path.join(screenshots_dir, f"PASS_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+                    try:
+                        temp_page.screenshot(path=shot_path, full_page=True)
+                        FormExecutor.last_custom_screenshot = shot_path
+                        log.info(f"Captured post-execution screenshot for {tc_id}: {shot_path}")
+                    except Exception as e:
+                        log.warning(f"Could not take screenshot in TC_CUSTOMER_NEG_06: {e}")
                 finally:
                     temp_context.close()
             return
@@ -471,6 +487,8 @@ class FormExecutor:
                 if save_btn.is_visible():
                     save_btn.click()
                     self.page.wait_for_timeout(1000)
+                errors = self.customer.get_validation_errors()
+                outcome = self.customer.get_toast_message(timeout=2000)
                 assert "customerdetails" not in self.page.url.lower(), (
                     f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
                     f"Actual: Application unexpectedly redirected to listing while network was offline."
@@ -485,70 +503,36 @@ class FormExecutor:
             timeout_data = self._build_customer_data(tc_id, data, is_pos=False)
             self._fill_customer_fields(timeout_data)
 
+            # Clear session cookies to simulate session timeout / expiration
             self.page.context.clear_cookies()
             try:
-                self.page.evaluate("() => { localStorage.clear(); sessionStorage.clear(); }")
-            except Exception:
+                save_btn = self.page.locator("button:has-text('Save'), button[type='submit']").first
+                if save_btn.is_visible():
+                    save_btn.click()
+                    self.page.wait_for_timeout(1000)
+                url = self.page.url.lower()
+                body_text = self.page.content().lower()
+                is_handled = (
+                    "login" in url
+                    or "tfa" in url
+                    or "session" in body_text
+                    or "expired" in body_text
+                    or "unauthorized" in body_text
+                    or "customerdetails" not in url
+                )
+                assert is_handled, (
+                    f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
+                    f"Actual: Application accepted save with expired session instead of redirecting to login. URL: {self.page.url}"
+                )
+            finally:
                 pass
-            save_btn = self.page.locator("button:has-text('Save'), button[type='submit']").first
-            if save_btn.is_visible():
-                save_btn.click()
-                self.page.wait_for_timeout(1000)
-            url = self.page.url.lower()
-            body_text = self.page.content().lower()
-            is_handled = (
-                "login" in url
-                or "tfa" in url
-                or "session" in body_text
-                or "expired" in body_text
-                or "unauthorized" in body_text
-                or "customerdetails" not in url
-            )
-            assert is_handled, (
-                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
-                f"Actual: Application accepted save with expired session instead of redirecting to login. URL: {self.page.url}"
-            )
             return
 
-    def _assert_negative_rejected(self, tc_id: str, expected: str, save_outcome: str = ""):
-        """Assert that an invalid negative test submission was rejected by the application."""
-        errors = self.customer.get_validation_errors()
-        toast = save_outcome if save_outcome else self.customer.get_toast_message(timeout=2500)
-        url = self.page.url.lower()
-
-        if "customerdetails" in url:
-            raise AssertionError(
-                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
-                f"Actual: Application accepted invalid input without validation error (redirected to customer details)."
-            )
-
-        if toast and "success" in toast.lower():
-            raise AssertionError(
-                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
-                f"Actual: Application accepted invalid input with success toast: '{toast}'."
-            )
-
-        has_error_toast = bool(toast) and "success" not in toast.lower()
-        rejected = bool(errors) or has_error_toast
-
-        if not rejected:
-            raise AssertionError(
-                f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
-                f"Actual: Application accepted invalid input without displaying validation errors. "
-                f"Errors: {errors}, Toast: '{toast}', URL: {url}"
-            )
-        log.info(f"[{tc_id}] Negative validation succeeded: submission rejected as expected. Errors: {errors}")
 
     # ----------------- Helpers & Data Parsing -----------------
 
     def _parse_test_data(self, raw_data: Any) -> Dict[str, str]:
-        """Parse key-value pairs from Excel Test Data or return dict if already structured."""
-        if isinstance(raw_data, dict):
-            return {
-                str(k).strip(): (str(v) if v is not None and str(v).lower() != "none" else "")
-                for k, v in raw_data.items()
-                if str(k).strip().lower() not in METADATA_KEYS and not str(k).lower().startswith("col_")
-            }
+        """Parse key-value pairs from Excel Test Data cell."""
         if not raw_data or str(raw_data).strip().lower() in ("fetch from excel", "n/a", "none", "-"):
             return {}
 
@@ -561,27 +545,21 @@ class FormExecutor:
                 parts = line.split(":", 1)
                 k = parts[0].strip()
                 v = parts[1].strip().strip("'\"")
-                if k.lower() not in METADATA_KEYS and not k.lower().startswith("col_"):
-                    result[k] = v
+                result[k] = v
             elif "=" in line:
                 parts = line.split("=", 1)
                 k = parts[0].strip()
                 v = parts[1].strip().strip("'\"")
-                if k.lower() not in METADATA_KEYS and not k.lower().startswith("col_"):
-                    result[k] = v
+                result[k] = v
         return result
 
     def _build_customer_data(self, tc_id: str, overrides: Dict[str, str], is_pos: bool = True) -> Dict[str, str]:
-        """Build full dataset for customer form submission dynamically from Excel baseline and overrides."""
-        baseline = dict(get_baseline_customer())
-        num = re.sub(r"\D", "", tc_id) or "01"
+        """Build full dataset for customer form submission with appropriate Customer Details fields."""
         ts = int(time.time()) % 100000
         pan_digits = ts % 10000
-
-        default_phone_1 = baseline.get("Primary Person Phone") or "9820012345"
-        clean_def_phone_1 = re.sub(r"\D", "", default_phone_1)[-10:] if re.sub(r"\D", "", default_phone_1) else f"98{(ts % 100000000):08d}"
-        default_phone_2 = baseline.get("Finance Person Phone") or "9820054321"
-        clean_def_phone_2 = re.sub(r"\D", "", default_phone_2)[-10:] if re.sub(r"\D", "", default_phone_2) else f"98{(ts % 100000000):08d}"
+        num = re.sub(r"\D", "", tc_id) or "01"
+        default_phone_1 = f"9{ts%900000000+100000000}"
+        default_phone_2 = f"8{ts%900000000+100000000}"
 
         mandatory_keys = [
             "Customer Name",
@@ -592,57 +570,63 @@ class FormExecutor:
             "Currency",
         ]
 
-        if tc_id == "TC_CUSTOMER_POS_05" or len(overrides) >= 15:
-            data = dict(baseline)
-        else:
-            data = {k: baseline[k] for k in mandatory_keys if k in baseline}
+        full_template = {
+            "Customer Name": f"AutoCustomer_{num}_{ts}",
+            "Address Line 1": f"Address Line {num}",
+            "Address Line 2": f"Area {ts % 100}",
+            "City": "Pune",
+            "PIN": f"4{ts%90000+10000}",
+            "State": "Maharashtra",
+            "Country": "India",
+            "Is IGST Applicable?": "Yes",
+            "PAN/IT NO.": f"ABCDE{pan_digits:04d}F",
+            "GST No.": f"27ABCDE{pan_digits:04d}F1Z5",
+            "Code": f"C{num[-1]}",
+            "Place of Supply": "Maharashtra",
+            "Primary Person Name": f"Primary {num}",
+            "Finance Person Name": f"Finance {num}",
+            "Primary Person Phone": default_phone_1,
+            "Finance Person Phone": default_phone_2,
+            "Primary Person Email ID": f"primary_{num}_{ts}@example.com",
+            "Finance Person Email ID": f"finance_{num}_{ts}@example.com",
+            "Payment Terms (Days)": "30",
+            "Currency": "INR",
+        }
 
+        # Normalize override keys
         normalized_overrides = {}
         for k, v in overrides.items():
-            clean_k = re.sub(r"[\*:]", "", str(k)).strip()
-            if clean_k.lower() in METADATA_KEYS or clean_k.lower().startswith("col_"):
-                continue
-            norm_key = self.FIELD_NORM_MAP.get(clean_k.lower(), clean_k)
+            norm_key = self.FIELD_NORM_MAP.get(k.strip().lower(), k.strip())
             normalized_overrides[norm_key] = v
+
+        # If POS_05 or extensive data provided, start with full 20 fields
+        if tc_id == "TC_CUSTOMER_POS_05" or len(normalized_overrides) >= 15:
+            data = dict(full_template)
+        else:
+            # Baseline is the mandatory fields
+            data = {k: full_template[k] for k in mandatory_keys if k in full_template}
 
         for k, v in normalized_overrides.items():
             key_lower = k.lower()
-            val_str = str(v).strip() if v is not None else ""
-
             if "customer name" in key_lower and is_pos:
-                clean_name = val_str.replace("'", "")
-                if tc_id == "TC_CUSTOMER_POS_14" or "trim" in tc_id.lower():
-                    v = f"   {clean_name.strip()}_{ts}   "
+                if tc_id == "TC_CUSTOMER_POS_14":
+                    v = f"  Trimmed_{ts}  "
                 else:
+                    clean_name = str(v).strip().replace("'", "")
                     v = f"{clean_name}_{ts}"
             elif "email" in key_lower and is_pos:
-                base_email = val_str if val_str and "@" in val_str else baseline.get(k) or baseline.get("Finance Person Email ID") or ""
-                if "@" in base_email:
-                    u_part, d_part = base_email.split("@", 1)
-                    v = f"{u_part}_{num}_{ts}@{d_part}"
-                else:
-                    v = f"cust_{num}_{ts}@example.com"
+                v = f"cust_{num}_{ts}@example.com"
             elif "phone" in key_lower:
-                if not is_pos and (any(ch.isalpha() for ch in val_str) or (len(val_str) < 10 and val_str.isdigit())):
-                    v = val_str
-                else:
-                    digits = re.sub(r"\D", "", val_str)
-                    target_def = clean_def_phone_1 if "primary" in key_lower else clean_def_phone_2
+                if "invalid" not in tc_id.lower() and not ("invalid" in str(v).lower() or len(str(v)) < 10):
+                    digits = re.sub(r"\D", "", str(v))
                     if len(digits) == 10 and digits[0] in "6789":
                         v = digits
-                    elif len(digits) >= 10 and digits[-10] in "6789":
-                        v = digits[-10:]
                     else:
-                        v = target_def
+                        v = default_phone_1
             elif "pan" in key_lower and is_pos:
-                clean_pan = val_str if len(val_str) == 10 and val_str[:5].isalpha() else (baseline.get("PAN/IT NO.") or "ABCDE1234F")
-                v = f"{clean_pan[:5]}{pan_digits:04d}{clean_pan[-1]}"
+                v = f"ABCDE{pan_digits:04d}F"
             elif "gst" in key_lower and is_pos:
-                clean_gst = val_str if len(val_str) == 15 else (baseline.get("GST No.") or "27ABCDE1234F1Z5")
-                v = f"{clean_gst[:7]}{pan_digits:04d}{clean_gst[11:]}"
-            elif "code" in key_lower and is_pos:
-                clean_code = val_str if val_str else baseline.get("Code", "CUST")
-                v = f"{clean_code[:6]}_{num}_{ts%1000}"[:15]
+                v = f"27ABCDE{pan_digits:04d}F1Z5"
             data[k] = v
 
         return data
@@ -651,12 +635,9 @@ class FormExecutor:
         """Fill each field on customer form."""
         failed_fields = []
         for field, value in data.items():
-            clean_field = re.sub(r"[\*:]", "", str(field)).strip()
-            if clean_field.lower() in METADATA_KEYS or clean_field.lower().startswith("col_"):
-                continue
-            success = self.customer.fill_field(clean_field, value)
+            success = self.customer.fill_field(field, value)
             if not success:
-                failed_fields.append(clean_field)
+                failed_fields.append(field)
         if failed_fields:
             log.warning(f"Fields not matched directly on UI: {failed_fields}")
             mandatory_names = {

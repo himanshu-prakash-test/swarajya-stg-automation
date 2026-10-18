@@ -1,5 +1,5 @@
 from .customer_page import CustomerPage
 from .form_executor import FormExecutor
-from shared.pages.login_page import LoginPage
+from .login_page import LoginPage
 
 __all__ = ["CustomerPage", "FormExecutor", "LoginPage"]
