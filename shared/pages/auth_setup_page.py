@@ -31,14 +31,16 @@ class AuthSetupPage(BasePage):
             creds = read_credentials(role=role)
             employee_id = creds["employee_id"]
             password = creds["password"]
-            auth_code = auth_code or creds.get("auth_code", "111111")
+            auth_code = auth_code or creds.get("auth_code") or os.environ.get("SWARAJYA_AUTH_CODE") or os.environ.get("AUTH_CODE")
+
+        resolved_auth_code = auth_code or os.environ.get("SWARAJYA_AUTH_CODE") or os.environ.get("AUTH_CODE") or ""
 
         if "default" in self.page.url.lower() or "dashboard" in self.page.url.lower():
             log.info("Already on dashboard.")
             return True
 
         if "tfa" in self.page.url.lower():
-            self._handle_2fa(auth_code or "111111")
+            self._handle_2fa(resolved_auth_code)
             return True
 
         self.goto("/")
@@ -63,7 +65,7 @@ class AuthSetupPage(BasePage):
             pass
 
         if "tfa" in self.page.url.lower():
-            self._handle_2fa(auth_code or "111111")
+            self._handle_2fa(resolved_auth_code)
 
         success = "login" not in self.page.url.lower()
         if success and save_state_path:

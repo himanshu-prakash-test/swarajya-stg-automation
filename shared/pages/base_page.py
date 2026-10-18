@@ -2,11 +2,13 @@ import os
 import time
 from typing import List, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout
+from shared.utils.excel_base import get_base_url
 from shared.utils.logger import get_logger
 
-BASE_URL = os.environ.get(
-    "SWARAJYA_BASE_URL",
-    os.environ.get("BASE_URL", "https://swarajya-stg.corecotechnologies.com"),
+BASE_URL = (
+    os.environ.get("SWARAJYA_BASE_URL")
+    or os.environ.get("BASE_URL")
+    or get_base_url()
 ).rstrip("/")
 
 

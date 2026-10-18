@@ -5,11 +5,13 @@ Environment variables override defaults for CI/CD and production flexibility.
 """
 
 import os
+from shared.utils.excel_base import get_base_url
 
 # ── URLs ────────────────────────────────────────────────────────
-BASE_URL = os.environ.get(
-    "SWARAJYA_BASE_URL",
-    os.environ.get("BASE_URL", "https://swarajya-stg.corecotechnologies.com"),
+BASE_URL = (
+    os.environ.get("SWARAJYA_BASE_URL")
+    or os.environ.get("BASE_URL")
+    or get_base_url()
 ).rstrip("/")
 
 # ── Authentication Defaults ─────────────────────────────────────
