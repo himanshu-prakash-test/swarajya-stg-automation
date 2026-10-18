@@ -277,10 +277,12 @@ def show_summary_popup(
         except Exception:
             pass
 
-        # Optional timeout support (e.g., SWARAJYA_POPUP_TIMEOUT=30)
+        # Optional timeout support with a safe default of 12 seconds so automated/unattended runs don't hang
         timeout_env = os.environ.get("SWARAJYA_POPUP_TIMEOUT")
         if timeout_env and timeout_env.isdigit() and int(timeout_env) > 0:
             root.after(int(timeout_env) * 1000, root.destroy)
+        else:
+            root.after(12000, root.destroy)
 
         root.mainloop()
     except Exception as exc:
