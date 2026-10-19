@@ -80,7 +80,6 @@ class PlaywrightHTMLReporter:
     def __init__(self, suite_title: str = "Swarajya Staging Automation", output_dir: Optional[str] = None):
         self.suite_title = suite_title
         self.output_dir = output_dir or DEFAULT_REPORTS_DIR
-        os.makedirs(self.output_dir, exist_ok=True)
 
         self.start_time = datetime.now()
         self.results: List[TestCaseResult] = []
@@ -178,6 +177,7 @@ class PlaywrightHTMLReporter:
         )
 
         # Write to single, clean latest_report.html
+        os.makedirs(self.output_dir, exist_ok=True)
         report_path = os.path.join(self.output_dir, "latest_report.html")
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(html_content)
