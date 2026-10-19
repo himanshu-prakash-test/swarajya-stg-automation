@@ -1,0 +1,81 @@
+name: Swarajya Automation CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - shared
+      - 'login/**'
+      - 'create/**'
+      - 'update/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      module_path:
+        description: 'Target test directory or path (leave blank to use branch default)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run Automated Tests (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      CI: "true"
+      PYTEST_NO_POPUP: "1"
+      SWARAJYA_ENV: "staging"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Browsers & OS Dependencies
+        run: |
+          playwright install --with-deps chromium
+
+      - name: Verify Pytest Test Collection
+        run: |
+          pytest --collect-only -q
+
+      - name: Execute Pytest Suite
+        run: |
+          mkdir -p reports
+          TARGET_PATH="${{ github.event.inputs.module_path }}"
+          if [ -n "$TARGET_PATH" ]; then
+            echo "Executing manually specified path: $TARGET_PATH"
+            pytest "$TARGET_PATH" -v --html=reports/latest_report.html --self-contained-html
+          else
+            echo "Executing default test suite configured for this branch..."
+            pytest -v --html=reports/latest_report.html --self-contained-html
+          fi
+
+      - name: Upload HTML Test Report & Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swarajya-test-artifacts-${{ github.ref_name }}
+          path: |
+            reports/
+            screenshots/
+            shared/reports/
+            **/screenshots/
+          retention-days: 14
