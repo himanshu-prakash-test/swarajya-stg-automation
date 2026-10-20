@@ -64,6 +64,18 @@ jobs:
           if [ -n "$TARGET_PATH" ]; then
             echo "Executing manually specified path: $TARGET_PATH"
             pytest "$TARGET_PATH" -v --headless --html=reports/latest_report.html --self-contained-html
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "Executing all module suites independently..."
+            EXIT_CODE=0
+            if [ -d "swarajya-login/emp-manager/tests" ]; then
+              echo ">>> Running Login Emp-Manager Tests..."
+              pytest swarajya-login/emp-manager/tests -v --headless --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
+            fi
+            if [ -d "swarajya-create/employee-management/tests" ]; then
+              echo ">>> Running Create Employee-Management Tests..."
+              pytest swarajya-create/employee-management/tests -v --headless --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
+            fi
+            exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."
             pytest -v --headless --html=reports/latest_report.html --self-contained-html
