@@ -389,35 +389,51 @@ class EmployeePage(BasePage):
         cleaned_last = re.sub(r"\s+", " ", str(expected_last_name)).strip().lower() if expected_last_name else ""
 
         try:
+            # Wait for table to render initial data rows before searching
+            try:
+                self.page.wait_for_selector(".mat-mdc-row, .mat-row, tr:has-text('Active')", timeout=8000)
+            except Exception:
+                pass
             self.page.wait_for_timeout(1000)
+
             input_locator = self.page.locator(self.SEARCH_INPUT).first
             input_locator.wait_for(state="visible", timeout=8000)
-            input_locator.click()
-            input_locator.fill("")
-            input_locator.press_sequentially(cleaned_query, delay=15)
-            input_locator.dispatch_event("input")
-            input_locator.dispatch_event("change")
-            input_locator.press("Enter")
 
             import time
-            start = time.time()
             row_selectors = "tr, [role='row'], .mat-mdc-row, .mat-row"
-            while time.time() - start < 8.0:
-                rows = self.page.locator(row_selectors).all()
-                for row in rows:
-                    text = row.inner_text().strip()
-                    lower_text = re.sub(r"\s+", " ", text).lower()
-                    if cleaned_query.lower() not in lower_text:
-                        continue
-                    if cleaned_last and cleaned_last not in lower_text:
-                        continue
-                    return {"row_text": text, "employee_id": self._extract_employee_id(text)}
 
-                body_text = re.sub(r"\s+", " ", self.page.locator("body").inner_text()).lower()
-                if cleaned_query.lower() in body_text and (not cleaned_last or cleaned_last in body_text):
-                    return {"row_text": body_text, "employee_id": self._extract_employee_id(body_text)}
+            for attempt in range(2):
+                input_locator.click()
+                input_locator.fill("")
+                self.page.wait_for_timeout(300)
+                input_locator.press_sequentially(cleaned_query, delay=20)
+                input_locator.dispatch_event("input")
+                input_locator.dispatch_event("change")
+                input_locator.press("Enter")
 
-                self.page.wait_for_timeout(500)
+                start = time.time()
+                while time.time() - start < 8.0:
+                    rows = self.page.locator(row_selectors).all()
+                    for row in rows:
+                        text = row.inner_text().strip()
+                        lower_text = re.sub(r"\s+", " ", text).lower()
+                        if "no data matching" in lower_text:
+                            continue
+                        if cleaned_query.lower() not in lower_text:
+                            continue
+                        if cleaned_last and cleaned_last not in lower_text:
+                            continue
+                        return {"row_text": text, "employee_id": self._extract_employee_id(text)}
+
+                    body_text = re.sub(r"\s+", " ", self.page.locator("body").inner_text()).lower()
+                    if "no data matching" not in body_text and cleaned_query.lower() in body_text and (not cleaned_last or cleaned_last in body_text):
+                        return {"row_text": body_text, "employee_id": self._extract_employee_id(body_text)}
+
+                    self.page.wait_for_timeout(500)
+
+                if attempt == 0:
+                    self.navigate_to_employee_list()
+                    self.page.wait_for_timeout(1500)
         except Exception as exc:
             log.warning(f"Error searching employee list for '{cleaned_query}': {exc}")
         return None
