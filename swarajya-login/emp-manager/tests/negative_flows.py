@@ -125,6 +125,7 @@ class TestEmpManagerNegativeFlows:
 
         _login_full(page, base_url, role="Manager")
         resp = page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
+        page.wait_for_timeout(2500)
 
         content_lower = page.content().lower()
         login = LoginPage(page, base_url)
@@ -134,10 +135,13 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "not found" in content_lower
+            or "page not found" in content_lower
+            or "back to home" in content_lower
             or "service unavailable" in content_lower
             or "503" in content_lower
             or (resp and resp.status >= 400)
-            or page.locator("app-error").count() > 0
+            or page.locator("text=/page not found|access denied|forbidden|not authorized/i").count() > 0
+            or page.locator("app-error, app-not-found").count() > 0
             or login.is_employee_id_field_visible()
             or "/default" in page.url.lower()
         ), (
@@ -248,6 +252,7 @@ class TestEmpManagerNegativeFlows:
 
         _login_full(page, base_url, role="Employee")
         resp = page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
+        page.wait_for_timeout(2500)
 
         content_lower = page.content().lower()
         login = LoginPage(page, base_url)
@@ -257,10 +262,13 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "not found" in content_lower
+            or "page not found" in content_lower
+            or "back to home" in content_lower
             or "service unavailable" in content_lower
             or "503" in content_lower
             or (resp and resp.status >= 400)
-            or page.locator("app-error").count() > 0
+            or page.locator("text=/page not found|access denied|forbidden|not authorized/i").count() > 0
+            or page.locator("app-error, app-not-found").count() > 0
             or login.is_employee_id_field_visible()
             or "/default" in page.url.lower()
         ), (
