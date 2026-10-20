@@ -1,5 +1,5 @@
 """
-Root Pytest Configuration for create/emp-mgmt branch.
+Root Pytest Configuration.
 Ensures workspace root is in sys.path for shared module imports and registers CLI options.
 """
 import os
