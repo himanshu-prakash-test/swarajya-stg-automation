@@ -251,16 +251,17 @@ class VendorPage(BasePage):
 
     def toggle_include_inactive(self, checked: bool = True) -> bool:
         """Toggle the Include Inactive Vendor checkbox."""
-        self.open_vendor_list()
+        if "vendordetails" not in self.page.url.lower():
+            self.open_vendor_list()
         chk_sel = "mat-checkbox:has-text('Include Inactive Vendor'), mat-checkbox:has-text('Inactive')"
         try:
             chk = self.page.locator(chk_sel).first
-            chk.wait_for(state="visible", timeout=3000)
+            chk.wait_for(state="visible", timeout=6000)
             input_chk = self.page.locator("mat-checkbox:has-text('Include Inactive Vendor') input[type='checkbox']").first
             is_checked = input_chk.is_checked() if input_chk.count() else "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "")
             if is_checked != checked:
                 chk.click()
-            self.page.wait_for_timeout(500)
+            self.page.wait_for_timeout(1000)
             self.wait_for_dom_ready()
             return True
         except Exception:

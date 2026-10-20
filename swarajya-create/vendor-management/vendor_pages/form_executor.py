@@ -125,7 +125,9 @@ class FormExecutor:
         if "POS_09" in tc_id:
             self.vendor.open_vendor_list()
             self.vendor.toggle_include_inactive(True)
-            assert self.vendor.is_visible("table tr, table tbody tr"), (
+            self.page.wait_for_timeout(1000)
+            has_rows = self.vendor.is_visible("table tr, mat-row, .mat-mdc-row", timeout=8000)
+            assert has_rows, (
                 f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
                 f"Actual: Vendor table has no visible rows when Include Inactive is enabled."
             )
