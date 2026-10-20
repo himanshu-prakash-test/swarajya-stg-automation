@@ -187,66 +187,71 @@ class EmployeePage(BasePage):
     def select_dropdown(self, dropdown_key: str, option_text: str) -> bool:
         selector = self.DROPDOWN_MAP.get(dropdown_key, f"mat-select[name='{dropdown_key}']")
         wanted = option_text.strip()
-        try:
-            mat_select = self.page.locator(selector).first
-            mat_select.wait_for(state="visible", timeout=6000)
-            mat_select.scroll_into_view_if_needed()
-            mat_select.click()
-
+        for attempt in range(3):
             try:
-                self.page.locator("mat-option:visible").first.wait_for(state="visible", timeout=4000)
-            except Exception:
-                pass
+                mat_select = self.page.locator(selector).first
+                mat_select.wait_for(state="visible", timeout=6000)
+                mat_select.scroll_into_view_if_needed()
+                mat_select.click()
 
-            options = self._visible_dropdown_options()
-            if not options:
+                try:
+                    self.page.locator("mat-option:visible").first.wait_for(state="visible", timeout=4000)
+                except Exception:
+                    pass
+
+                options = self._visible_dropdown_options()
+                if not options:
+                    self.page.keyboard.press("Escape")
+                    if attempt < 2:
+                        self.page.wait_for_timeout(1000)
+                        continue
+                    return False
+
+                if "select from given" in wanted.lower() or wanted.lower() in ("select", "--select--", ""):
+                    for option in options:
+                        text = option.inner_text().strip()
+                        if text and text.lower() not in ("select", "--select--", "choose"):
+                            option.click()
+                            try:
+                                self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
+                            except Exception:
+                                pass
+                            log.info(f"Selected '{dropdown_key}' from given options: '{text}'")
+                            return True
+                else:
+                    # First pass: Exact match (avoids 'Male' matching 'Female')
+                    for option in options:
+                        text = option.inner_text().strip()
+                        if text.lower() == wanted.lower():
+                            option.click()
+                            try:
+                                self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
+                            except Exception:
+                                pass
+                            log.info(f"Selected '{dropdown_key}' = '{text}'")
+                            return True
+                    # Second pass: Substring match only if exact match is not found
+                    for option in options:
+                        text = option.inner_text().strip()
+                        if wanted.lower() in text.lower():
+                            option.click()
+                            try:
+                                self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
+                            except Exception:
+                                pass
+                            log.info(f"Selected '{dropdown_key}' (substring match) = '{text}'")
+                            return True
+
                 self.page.keyboard.press("Escape")
-                return False
-
-            if "select from given" in wanted.lower() or wanted.lower() in ("select", "--select--", ""):
-                for option in options:
-                    text = option.inner_text().strip()
-                    if text and text.lower() not in ("select", "--select--", "choose"):
-                        option.click()
-                        try:
-                            self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
-                        except Exception:
-                            pass
-                        log.info(f"Selected '{dropdown_key}' from given options: '{text}'")
-                        return True
-            else:
-                # First pass: Exact match (avoids 'Male' matching 'Female')
-                for option in options:
-                    text = option.inner_text().strip()
-                    if text.lower() == wanted.lower():
-                        option.click()
-                        try:
-                            self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
-                        except Exception:
-                            pass
-                        log.info(f"Selected '{dropdown_key}' = '{text}'")
-                        return True
-                # Second pass: Substring match only if exact match is not found
-                for option in options:
-                    text = option.inner_text().strip()
-                    if wanted.lower() in text.lower():
-                        option.click()
-                        try:
-                            self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
-                        except Exception:
-                            pass
-                        log.info(f"Selected '{dropdown_key}' (substring match) = '{text}'")
-                        return True
-
-            self.page.keyboard.press("Escape")
-            return False
-        except Exception as exc:
-            log.warning(f"Error selecting dropdown '{dropdown_key}': {exc}")
-            try:
-                self.page.keyboard.press("Escape")
-            except Exception:
-                pass
-            return False
+            except Exception as exc:
+                log.warning(f"Error selecting dropdown '{dropdown_key}' (attempt {attempt + 1}): {exc}")
+                try:
+                    self.page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                if attempt < 2:
+                    self.page.wait_for_timeout(1000)
+        return False
 
     def get_dropdown_options(self, dropdown_key: str) -> List[str]:
         selector = self.DROPDOWN_MAP.get(dropdown_key, f"mat-select[name='{dropdown_key}']")
