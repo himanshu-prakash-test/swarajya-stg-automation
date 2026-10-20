@@ -71,6 +71,8 @@ def is_headless(config) -> bool:
         return False
     if config.getoption("--headless", default=False):
         return True
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        return True
     env_val = os.environ.get("HEADLESS")
     if env_val is not None:
         return env_val.lower() in ("true", "1", "yes")
