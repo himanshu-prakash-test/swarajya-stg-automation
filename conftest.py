@@ -1,6 +1,6 @@
 """
-Root Pytest Configuration for login/emp-manager branch.
-Ensures workspace root is in sys.path for shared module imports.
+Root Pytest Configuration.
+Ensures workspace root is in sys.path for shared module imports and registers CLI options.
 """
 import os
 import sys

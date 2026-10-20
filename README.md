@@ -1,52 +1,75 @@
-# 🚀 Swarajya Staging Automation - Employee & Manager Authentication Module
+# 🚀 Swarajya Staging Automation Framework
 
-> **Branch:** `login/emp-manager`  
-> **Master Repository:** [Switch to main branch](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main)
+An enterprise-grade, data-driven test automation framework for the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), built with **Python 3.12+**, **Playwright**, **Pytest**, and **OpenPyXL**.
 
-This branch contains strictly the **Employee & Manager Authentication Module** along with the shared framework dependencies.
+---
 
-## 🏃 Running Tests on this Branch
-```bash
-# Run tests for this module
-pytest swarajya-login/emp-manager/tests -v
+## 📁 Repository Structure & Modules
 
-# Run with HTML report
-pytest swarajya-login/emp-manager/tests --html=report.html --self-contained-html
+```
+swarajya-stg-automation/
+│
+├── shared/                             # 🌐 Centralized Core Framework & Test Data
+│   ├── config/                         # Central configuration & selectors
+│   ├── pages/                          # Shared BasePage, LoginPage, TfaPage
+│   ├── test_data/                      # Centralized Excel workbooks & sample documents
+│   └── utils/                          # Logging, Excel readers, popup reporting
+│
+├── swarajya-create/
+│   └── employee-management/            # 👤 Create Employee Management Module
+│       ├── emp_pages/                  # Page Object Model Layer (EmployeePage, FormExecutor)
+│       ├── emp_utils/                  # Excel loaders & test case sync
+│       ├── tests/                      # Parametrized positive & negative test suites
+│       └── pytest.ini                  # Module-level configuration
+│
+├── swarajya-login/
+│   └── emp-manager/                    # 🔐 Employee & Manager Authentication Module
+│       ├── tests/                      # Role-based positive & negative authentication flows
+│       └── pytest.ini                  # Module-level configuration
+│
+├── conftest.py                         # Root Pytest fixtures, sys.path & CLI options
+├── pytest.ini                          # Root testpaths, discovery & logging config
+└── requirements.txt                    # Project dependencies
 ```
 
 ---
 
-# 🔐 Employee & Manager Login Automation Module
+## 🏃 Test Execution Guide
 
-Automated test suite for Employee and Manager authentication workflows on the Swarajya platform.
-
-## 📁 Module Structure
-```
-emp-manager/
-├── conftest.py             # Fixtures, browser lifecycle, Excel reporting
-├── pytest.ini              # Module pytest configuration
-├── requirements.txt        # Sub-module dependencies
-├── tests/                  # Test suite
-│   ├── __init__.py
-│   ├── positive_flows.py   # 13 Data-driven positive test cases (strictly from Excel)
-│   └── negative_flows.py   # 9 Data-driven negative test cases (strictly from Excel)
-└── screenshots/            # Automated run screenshots
-```
-
-> **Note**: Shared page objects (`LoginPage`, `TfaPage`) and shared test data reader (`excel_base.py`) reside centrally in root `shared/`. All test data and test cases are strictly loaded from `shared/test_data/` (Sheet: `loginemp-manager`).
-
-## 🚀 Execution
+### 1. Run All Tests Across Modules
 ```bash
-# Run all Employee & Manager login tests
-pytest swarajya-login/emp-manager/tests
-
-# Run only positive flows
-pytest swarajya-login/emp-manager/tests/positive_flows.py
-
-# Run only negative flows
-pytest swarajya-login/emp-manager/tests/negative_flows.py
-
-# Run in headed mode
-pytest swarajya-login/emp-manager/tests --headed
+pytest -v
 ```
 
+### 2. Run Create Employee Management Tests
+```bash
+# Run all Employee Management create tests
+pytest swarajya-create/employee-management/tests -v
+
+# Run positive flows only
+pytest swarajya-create/employee-management/tests/test_emp_positive_flows.py -v
+
+# Run negative flows only
+pytest swarajya-create/employee-management/tests/test_emp_negative_flows.py -v
+```
+
+### 3. Run Employee & Manager Login Tests
+```bash
+# Run all Login tests
+pytest swarajya-login/emp-manager/tests -v
+
+# Run positive flows only
+pytest swarajya-login/emp-manager/tests/positive_flows.py -v
+
+# Run negative flows only
+pytest swarajya-login/emp-manager/tests/negative_flows.py -v
+```
+
+### 4. Browser Options & HTML Reports
+```bash
+# Run in headed mode
+pytest --headed
+
+# Run with HTML report output
+pytest --html=reports/latest_report.html --self-contained-html
+```
