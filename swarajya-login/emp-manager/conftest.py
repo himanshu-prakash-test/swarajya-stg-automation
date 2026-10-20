@@ -80,6 +80,10 @@ def _is_headless(config):
         return False
     if config.getoption("--headless", default=False):
         return True
+    ci_env = os.environ.get("CI", "").strip().lower() in ("1", "true", "yes") or \
+             os.environ.get("GITHUB_ACTIONS", "").strip().lower() in ("1", "true", "yes")
+    if ci_env:
+        return True
     return os.environ.get("HEADLESS", "0").strip().lower() in ("1", "true", "yes")
 
 
