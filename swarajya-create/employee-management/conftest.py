@@ -65,6 +65,8 @@ def _headless(config) -> bool:
         return False
     if config.getoption("--headless", default=False):
         return True
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        return True
     env_val = os.environ.get("HEADLESS")
     if env_val is not None:
         return env_val.lower() in ("true", "1", "yes")
@@ -206,9 +208,11 @@ def manager_creds():
 def _take_screenshot_after_test(request, page):
     yield
     status = "PASS"
-    if getattr(request.node, "rep_call", None) and request.node.rep_call.failed:
+    rep_call = getattr(request.node, "rep_call", None)
+    rep_setup = getattr(request.node, "rep_setup", None)
+    if (rep_call and rep_call.failed) or (rep_setup and rep_setup.failed):
         status = "FAIL"
-    elif getattr(request.node, "rep_setup", None) and request.node.rep_setup.failed:
+    elif rep_call and hasattr(rep_call, "wasxfail"):
         status = "FAIL"
 
     tc_id = None
@@ -362,7 +366,10 @@ def _clean_failure_message(longrepr) -> str:
 
 def pytest_runtest_logreport(report):
     if report.when == "call":
-        if report.passed:
+        if hasattr(report, "wasxfail"):
+            reason = getattr(report, "wasxfail", "") or "Application defect detected"
+            _record_excel_result(report, "FAIL", f"Defect: {reason}"[:240])
+        elif report.passed:
             is_pos = "pos" in report.nodeid.lower()
             remark = (
                 "Validation successful: Employee record created and verified in employee list."

@@ -245,25 +245,35 @@ class EmployeePage(BasePage):
 
     def get_dropdown_options(self, dropdown_key: str) -> List[str]:
         selector = self.DROPDOWN_MAP.get(dropdown_key, f"mat-select[name='{dropdown_key}']")
-        try:
-            mat_select = self.page.locator(selector).first
-            mat_select.wait_for(state="visible", timeout=6000)
-            mat_select.scroll_into_view_if_needed()
-            mat_select.click()
+        for attempt in range(2):
             try:
-                self.page.locator("mat-option:visible").first.wait_for(state="visible", timeout=4000)
-            except Exception:
-                pass
-            options = self._option_texts()
-            self.page.keyboard.press("Escape")
-            try:
-                self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
-            except Exception:
-                pass
-            return options
-        except Exception as exc:
-            log.warning(f"Error reading options for '{dropdown_key}': {exc}")
-            return []
+                mat_select = self.page.locator(selector).first
+                mat_select.wait_for(state="visible", timeout=6000)
+                mat_select.scroll_into_view_if_needed()
+                mat_select.click()
+                try:
+                    self.page.locator("mat-option:visible").first.wait_for(state="visible", timeout=5000)
+                except Exception:
+                    pass
+                options = self._option_texts()
+                self.page.keyboard.press("Escape")
+                try:
+                    self.page.locator("mat-option:visible").first.wait_for(state="hidden", timeout=2000)
+                except Exception:
+                    pass
+                if options:
+                    return options
+                if attempt == 0:
+                    self.page.wait_for_timeout(1000)
+            except Exception as exc:
+                log.warning(f"Error reading options for '{dropdown_key}' (attempt {attempt + 1}): {exc}")
+                try:
+                    self.page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                if attempt == 0:
+                    self.page.wait_for_timeout(1000)
+        return []
 
     def validate_all_options_for_dropdown(self, dropdown_key: str) -> List[str]:
         options = self.get_dropdown_options(dropdown_key)
@@ -375,34 +385,39 @@ class EmployeePage(BasePage):
 
     def search_employee_in_list(self, query: str, expected_last_name: str = "") -> Optional[Dict[str, str]]:
         self.navigate_to_employee_list()
-        cleaned_query = query.strip()
+        cleaned_query = re.sub(r"\s+", " ", str(query)).strip()
+        cleaned_last = re.sub(r"\s+", " ", str(expected_last_name)).strip().lower() if expected_last_name else ""
 
         try:
+            self.page.wait_for_timeout(1000)
             input_locator = self.page.locator(self.SEARCH_INPUT).first
-            input_locator.wait_for(state="visible", timeout=6000)
+            input_locator.wait_for(state="visible", timeout=8000)
             input_locator.click()
             input_locator.fill("")
-            input_locator.press_sequentially(cleaned_query, delay=20)
+            input_locator.press_sequentially(cleaned_query, delay=15)
+            input_locator.dispatch_event("input")
+            input_locator.dispatch_event("change")
             input_locator.press("Enter")
-            
-            try:
-                self.page.locator("tr, [role='row'], .mat-mdc-row, .mat-row").first.wait_for(state="visible", timeout=6000)
-            except Exception:
-                pass
 
+            import time
+            start = time.time()
             row_selectors = "tr, [role='row'], .mat-mdc-row, .mat-row"
-            for row in self.page.locator(row_selectors).all():
-                text = row.inner_text().strip()
-                lower_text = text.lower()
-                if cleaned_query.lower() not in lower_text:
-                    continue
-                if expected_last_name and expected_last_name.strip().lower() not in lower_text:
-                    continue
-                return {"row_text": text, "employee_id": self._extract_employee_id(text)}
+            while time.time() - start < 8.0:
+                rows = self.page.locator(row_selectors).all()
+                for row in rows:
+                    text = row.inner_text().strip()
+                    lower_text = re.sub(r"\s+", " ", text).lower()
+                    if cleaned_query.lower() not in lower_text:
+                        continue
+                    if cleaned_last and cleaned_last not in lower_text:
+                        continue
+                    return {"row_text": text, "employee_id": self._extract_employee_id(text)}
 
-            body_text = self.page.locator("body").inner_text()
-            if cleaned_query.lower() in body_text.lower():
-                return {"row_text": body_text, "employee_id": self._extract_employee_id(body_text)}
+                body_text = re.sub(r"\s+", " ", self.page.locator("body").inner_text()).lower()
+                if cleaned_query.lower() in body_text and (not cleaned_last or cleaned_last in body_text):
+                    return {"row_text": body_text, "employee_id": self._extract_employee_id(body_text)}
+
+                self.page.wait_for_timeout(500)
         except Exception as exc:
             log.warning(f"Error searching employee list for '{cleaned_query}': {exc}")
         return None
