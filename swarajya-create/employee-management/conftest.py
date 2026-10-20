@@ -120,11 +120,11 @@ def session_context(browser):
         yield AUTH_STATE_PATH
         return
 
-    creds = read_credentials("Employee")
+    creds = read_credentials("Admin")
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
-    log.info("Performing session-level authentication from credentials.xlsx")
+    log.info("Performing session-level authentication from shared test data")
     LoginPage(page).login(creds["employee_id"], creds["password"], creds["auth_code"])
     try:
         page.wait_for_timeout(1000)
@@ -170,7 +170,7 @@ def page(browser, request, session_context):
 
     # Self-healing fallback: if auth is missing or expired, re-authenticate on the fly
     if not is_login_test and not storage:
-        creds = read_credentials("Employee")
+        creds = read_credentials("Admin")
         LoginPage(page_instance).login(creds["employee_id"], creds["password"], creds["auth_code"])
         try:
             context.storage_state(path=AUTH_STATE_PATH)
@@ -196,7 +196,7 @@ def logged_in_page(page):
 
 @pytest.fixture
 def employee_creds():
-    return read_credentials("Employee")
+    return read_credentials("Admin")
 
 
 @pytest.fixture

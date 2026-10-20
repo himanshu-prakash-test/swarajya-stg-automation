@@ -35,9 +35,15 @@ def is_ui_case(tc: Dict[str, Any]) -> bool:
     return _shared_is_ui_case(tc)
 
 
-def read_credentials(role: str = "Employee") -> Dict[str, str]:
-    """Pull credentials for a given role from environment variables or shared test data."""
-    return _shared_read_credentials(role=role, sheet_name=SHEET_NAME)
+def read_credentials(role: str = "Admin") -> Dict[str, str]:
+    """
+    Pull credentials for Employee Management module.
+    Creating and managing employees requires Admin privileges (User ID 332 in createemp-mgmt).
+    If Manager is explicitly requested for login verification, returns Manager credentials.
+    """
+    if role and role.strip().lower() == "manager":
+        return _shared_read_credentials(role="Manager", sheet_name=SHEET_NAME)
+    return _shared_read_credentials(role="Admin", sheet_name=SHEET_NAME)
 
 
 def read_test_cases(sheet_name: str) -> List[Dict[str, Any]]:
@@ -65,7 +71,7 @@ def update_test_result(tc_id: str, status: str, auto_id: str = "", remark: str =
     _shared_update_test_result(
         sheet_name=SHEET_NAME,
         tc_id=tc_id,
-        status_or_remarks=status,
-        auto_id_or_sheet=normalized_auto_id,
+        status=status,
+        auto_id=normalized_auto_id,
         remarks=remark,
     )
