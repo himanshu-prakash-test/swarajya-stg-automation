@@ -187,22 +187,27 @@ class EmployeePage(BasePage):
     def select_dropdown(self, dropdown_key: str, option_text: str) -> bool:
         selector = self.DROPDOWN_MAP.get(dropdown_key, f"mat-select[name='{dropdown_key}']")
         wanted = option_text.strip()
-        for attempt in range(3):
+        for attempt in range(4):
             try:
                 mat_select = self.page.locator(selector).first
-                mat_select.wait_for(state="visible", timeout=6000)
                 mat_select.scroll_into_view_if_needed()
-                mat_select.click()
+                mat_select.wait_for(state="visible", timeout=8000)
+                mat_select.click(force=True)
 
                 try:
-                    self.page.locator("mat-option:visible").first.wait_for(state="visible", timeout=4000)
+                    self.page.locator("mat-option").first.wait_for(state="visible", timeout=8000)
                 except Exception:
-                    pass
+                    # Fallback: trigger with Space key if click didn't open overlay
+                    self.page.keyboard.press("Space")
+                    try:
+                        self.page.locator("mat-option").first.wait_for(state="visible", timeout=4000)
+                    except Exception:
+                        pass
 
                 options = self._visible_dropdown_options()
                 if not options:
                     self.page.keyboard.press("Escape")
-                    if attempt < 2:
+                    if attempt < 3:
                         self.page.wait_for_timeout(1000)
                         continue
                     return False
