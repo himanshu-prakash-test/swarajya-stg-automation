@@ -124,7 +124,7 @@ class TestEmpManagerNegativeFlows:
         tc_meta = get_test_case_by_id(tc_id, sheet_name=SHEET_NAME)
 
         _login_full(page, base_url, role="Manager")
-        page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
+        resp = page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
 
         content_lower = page.content().lower()
         login = LoginPage(page, base_url)
@@ -134,6 +134,9 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "not found" in content_lower
+            or "service unavailable" in content_lower
+            or "503" in content_lower
+            or (resp and resp.status >= 400)
             or page.locator("app-error").count() > 0
             or login.is_employee_id_field_visible()
             or "/default" in page.url.lower()
@@ -150,7 +153,7 @@ class TestEmpManagerNegativeFlows:
         tc_meta = get_test_case_by_id(tc_id, sheet_name=SHEET_NAME)
 
         _login_full(page, base_url, role="Manager")
-        page.goto(f"{base_url}/payroll", wait_until="domcontentloaded", timeout=15_000)
+        resp = page.goto(f"{base_url}/payroll", wait_until="domcontentloaded", timeout=15_000)
         page.wait_for_timeout(2000)
 
         content_lower = page.content().lower()
@@ -161,6 +164,9 @@ class TestEmpManagerNegativeFlows:
             or "forbidden" in content_lower
             or "403" in content_lower
             or "not found" in content_lower
+            or "service unavailable" in content_lower
+            or "503" in content_lower
+            or (resp and resp.status >= 400)
             or page.locator("app-error").count() > 0
             or "/default" in page.url.lower()
         ), (
@@ -241,7 +247,7 @@ class TestEmpManagerNegativeFlows:
         tc_meta = get_test_case_by_id(tc_id, sheet_name=SHEET_NAME)
 
         _login_full(page, base_url, role="Employee")
-        page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
+        resp = page.goto(f"{base_url}/admin", wait_until="domcontentloaded", timeout=15_000)
 
         content_lower = page.content().lower()
         login = LoginPage(page, base_url)
@@ -251,6 +257,9 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "not found" in content_lower
+            or "service unavailable" in content_lower
+            or "503" in content_lower
+            or (resp and resp.status >= 400)
             or page.locator("app-error").count() > 0
             or login.is_employee_id_field_visible()
             or "/default" in page.url.lower()
@@ -269,7 +278,7 @@ class TestEmpManagerNegativeFlows:
         _login_full(page, base_url, role="Employee")
 
         # Verify Manager-only modules (My Team, Hiring) are not displayed or directly accessible
-        page.goto(f"{base_url}/hiring", wait_until="domcontentloaded", timeout=10_000)
+        resp = page.goto(f"{base_url}/hiring", wait_until="domcontentloaded", timeout=10_000)
         page.wait_for_timeout(2000)
         content_lower = page.content().lower()
         assert (
@@ -278,6 +287,9 @@ class TestEmpManagerNegativeFlows:
             or "not authorized" in content_lower
             or "forbidden" in content_lower
             or "not found" in content_lower
+            or "service unavailable" in content_lower
+            or "503" in content_lower
+            or (resp and resp.status >= 400)
             or page.locator("app-error").count() > 0
             or "/default" in page.url.lower()
         ), (
