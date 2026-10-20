@@ -69,9 +69,14 @@ class EmployeePage(BasePage):
         self.goto(self.LIST_PATH)
         self._dismiss_tutorial()
         try:
-            self.page.locator(self.SEARCH_INPUT).first.wait_for(state="visible", timeout=10000)
+            self.page.locator(self.SEARCH_INPUT).first.wait_for(state="visible", timeout=8000)
         except Exception:
-            pass
+            try:
+                self.page.reload(wait_until="domcontentloaded")
+                self._dismiss_tutorial()
+                self.page.locator(self.SEARCH_INPUT).first.wait_for(state="visible", timeout=8000)
+            except Exception:
+                pass
 
     def open_create_employee_form(self) -> None:
         first_input = self.page.locator(

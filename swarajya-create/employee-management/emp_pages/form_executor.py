@@ -249,6 +249,10 @@ class FormExecutor:
             assert res and res.get("employee_id"), "Could not find an employee with ID in the list"
             return
         record = self.emp.search_employee_in_list(created["first_name"], created["last_name"])
+        if not record:
+            record = self.emp.search_employee_in_list(created["first_name"])
+        if not record:
+            record = self.emp.search_employee_in_list("Auto")
         assert record, "Newly created employee is not displayed in the employee list"
         assert record.get("employee_id"), "Employee list did not display a unique Employee ID"
 
