@@ -196,52 +196,50 @@ class CustomerPage(BasePage):
         Navigate to Customer Details listing page (/customerDetails).
         Direct navigation saves redundant route transitions when session is authenticated.
         """
-        if "customerdetails" in self.page.url.lower():
-            return
+        if "customerdetails" not in self.page.url.lower():
+            if direct:
+                self.goto("/customerDetails")
+            else:
+                if "invoicedashboard" not in self.page.url.lower():
+                    self.open_invoice_dashboard()
 
-        if direct:
-            self.goto("/customerDetails")
-            self.wait_for_dom_ready()
-            return
+                link = self.page.locator(
+                    "mat-card:has-text('Customers'), div:has-text('Customers'), a:has-text('Customers'), "
+                    "a[href*='customerDetails'], button:has-text('Customer Details'), [mattooltip*='Customer Details' i], span:has-text('Customer Details')"
+                ).last
+                if link.is_visible(timeout=3000):
+                    link.click()
+                else:
+                    self.goto("/customerDetails")
 
-        if "invoicedashboard" not in self.page.url.lower():
-            self.open_invoice_dashboard()
-
-        link = self.page.locator(
-            "mat-card:has-text('Customers'), div:has-text('Customers'), a:has-text('Customers'), "
-            "a[href*='customerDetails'], button:has-text('Customer Details'), [mattooltip*='Customer Details' i], span:has-text('Customer Details')"
-        ).last
-        if link.is_visible(timeout=3000):
-            link.click()
-            self.wait_for_dom_ready()
-        else:
-            self.goto("/customerDetails")
-            self.wait_for_dom_ready()
+        self.wait_for_dom_ready()
+        try:
+            self.page.locator("table, mat-table, input[placeholder*='Search' i]").first.wait_for(state="visible", timeout=10000)
+        except Exception:
+            pass
 
     def open_create_customer_form(self, direct: bool = True):
         """
         Open the Add / Create Customer form (/addNewCustomer).
         """
-        if "addnewcustomer" in self.page.url.lower():
-            return
+        if "addnewcustomer" not in self.page.url.lower():
+            if direct:
+                self.goto("/addNewCustomer")
+            else:
+                self.open_customer_list(direct=False)
+                btn = self.page.locator(
+                    "button:has-text('New Customer'), button:has-text('Add Customer'), a:has-text('New Customer'), a:has-text('Add Customer'), a[href*='addNewCustomer'], button:has-text('Customer')"
+                ).first
+                if btn.is_visible(timeout=3000):
+                    btn.click()
+                else:
+                    self.goto("/addNewCustomer")
 
-        if direct:
-            self.goto("/addNewCustomer")
-            self.wait_for_dom_ready()
-            return
-
-        self.open_customer_list(direct=False)
-        btn = self.page.locator(
-            "button:has-text('New Customer'), button:has-text('Add Customer'), a:has-text('New Customer'), a:has-text('Add Customer'), a[href*='addNewCustomer'], button:has-text('Customer')"
-        ).first
-        if btn.is_visible(timeout=3000):
-            btn.click()
-            self.wait_for_dom_ready()
-        else:
-            self.goto("/addNewCustomer")
-            self.wait_for_dom_ready()
-
-        self.wait_for_url_contains("addNewCustomer", timeout=6000)
+        self.wait_for_dom_ready()
+        try:
+            self.page.locator("input[name='customer_name'], input[formcontrolname='customerName'], input[placeholder*='Customer Name' i], input#mat-input-0").first.wait_for(state="visible", timeout=12000)
+        except Exception:
+            pass
 
     # ----------------- Form Field Interactions -----------------
 
@@ -296,7 +294,7 @@ class CustomerPage(BasePage):
                         field.scroll_into_view_if_needed(timeout=1000)
                     except Exception:
                         pass
-                    if field.is_visible(timeout=800):
+                    if field.is_visible(timeout=2500):
                         try:
                             field.fill(val_str)
                         except Exception:

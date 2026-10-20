@@ -11,6 +11,15 @@ from shared.utils.logger import get_logger
 
 log = get_logger("CustomerFormExecutor")
 
+METADATA_KEYS = {
+    "test case id", "tc id", "tc_id", "scenario", "test scenario",
+    "pre-condition", "pre condition", "test steps", "steps",
+    "expected result", "expected results", "automation status",
+    "execution type", "test status", "remarks / defect observed",
+    "remarks", "defect", "test data", "data", "_sheet", "auto_id",
+    "module", "comments", "description", "_row"
+}
+
 
 class FormExecutor:
     """Executes data-driven test scenarios from Create-Customer-Management.xlsx."""
@@ -92,13 +101,14 @@ class FormExecutor:
         FormExecutor.last_custom_screenshot = None
         tc_id = test_case_row.get("Test Case ID", "").strip()
         scenario = test_case_row.get("Scenario", "").strip()
+        excel_data = test_case_row.get("data") or {}
         raw_data = test_case_row.get("Test Data", "")
         steps = test_case_row.get("Steps", test_case_row.get("Test Steps", ""))
         expected = test_case_row.get("Expected Result", "")
 
         log.info(f"==================== [{tc_id}] {scenario} ====================")
-        parsed_data = self._parse_test_data(raw_data)
-        log.info(f"Parsed test data: {parsed_data}")
+        parsed_data = self._parse_test_data(excel_data or raw_data)
+        log.info(f"Parsed test data fields: {list(parsed_data.keys())}")
 
         if is_positive:
             self._execute_positive(tc_id, parsed_data, scenario, steps, expected)
@@ -145,7 +155,7 @@ class FormExecutor:
             return
 
         # 4. Cancel on form test
-        if tc_id in ("TC_CUSTOMER_POS_15", "TC_CUSTOMER_POS_05") and "cancel" in scenario.lower():
+        if tc_id == "TC_CUSTOMER_POS_15" and "cancel" in scenario.lower():
             self.customer.open_create_customer_form()
             for k, v in data.items():
                 self.customer.fill_field(k, v)
@@ -162,7 +172,7 @@ class FormExecutor:
             return
 
         # 5. Dismiss popup / Select No test
-        if tc_id in ("TC_CUSTOMER_POS_16", "TC_CUSTOMER_POS_06") and "dismiss" in scenario.lower():
+        if tc_id == "TC_CUSTOMER_POS_16" and "dismiss" in scenario.lower():
             self.customer.open_create_customer_form()
             for k, v in data.items():
                 self.customer.fill_field(k, v)
@@ -195,7 +205,7 @@ class FormExecutor:
             return
 
         # 7. Search customer in list by Name
-        if tc_id in ("TC_CUSTOMER_POS_18", "TC_CUSTOMER_POS_07"):
+        if tc_id == "TC_CUSTOMER_POS_18":
             search_name = FormExecutor.last_created_customer.get("name")
             if not search_name:
                 self.customer.open_create_customer_form()
@@ -203,6 +213,7 @@ class FormExecutor:
                 self._fill_customer_fields(full_data)
                 self.customer.click_save_and_confirm(confirm=True)
                 search_name = full_data["Customer Name"]
+                FormExecutor.last_created_customer = {"name": search_name}
 
             self.customer.open_customer_list()
             found = self.customer.is_customer_in_list(search_name)
@@ -213,7 +224,7 @@ class FormExecutor:
             return
 
         # 8. Search customer in list by Code
-        if tc_id in ("TC_CUSTOMER_POS_19", "TC_CUSTOMER_POS_08"):
+        if tc_id == "TC_CUSTOMER_POS_19":
             search_code = data.get("Code") or FormExecutor.last_created_customer.get("code") or f"CUST_{(int(time.time()) % 1000):03d}"
             self.customer.open_customer_list()
             self.customer.search_customer(search_code)
@@ -269,6 +280,7 @@ class FormExecutor:
                 self._fill_customer_fields(full_data)
                 self.customer.click_save_and_confirm(confirm=True)
                 last_cust = {"name": full_data["Customer Name"], "code": full_data.get("Code", "")}
+                FormExecutor.last_created_customer = last_cust
 
             self.customer.open_customer_list()
             found = self.customer.is_customer_in_list(last_cust["name"])
@@ -544,12 +556,37 @@ class FormExecutor:
     # ----------------- Helpers & Data Parsing -----------------
 
     def _parse_test_data(self, raw_data: Any) -> Dict[str, str]:
-        """Parse key-value pairs from Excel Test Data cell."""
-        if not raw_data or str(raw_data).strip().lower() in ("fetch from excel", "n/a", "none", "-"):
+        """Parse key-value pairs from Excel Test Data cell or dictionary."""
+        if not raw_data:
             return {}
 
+        if isinstance(raw_data, dict):
+            return {
+                str(k).strip(): (str(v)[:-2] if str(v).endswith(".0") and str(v)[:-2].isdigit() else str(v).strip())
+                for k, v in raw_data.items()
+                if v is not None and str(v).strip()
+            }
+
+        raw_str = str(raw_data).strip()
+        if raw_str.lower() in ("fetch from excel", "n/a", "none", "-"):
+            return {}
+
+        # If it looks like a stringified Python dict
+        if raw_str.startswith("{") and raw_str.endswith("}"):
+            try:
+                import ast
+                parsed = ast.literal_eval(raw_str)
+                if isinstance(parsed, dict):
+                    return {
+                        str(k).strip(): (str(v)[:-2] if str(v).endswith(".0") and str(v)[:-2].isdigit() else str(v).strip())
+                        for k, v in parsed.items()
+                        if v is not None and str(v).strip()
+                    }
+            except Exception:
+                pass
+
         result = {}
-        for line in str(raw_data).splitlines():
+        for line in raw_str.splitlines():
             line = line.strip().lstrip("•-* ").strip()
             if not line:
                 continue
@@ -608,6 +645,8 @@ class FormExecutor:
         # Normalize override keys
         normalized_overrides = {}
         for k, v in overrides.items():
+            if str(k).strip().lower() in METADATA_KEYS:
+                continue
             norm_key = self.FIELD_NORM_MAP.get(k.strip().lower(), k.strip())
             normalized_overrides[norm_key] = v
 
