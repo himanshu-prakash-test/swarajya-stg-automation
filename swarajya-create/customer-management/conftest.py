@@ -1,38 +1,48 @@
-import logging
+"""
+Pytest configuration and shared fixtures for Swarajya Customer Management (Create Module).
+Centralized session state, dynamic credential loading, reporting, and screenshot evidence.
+Strictly zero hardcoding.
+"""
+
 import os
-import sys
 import re
+import sys
 from datetime import datetime
-
-_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-_CREATE_ROOT = os.path.dirname(_PROJECT_ROOT)
-_WORKSPACE_ROOT = os.path.dirname(_CREATE_ROOT)
-for _p in (_PROJECT_ROOT, _CREATE_ROOT, _WORKSPACE_ROOT):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
+from typing import Dict, List, Optional
 import pytest
 from playwright.sync_api import sync_playwright
 
-from customer_pages.login_page import LoginPage
-from customer_utils.excel_reader import build_automation_id, read_credentials, update_test_result
-from shared.utils.popup import show_summary_popup
+_MODULE_ROOT = os.path.dirname(os.path.abspath(__file__))
+_WS_ROOT = os.path.dirname(os.path.dirname(_MODULE_ROOT))
+for _p in (_WS_ROOT, _MODULE_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from shared.pages.login_page import LoginPage
 from shared.reporter import PytestReporterPlugin
-from shared.utils.excel_base import get_base_url
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
-    datefmt="%H:%M:%S",
+from shared.utils.excel_loader import build_automation_id
+from shared.utils.logger import get_logger
+from shared.utils.paths import AUTH_STATE_FILE
+from shared.utils.popup import show_summary_popup
+from customer_utils.excel_reader import (
+    SHEET_CASES,
+    SHEET_DATA,
+    read_base_url,
+    read_credentials,
+    update_test_result,
 )
-log = logging.getLogger("conftest")
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-SCREENSHOTS = os.path.join(ROOT, "screenshots")
+log = get_logger("customer_conftest")
+
+SCREENSHOTS = os.path.join(_MODULE_ROOT, "screenshots")
 os.makedirs(SCREENSHOTS, exist_ok=True)
 
 
+# ----------------- CLI & Headless Configuration -----------------
+
+
 def pytest_addoption(parser):
+    """Register CLI options safely without conflicts."""
     existing = set()
     for grp in getattr(parser, "_groups", []):
         for opt in getattr(grp, "options", []):
@@ -60,14 +70,20 @@ def pytest_addoption(parser):
 
 
 def is_headless(config) -> bool:
+    """Determine headless state based on CLI flags, CI environment, and defaults."""
     if config.getoption("--headed", default=False):
         return False
     if config.getoption("--headless", default=False):
+        return True
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
         return True
     env_val = os.environ.get("HEADLESS")
     if env_val is not None:
         return env_val.lower() in ("true", "1", "yes")
     return True
+
+
+# ----------------- Browser & Fixtures -----------------
 
 
 @pytest.fixture(scope="session")
@@ -91,60 +107,125 @@ def playwright_instance():
 
 @pytest.fixture(scope="session")
 def browser(playwright_instance, headed, slowmo):
-    br = playwright_instance.chromium.launch(headless=not headed, slow_mo=slowmo)
+    """Single Chromium browser instance per session."""
+    is_ci = bool(os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"))
+    effective_headless = True if is_ci else not headed
+
+    launch_args = [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+    ]
+    if effective_headless:
+        launch_args.extend(["--headless=new", "--mute-audio"])
+
+    log.info(f"Launching Chromium browser (headless={effective_headless}, slow_mo={slowmo})")
+    br = playwright_instance.chromium.launch(
+        headless=effective_headless,
+        slow_mo=slowmo,
+        args=launch_args,
+    )
     yield br
     br.close()
 
 
-def _wait_until_server_healthy(page, max_retries=6, delay_s=2):
-    """Poll staging URL dynamically to confirm server is healthy and not 503."""
-    url = (os.environ.get("SWARAJYA_BASE_URL") or os.environ.get("BASE_URL") or get_base_url()).rstrip("/") + "/"
-    for _ in range(max_retries):
+def _wait_until_server_healthy(page, max_retries: int = 5, delay_s: int = 3) -> bool:
+    """Poll staging URL dynamically to confirm server is healthy and not returning 503."""
+    import time
+    base_url = read_base_url().rstrip("/") + "/"
+    for attempt in range(1, max_retries + 1):
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            page.goto(base_url, wait_until="domcontentloaded", timeout=20000)
             content = page.content().lower()
             if "service unavailable" not in content and "503" not in content:
                 return True
+            log.warning(f"Attempt {attempt}: Staging server returned 503. Retrying in {delay_s}s...")
+        except Exception as exc:
+            log.warning(f"Attempt {attempt}: Connection check error: {exc}. Retrying in {delay_s}s...")
+        time.sleep(delay_s)
+    return False
+
+
+def _is_valid_auth_state(path: Optional[str]) -> bool:
+    """Validate that auth_state.json exists and contains actual auth tokens or session storage."""
+    if not path or not os.path.exists(path):
+        return False
+    ss_file = path.replace(".json", "_session.json")
+    if os.path.exists(ss_file):
+        try:
+            import json
+            with open(ss_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data and any("token" in k.lower() or "isloggedin" in k.lower() or "currentuser" in k.lower() for k in data.keys()):
+                return True
         except Exception:
             pass
-        page.wait_for_timeout(delay_s * 1000)
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for origin in data.get("origins", []):
+            for item in origin.get("localStorage", []):
+                if item.get("name") in ("token", "isLoggedIn") and item.get("value"):
+                    return True
+    except Exception:
+        return False
     return False
 
 
 @pytest.fixture(scope="session")
 def session_storage_state(browser):
-    """Authenticate as Admin once and cache auth_state.json."""
-    storage_path = os.path.join(ROOT, "test_data", "auth_state.json")
+    """Authenticate as Admin once dynamically and cache auth_state.json."""
+    storage_path = AUTH_STATE_FILE
+    if _is_valid_auth_state(storage_path):
+        return storage_path
+
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
 
     _wait_until_server_healthy(page)
 
     login_page = LoginPage(page)
-    success = login_page.login(role="Admin")
+    success = login_page.login(role="Admin", sheet_name=SHEET_DATA)
     if success:
-        context.storage_state(path=storage_path)
+        page.wait_for_timeout(1000)
+        login_page.save_auth_state(path=storage_path)
         log.info(f"Saved authenticated session state to {storage_path}")
     else:
         log.warning("Initial login failed; tests will authenticate per-test")
 
     context.close()
-    return storage_path if os.path.exists(storage_path) else None
+    return storage_path if _is_valid_auth_state(storage_path) else None
 
 
 @pytest.fixture(scope="function")
 def authenticated_page(browser, session_storage_state):
-    """Provides a Playwright page already authenticated via storage state."""
-    kwargs = {"viewport": {"width": 1920, "height": 1080}}
-    if session_storage_state and os.path.exists(session_storage_state):
-        kwargs["storage_state"] = session_storage_state
-
-    context = browser.new_context(**kwargs)
+    """Provides an authenticated Playwright page fixture with auto-login fallback."""
+    storage = session_storage_state if _is_valid_auth_state(session_storage_state) else None
+    context = browser.new_context(
+        viewport={"width": 1920, "height": 1080},
+        storage_state=storage,
+    )
     page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
 
-    if not session_storage_state or not os.path.exists(session_storage_state):
+    # Pre-inject saved sessionStorage
+    LoginPage.inject_session_storage(page, storage_path=storage)
+
+    # Health check
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
+    # Verify session is alive
+    base_url = read_base_url()
+    try:
+        page.goto(f"{base_url}/default", timeout=12000, wait_until="domcontentloaded")
+        if "login" in page.url.lower() or "tfa" in page.url.lower():
+            login_page = LoginPage(page)
+            login_page.login(role="Admin", sheet_name=SHEET_DATA)
+    except Exception:
         login_page = LoginPage(page)
-        login_page.login(role="Admin")
+        login_page.login(role="Admin", sheet_name=SHEET_DATA)
 
     yield page
     context.close()
@@ -152,34 +233,47 @@ def authenticated_page(browser, session_storage_state):
 
 @pytest.fixture(scope="function")
 def unauthenticated_page(browser):
-    """Provides a fresh, unauthenticated Playwright page for login tests."""
+    """Provides a fresh unauthenticated Playwright page fixture."""
     context = browser.new_context(viewport={"width": 1920, "height": 1080})
     page = context.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(30000)
+
+    _wait_until_server_healthy(page, max_retries=3, delay_s=2)
+
     yield page
     context.close()
 
 
-def _extract_tc_id(item) -> str:
-    """Extract standard test case ID from markers, params, or function name."""
-    marker = item.get_closest_marker("tc_id")
-    if marker and marker.args:
-        return str(marker.args[0])
-    if hasattr(item, "callspec"):
-        for val in item.callspec.params.values():
-            if isinstance(val, dict) and "Test Case ID" in val:
-                return str(val["Test Case ID"])
-    match = re.search(r"TC_CUSTOMER_[A-Z0-9_]+|TC_[A-Z0-9_]+", item.name)
-    if match:
-        return match.group(0)
-    if "admin_login" in item.name:
-        return "TC_CUSTOMER_AUTH_01"
-    if "navigation_path" in item.name:
-        return "TC_CUSTOMER_NAV_01"
-    return re.sub(r"[^\w\-]", "_", item.name)[:50]
+@pytest.fixture
+def admin_creds():
+    """Dynamically read Admin credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Admin")
+
+
+@pytest.fixture
+def employee_creds():
+    """Dynamically read Employee credentials from Swarajya-test-data.xlsx."""
+    return read_credentials("Employee")
+
+
+@pytest.fixture
+def base_url():
+    """Dynamically read Base URL from Swarajya-test-data.xlsx."""
+    return read_base_url()
+
+
+# ----------------- Reporting & Metrics Tracking -----------------
+
+_metrics = {"passed": 0, "failed": 0, "skipped": 0, "total": 0}
+_failures: List[str] = []
+_recorded_nodes = set()
+_SESSION_START = None
+_html_reporter = PytestReporterPlugin(suite_title="Customer Management")
 
 
 def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: int = 80):
-    """Purge screenshots older than max_age_hours or if count exceeds max_files."""
+    """Automatically purge screenshots older than max_age_hours or if count exceeds max_files."""
     if not os.path.exists(directory):
         return
     import time
@@ -199,143 +293,169 @@ def _clean_old_screenshots(directory: str, max_age_hours: int = 24, max_files: i
                 pass
     if len(files) > max_files:
         files.sort(key=lambda x: x[0])
-        for _, old_path in files[: len(files) - max_files]:
+        for _, old_path in files[:len(files) - max_files]:
             try:
                 os.remove(old_path)
             except Exception:
                 pass
 
 
-_session_stats = {"passed": 0, "failed": 0, "skipped": 0, "start_time": datetime.now(), "failed_tests": []}
-_html_reporter = PytestReporterPlugin(suite_title="Customer Management")
+def _extract_tc_id(item) -> str:
+    """Extract standard test case ID from markers, params, or nodeid."""
+    marker = item.get_closest_marker("tc_id")
+    if marker and marker.args:
+        return str(marker.args[0])
+    if hasattr(item, "callspec"):
+        for val in item.callspec.params.values():
+            if isinstance(val, dict) and "Test Case ID" in val:
+                return str(val["Test Case ID"])
+    m = re.search(r"(TC_CUSTOMER_[A-Za-z0-9_]+)", item.name) or re.search(r"(TC_CUSTOMER_[A-Za-z0-9_]+)", getattr(item, "nodeid", ""))
+    if m:
+        return m.group(1)
+    if "admin_login" in item.name:
+        return "TC_CUSTOMER_AUTH_01"
+    if "navigation" in item.name:
+        return "TC_CUSTOMER_NAV_01"
+    return re.sub(r"[^\w\-]", "_", item.name)[:50]
+
+
+def pytest_sessionstart(session):
+    global _SESSION_START
+    _SESSION_START = datetime.now()
+    _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=80)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """
-    Hook executed around each test lifecycle phase (setup, call, teardown).
-    Visual evidence screenshot is captured strictly AFTER the test case has executed (call phase),
-    never before.
-    """
     outcome = yield
     report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
 
-    # Capture evidence strictly immediately AFTER test execution completes
-    if report.when == "call":
-        tc_id = _extract_tc_id(item)
+    if report.when == "call" or (report.when == "setup" and (report.skipped or report.failed)):
+        if getattr(report, "nodeid", "") in _recorded_nodes:
+            return
+        _recorded_nodes.add(report.nodeid)
+
+        tc_id = _extract_tc_id(item) or "UNKNOWN"
         page = item.funcargs.get("authenticated_page") or item.funcargs.get("unauthenticated_page") or item.funcargs.get("page")
-        test_case_obj = item.funcargs.get("test_case", {})
-        expected_res = test_case_obj.get("Expected Result", "") if isinstance(test_case_obj, dict) else ""
+        auto_id = build_automation_id(tc_id) if tc_id != "UNKNOWN" else ""
+        duration = getattr(report, "duration", 0.0)
 
-        # Check if test execution generated an immediate custom post-execution screenshot
-        from customer_pages.form_executor import FormExecutor
-        scr = getattr(FormExecutor, "last_custom_screenshot", None)
-        FormExecutor.last_custom_screenshot = None
-
-        if report.passed:
-            _session_stats["passed"] += 1
-            if not scr and page:
-                try:
-                    page.wait_for_load_state("domcontentloaded", timeout=2000)
-                    page.wait_for_timeout(300)
-                except Exception:
-                    pass
-                scr = os.path.join(SCREENSHOTS, f"PASS_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
-                try:
-                    page.screenshot(path=scr, full_page=True)
-                    log.info(f"Captured 1-to-1 post-execution screenshot (PASS): {os.path.basename(scr)}")
-                except Exception as exc:
-                    log.warning(f"Could not capture screenshot for {tc_id}: {exc}")
-                    scr = None
-
-            remarks = f"PASS: Expected Result satisfied: {expected_res}" if expected_res else "PASS: Expected Result satisfied"
-            update_test_result(tc_id, "PASS", remarks, report.duration)
-            _html_reporter.record_test(
-                item=item,
-                report=report,
-                status="PASS",
-                remarks=remarks,
-                auto_id=build_automation_id(tc_id),
-                screenshot_path=scr,
-                duration=report.duration,
+        if hasattr(report, "wasxfail"):
+            status = "FAIL"
+            reason = getattr(report, "wasxfail", "") or "Application defect detected"
+            remarks = f"Defect: {reason}"[:240]
+            _metrics["failed"] += 1
+            _failures.append(f"{tc_id}: {remarks}")
+        elif report.passed:
+            status = "PASS"
+            _metrics["passed"] += 1
+            is_pos = "pos" in report.nodeid.lower() or "positive" in report.nodeid.lower()
+            remarks = (
+                "Validation successful: Customer profile created and verified in customer directory."
+                if is_pos
+                else "Validation successful: Form rejected invalid input and prevented submission."
             )
-
         elif report.failed:
-            _session_stats["failed"] += 1
-            fail_label = tc_id if tc_id != "UNKNOWN" else item.name
-            _session_stats["failed_tests"].append(fail_label)
-            if not scr and page:
-                try:
-                    page.wait_for_timeout(300)
-                except Exception:
-                    pass
-                scr = os.path.join(SCREENSHOTS, f"FAIL_{tc_id}__{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
-                try:
-                    page.screenshot(path=scr, full_page=True)
-                    log.info(f"Captured post-execution failure screenshot (FAIL): {os.path.basename(scr)}")
-                except Exception as exc:
-                    log.warning(f"Could not capture failure screenshot for {tc_id}: {exc}")
-                    scr = None
+            status = "FAIL"
+            _metrics["failed"] += 1
+            remarks = str(report.longrepr).splitlines()[-1].strip()[:240] if report.longrepr else "Test Assertion Error"
+            _failures.append(f"{tc_id}: {remarks}")
+        else:
+            status = "SKIPPED"
+            _metrics["skipped"] += 1
+            remarks = "Skipped: Execution Type is API or non-UI in Excel workbook"
+        _metrics["total"] += 1
 
-            err_msg = str(report.longrepr) if report.longrepr else "Test Assertion / Execution Failure"
-            if expected_res:
-                remarks = f"FAIL: Expected Result NOT satisfied. Expected: '{expected_res}'. {err_msg[:120]}"
-            else:
-                remarks = f"FAIL: Expected Result NOT satisfied. {err_msg[:150]}"
-            update_test_result(tc_id, "FAIL", remarks, report.duration)
-            _html_reporter.record_test(
-                item=item,
-                report=report,
-                status="FAIL",
-                remarks=remarks,
-                auto_id=build_automation_id(tc_id),
-                screenshot_path=scr,
-                duration=report.duration,
-            )
+        # Capture 1-to-1 screenshot on PASS/FAIL/DEFECT
+        shot_path = None
+        if page and (status in ("PASS", "FAIL") or hasattr(report, "wasxfail")):
+            try:
+                label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                shot_prefix = "DEFECT" if hasattr(report, "wasxfail") else status
+                shot_filename = f"{shot_prefix}_{label}__{ts}.png"
+                shot_path = os.path.join(SCREENSHOTS, shot_filename)
+                page.screenshot(path=shot_path, timeout=5000)
+                log.info(f"Captured test screenshot ({shot_prefix}): {shot_filename}")
+            except Exception as exc:
+                log.warning(f"Could not capture screenshot for {item.name}: {exc}")
+                shot_path = None
 
-        elif report.skipped:
-            _session_stats["skipped"] += 1
-            remarks = "Scenario Skipped / Non-UI Flow"
-            update_test_result(tc_id, "SKIP", remarks, report.duration)
-            _html_reporter.record_test(
-                item=item,
-                report=report,
-                status="SKIPPED",
-                remarks=remarks,
-                auto_id=build_automation_id(tc_id),
-                duration=report.duration,
-            )
+        if tc_id != "UNKNOWN":
+            try:
+                update_test_result(
+                    tc_id=tc_id,
+                    status=status,
+                    remarks=remarks,
+                    duration_s=duration,
+                    sheet_name=SHEET_CASES,
+                )
+            except Exception as exc:
+                log.warning(f"Excel result update failed for {tc_id}: {exc}")
+
+        _html_reporter.record_test(
+            item=item,
+            report=report,
+            status=status,
+            remarks=remarks,
+            auto_id=auto_id,
+            screenshot_path=shot_path,
+            duration=duration,
+        )
 
 
 def pytest_sessionfinish(session, exitstatus):
     if getattr(session.config.option, "collectonly", False):
         return
-    dur = (datetime.now() - _session_stats["start_time"]).total_seconds()
-    log.info(
-        f"Session Complete: Passed={_session_stats['passed']}, Failed={_session_stats['failed']}, Skipped={_session_stats['skipped']} in {dur:.1f}s"
-    )
-    dur_str = f"{int(dur // 60)}m {int(dur % 60)}s"
-    total = _session_stats["passed"] + _session_stats["failed"] + _session_stats["skipped"]
+
+    elapsed = str(datetime.now() - _SESSION_START).split(".")[0] if _SESSION_START else "0:00:00"
+    passed = _metrics["passed"]
+    failed = _metrics["failed"]
+    skipped = _metrics["skipped"]
+    total = _metrics["total"]
+    tag = "ALL PASSED" if failed == 0 and total > 0 else f"{failed} FAILED" if failed > 0 else "SESSION COMPLETE"
+
+    print(f"\n{'=' * 60}")
+    print(f"  SWARAJYA CUSTOMER CREATE EXCEL AUTOMATION - {tag}")
+    print(f"{'=' * 60}")
+    print(f"  Total : {total:<4} Passed : {passed:<4} Failed : {failed:<4} Skipped : {skipped}")
+    print(f"  Time  : {elapsed}")
+    if _failures:
+        print("  Failed / observed defects:")
+        for failure in _failures[:10]:
+            print(f"    - {failure}")
+    print(f"{'=' * 60}\n")
+
+    if total == 0:
+        return
 
     report_path = None
-    if total > 0:
+    try:
+        report_path = _html_reporter.finalize_report(filename_prefix="customer_mgmt")
+    except Exception as exc:
+        log.warning(f"Could not finalize HTML report: {exc}")
+
+    # Open report only if explicitly requested via OPEN_REPORT env var
+    if report_path and os.path.exists(report_path) and os.environ.get("OPEN_REPORT") == "1":
         try:
-            report_path = _html_reporter.finalize_report(filename_prefix="customer_mgmt")
+            from shared.reporter.html_reporter import PlaywrightHTMLReporter
+            PlaywrightHTMLReporter.open_in_browser(report_path)
+            log.info(f"Opened HTML report in default browser: {report_path}")
         except Exception as exc:
-            log.warning(f"Could not finalize HTML report: {exc}")
+            log.warning(f"Could not open HTML report: {exc}")
 
-    _clean_old_screenshots(SCREENSHOTS, max_age_hours=24, max_files=80)
-
+    # Display styled execution summary desktop popup
     try:
         show_summary_popup(
             total=total,
-            passed=_session_stats["passed"],
-            failed=_session_stats["failed"],
-            skipped=_session_stats["skipped"],
-            duration_str=dur_str,
-            failed_tests=_session_stats["failed_tests"],
-            suite_title="Customer Management",
+            passed=passed,
+            failed=failed,
+            skipped=skipped,
+            duration_str=elapsed,
+            failures=_failures,
             report_path=report_path,
+            suite_title="Customer Management Create",
         )
     except Exception as exc:
-        log.warning(f"Could not display summary popup: {exc}")
+        log.warning(f"Popup display note: {exc}")

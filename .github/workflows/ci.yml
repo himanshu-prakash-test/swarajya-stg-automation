@@ -79,6 +79,10 @@ jobs:
               echo ">>> Running Create Vendor-Management Tests..."
               pytest swarajya-create/vendor-management/tests -v --headless --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
             fi
+            if [ -d "swarajya-create/customer-management/tests" ]; then
+              echo ">>> Running Create Customer-Management Tests..."
+              pytest swarajya-create/customer-management/tests -v --headless --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
+            fi
             exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."

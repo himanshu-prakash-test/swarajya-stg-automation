@@ -291,16 +291,21 @@ class CustomerPage(BasePage):
         for sel in target_selectors:
             try:
                 field = self.page.locator(sel).first
-                if field.count() and field.is_visible(timeout=800):
+                if field.count():
                     try:
-                        field.fill(val_str)
+                        field.scroll_into_view_if_needed(timeout=1000)
                     except Exception:
-                        field.evaluate(
-                            "(el, val) => { el.value = val; el.dispatchEvent(new Event('input', {bubbles: true})); el.dispatchEvent(new Event('change', {bubbles: true})); }",
-                            val_str,
-                        )
-                    self.log.info(f"Filled '{field_name}' = '{val_str}' using selector: {sel}")
-                    return True
+                        pass
+                    if field.is_visible(timeout=800):
+                        try:
+                            field.fill(val_str)
+                        except Exception:
+                            field.evaluate(
+                                "(el, val) => { el.value = val; el.dispatchEvent(new Event('input', {bubbles: true})); el.dispatchEvent(new Event('change', {bubbles: true})); }",
+                                val_str,
+                            )
+                        self.log.info(f"Filled '{field_name}' = '{val_str}' using selector: {sel}")
+                        return True
             except Exception:
                 continue
 
@@ -312,6 +317,10 @@ class CustomerPage(BasePage):
                 attr_ph = (inp.get_attribute("placeholder") or "").lower()
                 attr_fc = (inp.get_attribute("formcontrolname") or "").lower()
                 if key in attr_name or key in attr_ph or key in attr_fc:
+                    try:
+                        inp.scroll_into_view_if_needed(timeout=1000)
+                    except Exception:
+                        pass
                     try:
                         inp.fill(val_str)
                         return True
@@ -356,11 +365,17 @@ class CustomerPage(BasePage):
             select_el = None
             for sel in selectors:
                 el = self.page.locator(sel).first
-                if el.count() and el.is_visible(timeout=1500):
-                    select_el = el
-                    break
+                if el.count():
+                    try:
+                        el.scroll_into_view_if_needed(timeout=2000)
+                    except Exception:
+                        pass
+                    if el.is_visible(timeout=1500):
+                        select_el = el
+                        break
 
             if select_el:
+                select_el.scroll_into_view_if_needed(timeout=2000)
                 select_el.click()
                 self.page.wait_for_timeout(400)
                 # Look for matching option in overlay
@@ -408,11 +423,17 @@ class CustomerPage(BasePage):
             select_el = None
             for sel in selectors:
                 el = self.page.locator(sel).first
-                if el.count() and el.is_visible(timeout=2000):
-                    select_el = el
-                    break
+                if el.count():
+                    try:
+                        el.scroll_into_view_if_needed(timeout=2000)
+                    except Exception:
+                        pass
+                    if el.is_visible(timeout=2000):
+                        select_el = el
+                        break
 
             if select_el:
+                select_el.scroll_into_view_if_needed(timeout=2000)
                 select_el.click()
                 self.page.wait_for_timeout(500)
                 opt_elements = self.page.locator("mat-option, .mat-mdc-option, [role='option']").all()
@@ -450,7 +471,8 @@ class CustomerPage(BasePage):
             chk = self.page.locator("mat-checkbox[name='hasIgst'], mat-checkbox:has-text('IGST')").first
             if chk.count():
                 classes = chk.get_attribute("class") or ""
-                return "checked" in classes or "mat-mdc-checkbox-checked" in classes
+                aria = chk.get_attribute("aria-checked") or ""
+                return "checked" in classes or "mat-mdc-checkbox-checked" in classes or aria == "true"
         except Exception:
             pass
         return False
@@ -462,6 +484,10 @@ class CustomerPage(BasePage):
                 "input[name='hasIgst'], mat-checkbox[name='hasIgst'], mat-checkbox:has-text('IGST'), mat-slide-toggle:has-text('IGST')"
             ).first
             if chk.count():
+                try:
+                    chk.scroll_into_view_if_needed(timeout=2000)
+                except Exception:
+                    pass
                 current = self.get_igst_switch_state()
                 if target_state is None or current != target_state:
                     chk.click(force=True)
@@ -494,7 +520,11 @@ class CustomerPage(BasePage):
         save_btn = self.page.locator(
             "button:has-text('Save'), button:has-text('Submit'), button[type='submit']"
         ).first
-        save_btn.wait_for(state="visible", timeout=4000)
+        try:
+            save_btn.scroll_into_view_if_needed(timeout=3000)
+        except Exception:
+            pass
+        save_btn.wait_for(state="visible", timeout=6000)
         save_btn.click()
         self.wait_for_dom_ready()
 
@@ -505,12 +535,12 @@ class CustomerPage(BasePage):
                 ".cdk-overlay-pane:has(button:has-text('Yes')), div:has(button:has-text('Yes')):has(button:has-text('No')), "
                 "div[role='dialog'], div[role='alertdialog']"
             ).first
-            if confirm_container.is_visible(timeout=2500):
+            if confirm_container.is_visible(timeout=3500):
                 if confirm:
                     yes_btn = confirm_container.locator(
                         "button:has-text('Yes'), button:has-text('Confirm'), button:has-text('Ok'), a:has-text('Yes')"
                     ).first
-                    if yes_btn.is_visible():
+                    if yes_btn.is_visible(timeout=2000):
                         yes_btn.click()
                         self.wait_for_dom_ready()
                         time.sleep(1)
@@ -518,20 +548,24 @@ class CustomerPage(BasePage):
                     no_btn = confirm_container.locator(
                         "button:has-text('No'), button:has-text('Cancel'), button:has-text('Dismiss'), a:has-text('No')"
                     ).first
-                    if no_btn.is_visible():
+                    if no_btn.is_visible(timeout=2000):
                         no_btn.click()
                         self.wait_for_dom_ready()
                         return "Cancelled"
         except Exception:
             pass
 
-        return self.get_toast_message(timeout=2500) or "Submitted"
+        return self.get_toast_message(timeout=3000) or "Submitted"
 
     def click_cancel(self) -> bool:
         """Click Cancel or Reset button."""
         cancel_btn = self.page.locator(
             "button:has-text('Cancel'), button:has-text('Reset'), button:has-text('Back')"
         ).first
+        try:
+            cancel_btn.scroll_into_view_if_needed(timeout=3000)
+        except Exception:
+            pass
         if cancel_btn.is_visible(timeout=4000):
             cancel_btn.click()
             self.wait_for_dom_ready()
