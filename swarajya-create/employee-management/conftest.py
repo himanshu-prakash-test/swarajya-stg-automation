@@ -93,7 +93,7 @@ def browser(pw, request):
     browser_instance.close()
 
 
-AUTH_STATE_PATH = os.path.join(ROOT, "test_data", "auth_state.json")
+AUTH_STATE_PATH = os.path.join(_WORKSPACE_ROOT, "shared", "test_data", "auth_state_session.json")
 
 
 def _is_valid_auth_state(path: Optional[str]) -> bool:
