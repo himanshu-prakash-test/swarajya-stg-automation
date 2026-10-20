@@ -326,18 +326,24 @@ class EmployeePage(BasePage):
             first_input = self.page.locator(self.FIELD_MAP["first name"]).first
             before_url = self.page.url
             button = self.page.locator(self.CANCEL_BTN).first
-            button.wait_for(state="visible", timeout=5000)
+            button.scroll_into_view_if_needed()
+            button.wait_for(state="visible", timeout=10000)
             button.click()
 
             try:
-                self.page.wait_for_function(
-                    f"() => window.location.href !== '{before_url}' || (document.querySelector('#emp_first_name') && document.querySelector('#emp_first_name').value === '')",
-                    timeout=4000,
-                )
+                # Cancel navigates away to /employeeList or clears form
+                self.page.wait_for_url(lambda u: u != before_url, timeout=10000)
             except Exception:
-                pass
+                try:
+                    self.page.wait_for_function(
+                        f"() => window.location.href !== '{before_url}' || (document.querySelector('#emp_first_name') && document.querySelector('#emp_first_name').value === '')",
+                        timeout=5000,
+                    )
+                except Exception:
+                    pass
 
             if self.page.url != before_url:
+                log.info(f"Cancel navigated away from {before_url} to {self.page.url}")
                 return True
             if first_input.is_visible():
                 return first_input.input_value().strip() == ""
