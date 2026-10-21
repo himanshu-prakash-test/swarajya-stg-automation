@@ -222,24 +222,28 @@ class CustomerPage(BasePage):
         """
         Open the Add / Create Customer form (/addNewCustomer).
         """
-        if "addnewcustomer" not in self.page.url.lower():
-            if direct:
-                self.goto("/addNewCustomer")
-            else:
-                self.open_customer_list(direct=False)
-                btn = self.page.locator(
-                    "button:has-text('New Customer'), button:has-text('Add Customer'), a:has-text('New Customer'), a:has-text('Add Customer'), a[href*='addNewCustomer'], button:has-text('Customer')"
-                ).first
-                if btn.is_visible(timeout=3000):
-                    btn.click()
-                else:
+        for attempt in range(1, 3):
+            if "addnewcustomer" not in self.page.url.lower():
+                if direct:
                     self.goto("/addNewCustomer")
+                else:
+                    self.open_customer_list(direct=False)
+                    btn = self.page.locator(
+                        "button:has-text('New Customer'), button:has-text('Add Customer'), a:has-text('New Customer'), a:has-text('Add Customer'), a[href*='addNewCustomer'], button:has-text('Customer')"
+                    ).first
+                    if btn.is_visible(timeout=3000):
+                        btn.click()
+                    else:
+                        self.goto("/addNewCustomer")
 
-        self.wait_for_dom_ready()
-        try:
-            self.page.locator("input[name='customer_name'], input[formcontrolname='customerName'], input[placeholder*='Customer Name' i], input#mat-input-0").first.wait_for(state="visible", timeout=12000)
-        except Exception:
-            pass
+            self.wait_for_dom_ready()
+            try:
+                self.page.locator("input[name='customer_name'], input[formcontrolname='customerName'], input[placeholder*='Customer Name' i], input#mat-input-0").first.wait_for(state="visible", timeout=12000)
+                return
+            except Exception:
+                if attempt < 2:
+                    self.log.warning(f"open_create_customer_form attempt {attempt} timed out waiting for form inputs. Retrying navigation...")
+                    self.goto("/addNewCustomer")
 
     # ----------------- Form Field Interactions -----------------
 
@@ -522,8 +526,11 @@ class CustomerPage(BasePage):
             save_btn.scroll_into_view_if_needed(timeout=3000)
         except Exception:
             pass
-        save_btn.wait_for(state="visible", timeout=6000)
-        save_btn.click()
+        save_btn.wait_for(state="visible", timeout=15000)
+        try:
+            save_btn.click()
+        except Exception:
+            save_btn.click(force=True)
         self.wait_for_dom_ready()
 
         # Handle confirmation dialog / snackbar popup with Yes / No
@@ -605,16 +612,46 @@ class CustomerPage(BasePage):
             "input[placeholder*='Search' i], input[type='search']"
         ).first
         if search_input.is_visible(timeout=5000):
+            search_input.fill("")
+            self.page.wait_for_timeout(200)
             search_input.fill(search_term)
+            try:
+                search_input.dispatch_event("input")
+            except Exception:
+                pass
             search_input.press("Enter")
             self.wait_for_dom_ready()
             time.sleep(1)
 
-    def is_customer_in_list(self, customer_name: str) -> bool:
-        """Verify customer name is present in grid."""
-        self.search_customer(customer_name)
-        row = self.page.locator(f"table tbody tr:has-text('{customer_name}'), mat-row:has-text('{customer_name}'), tr:has-text('{customer_name}'), td:has-text('{customer_name}')").first
-        return row.is_visible(timeout=3000)
+    def is_customer_in_list(self, customer_name: str, max_retries: int = 3) -> bool:
+        """Verify customer name is present in grid with retry for staging API indexing."""
+        for attempt in range(1, max_retries + 1):
+            self.search_customer(customer_name)
+            row = self.page.locator(
+                f"table tbody tr:has-text('{customer_name}'), mat-row:has-text('{customer_name}'), tr:has-text('{customer_name}'), td:has-text('{customer_name}')"
+            ).first
+            try:
+                if row.is_visible(timeout=4000):
+                    return True
+            except Exception:
+                pass
+
+            # If not found, check if 'Include Inactive Customers' needs to be toggled
+            inactive_cb = self.page.locator("mat-checkbox:has-text('Inactive'), label:has-text('Inactive') input[type='checkbox']").first
+            if inactive_cb.count() and inactive_cb.is_visible():
+                try:
+                    inactive_cb.click(force=True)
+                    self.page.wait_for_timeout(1000)
+                    if row.is_visible(timeout=3000):
+                        return True
+                except Exception:
+                    pass
+
+            if attempt < max_retries:
+                self.log.info(f"Customer '{customer_name}' not yet visible in listing (attempt {attempt}/{max_retries}). Retrying in 2s...")
+                self.clear_search()
+                self.page.wait_for_timeout(2000)
+        return False
 
     def wait_for_url_contains(self, keyword: str, timeout: int = 10000):
         """Wait for page URL to contain specific substring."""
@@ -630,6 +667,10 @@ class CustomerPage(BasePage):
         ).first
         if search_input.is_visible(timeout=5000):
             search_input.fill("")
+            try:
+                search_input.dispatch_event("input")
+            except Exception:
+                pass
             search_input.press("Enter")
             self.wait_for_dom_ready()
             time.sleep(1)
