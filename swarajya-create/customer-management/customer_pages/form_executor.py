@@ -360,12 +360,18 @@ class FormExecutor:
             f"Actual: Customer creation was rejected or failed. Outcome message: '{outcome}'"
         )
 
+        log.info(f"Customer creation save outcome for [{tc_id}]: '{outcome}'")
+
         # Validate that newly created customer is visible on the Customer Details page by searching with customer name
+        try:
+            self.page.wait_for_url(lambda u: "customerdetails" in u.lower(), timeout=3000)
+        except Exception:
+            pass
         self.customer.open_customer_list()
         found = self.customer.is_customer_in_list(customer_name)
         assert found, (
             f"Expected Result NOT satisfied for [{tc_id}]: '{expected}'. "
-            f"Actual: Customer '{customer_name}' was not visible in Customer Details table after pressing Yes on confirmation."
+            f"Actual: Customer '{customer_name}' was not visible in Customer Details table after pressing Yes on confirmation. Save outcome: '{outcome}'"
         )
 
         FormExecutor.last_created_customer = {"name": customer_name, "code": customer_code}

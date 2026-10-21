@@ -546,30 +546,42 @@ class CustomerPage(BasePage):
 
         # Handle confirmation dialog / snackbar popup with Yes / No
         try:
-            confirm_container = self.page.locator(
-                "mat-dialog-container, .mat-snack-bar-container, .modal-content, .swal2-popup, "
-                ".cdk-overlay-pane:has(button:has-text('Yes')), div:has(button:has-text('Yes')):has(button:has-text('No')), "
-                "div[role='dialog'], div[role='alertdialog']"
-            ).first
-            if confirm_container.is_visible(timeout=3500):
-                if confirm:
-                    yes_btn = confirm_container.locator(
-                        "button:has-text('Yes'), button:has-text('Confirm'), button:has-text('Ok'), a:has-text('Yes')"
-                    ).first
-                    if yes_btn.is_visible(timeout=2000):
+            if confirm:
+                yes_btn = self.page.locator(
+                    "mat-dialog-container button:has-text('Yes'), "
+                    ".cdk-overlay-pane button:has-text('Yes'), "
+                    "button:has-text('Yes'), button:has-text('Confirm'), button:has-text('Ok')"
+                ).first
+                if yes_btn.is_visible(timeout=8000):
+                    self.log.info("Confirmation dialog displayed with Yes button. Clicking Yes...")
+                    try:
                         yes_btn.click()
-                        self.wait_for_dom_ready()
-                        time.sleep(1)
+                    except Exception:
+                        yes_btn.click(force=True)
+                    self.wait_for_dom_ready()
+                    # Wait for dialog to dismiss indicating backend API transaction finished
+                    try:
+                        yes_btn.wait_for(state="hidden", timeout=8000)
+                    except Exception:
+                        pass
+                    self.page.wait_for_timeout(2000)
                 else:
-                    no_btn = confirm_container.locator(
-                        "button:has-text('No'), button:has-text('Cancel'), button:has-text('Dismiss'), a:has-text('No')"
-                    ).first
-                    if no_btn.is_visible(timeout=2000):
+                    self.log.info("No confirmation dialog detected within 8s; proceeding.")
+            else:
+                no_btn = self.page.locator(
+                    "mat-dialog-container button:has-text('No'), "
+                    ".cdk-overlay-pane button:has-text('No'), "
+                    "button:has-text('No'), button:has-text('Cancel'), button:has-text('Dismiss')"
+                ).first
+                if no_btn.is_visible(timeout=8000):
+                    try:
                         no_btn.click()
-                        self.wait_for_dom_ready()
-                        return "Cancelled"
-        except Exception:
-            pass
+                    except Exception:
+                        no_btn.click(force=True)
+                    self.wait_for_dom_ready()
+                    return "Cancelled"
+        except Exception as exc:
+            self.log.warning(f"Dialog confirmation exception: {exc}")
 
         return self.get_toast_message(timeout=3000) or "Submitted"
 
@@ -654,15 +666,17 @@ class CustomerPage(BasePage):
                 pass
 
             # If not found, check if 'Include Inactive Customers' needs to be toggled
-            inactive_cb = self.page.locator("mat-checkbox:has-text('Inactive'), label:has-text('Inactive') input[type='checkbox']").first
+            inactive_cb = self.page.locator("mat-checkbox:has-text('Include Inactive Customers'), mat-checkbox:has-text('Inactive')").first
             if inactive_cb.count() and inactive_cb.is_visible():
-                try:
-                    inactive_cb.click(force=True)
-                    self.page.wait_for_timeout(1000)
-                    if row.is_visible(timeout=3000):
-                        return True
-                except Exception:
-                    pass
+                is_checked = "checked" in (inactive_cb.get_attribute("class") or "")
+                if not is_checked:
+                    try:
+                        inactive_cb.click(force=True)
+                        self.page.wait_for_timeout(1000)
+                        if row.is_visible(timeout=3000):
+                            return True
+                    except Exception:
+                        pass
 
             if attempt < max_retries:
                 self.log.info(f"Customer '{customer_name}' not yet visible in listing (attempt {attempt}/{max_retries}). Retrying in 2s...")
