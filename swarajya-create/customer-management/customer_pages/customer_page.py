@@ -196,27 +196,38 @@ class CustomerPage(BasePage):
         Navigate to Customer Details listing page (/customerDetails).
         Direct navigation saves redundant route transitions when session is authenticated.
         """
-        if "customerdetails" not in self.page.url.lower():
-            if direct:
-                self.goto("/customerDetails")
-            else:
-                if "invoicedashboard" not in self.page.url.lower():
-                    self.open_invoice_dashboard()
-
-                link = self.page.locator(
-                    "mat-card:has-text('Customers'), div:has-text('Customers'), a:has-text('Customers'), "
-                    "a[href*='customerDetails'], button:has-text('Customer Details'), [mattooltip*='Customer Details' i], span:has-text('Customer Details')"
-                ).last
-                if link.is_visible(timeout=3000):
-                    link.click()
-                else:
+        for attempt in range(1, 4):
+            if "customerdetails" not in self.page.url.lower():
+                if direct:
                     self.goto("/customerDetails")
+                else:
+                    if "invoicedashboard" not in self.page.url.lower():
+                        self.open_invoice_dashboard()
 
-        self.wait_for_dom_ready()
-        try:
-            self.page.locator("table, mat-table, input[placeholder*='Search' i]").first.wait_for(state="visible", timeout=10000)
-        except Exception:
-            pass
+                    link = self.page.locator(
+                        "mat-card:has-text('Customers'), div:has-text('Customers'), a:has-text('Customers'), "
+                        "a[href*='customerDetails'], button:has-text('Customer Details'), [mattooltip*='Customer Details' i], span:has-text('Customer Details')"
+                    ).last
+                    if link.is_visible(timeout=3000):
+                        link.click()
+                    else:
+                        self.goto("/customerDetails")
+
+            self.wait_for_dom_ready()
+            try:
+                self.page.locator("table, mat-table, input[placeholder*='Search' i]").first.wait_for(state="visible", timeout=8000)
+                if "customerdetails" in self.page.url.lower():
+                    return
+            except Exception:
+                pass
+
+            if "customerdetails" in self.page.url.lower():
+                return
+
+            if attempt < 3:
+                self.log.warning(f"open_customer_list attempt {attempt} not at customerDetails (current: {self.page.url}). Retrying...")
+                self.goto("/customerDetails")
+                self.page.wait_for_timeout(2000)
 
     def open_create_customer_form(self, direct: bool = True):
         """
@@ -623,9 +634,15 @@ class CustomerPage(BasePage):
             self.wait_for_dom_ready()
             time.sleep(1)
 
-    def is_customer_in_list(self, customer_name: str, max_retries: int = 3) -> bool:
+    def is_customer_in_list(self, customer_name: str, max_retries: int = 4) -> bool:
         """Verify customer name is present in grid with retry for staging API indexing."""
+        if "customerdetails" not in self.page.url.lower():
+            self.open_customer_list(direct=True)
+
         for attempt in range(1, max_retries + 1):
+            if "customerdetails" not in self.page.url.lower():
+                self.open_customer_list(direct=True)
+
             self.search_customer(customer_name)
             row = self.page.locator(
                 f"table tbody tr:has-text('{customer_name}'), mat-row:has-text('{customer_name}'), tr:has-text('{customer_name}'), td:has-text('{customer_name}')"

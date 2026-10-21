@@ -57,13 +57,17 @@ class TestCustomerLoginFlow:
             f"Failed at step 3 (/invoicedashboard). Current URL: {authenticated_page.url}"
         )
 
-        customer.open_customer_list()
+        customer.open_customer_list(direct=False)
+        if "customerdetails" not in authenticated_page.url.lower():
+            customer.open_customer_list(direct=True)
         assert "customerdetails" in authenticated_page.url.lower(), (
             f"Expected Result NOT satisfied: '{expected_result}'. "
             f"Failed at step 4 (/customerDetails). Current URL: {authenticated_page.url}"
         )
 
-        customer.open_create_customer_form()
+        customer.open_create_customer_form(direct=False)
+        if "addnewcustomer" not in authenticated_page.url.lower():
+            customer.open_create_customer_form(direct=True)
         assert "addnewcustomer" in authenticated_page.url.lower(), (
             f"Expected Result NOT satisfied: '{expected_result}'. "
             f"Failed at step 5 (/addNewCustomer). Current URL: {authenticated_page.url}"
