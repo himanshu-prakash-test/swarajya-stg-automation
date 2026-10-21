@@ -83,6 +83,10 @@ jobs:
               echo ">>> Running Create Customer-Management Tests..."
               pytest swarajya-create/customer-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
             fi
+            if [ -d "swarajya-create/invoice-management/tests" ]; then
+              echo ">>> Running Create Invoice-Management Tests..."
+              pytest swarajya-create/invoice-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_invoice_report.html --self-contained-html || EXIT_CODE=1
+            fi
             exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."
