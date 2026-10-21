@@ -14,6 +14,12 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 │   └── utils/                          # Logging, Excel readers, popup reporting
 │
 ├── swarajya-create/
+│   ├── customer-management/            # 👥 Create Customer Management Module
+│   │   ├── customer_pages/             # Page Object Model Layer (CustomerPage, FormExecutor)
+│   │   ├── customer_utils/             # Excel loaders & test case sync
+│   │   ├── tests/                      # Parametrized positive & negative test suites
+│   │   └── pytest.ini                  # Module-level configuration
+│   │
 │   ├── employee-management/            # 👤 Create Employee Management Module
 │   │   ├── emp_pages/                  # Page Object Model Layer (EmployeePage, FormExecutor)
 │   │   ├── emp_utils/                  # Excel loaders & test case sync
@@ -40,22 +46,27 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 
 ## 🏃 Test Execution Guide
 
-### 1. Run Create Vendor Management Tests
+### 1. Run Create Customer Management Tests
+```bash
+pytest swarajya-create/customer-management/tests -v
+```
+
+### 2. Run Create Vendor Management Tests
 ```bash
 pytest swarajya-create/vendor-management/tests -v
 ```
 
-### 2. Run Create Employee Management Tests
+### 3. Run Create Employee Management Tests
 ```bash
 pytest swarajya-create/employee-management/tests -v
 ```
 
-### 3. Run Employee & Manager Login Tests
+### 4. Run Employee & Manager Login Tests
 ```bash
 pytest swarajya-login/emp-manager/tests -v
 ```
 
-### 4. Browser Options & HTML Reports
+### 5. Browser Options & HTML Reports
 ```bash
 # Run in headed mode
 pytest --headed
