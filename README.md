@@ -2,18 +2,27 @@
 
 An enterprise-grade, data-driven test automation framework for the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), built with **Python 3.12+**, **Playwright**, **Pytest**, and **OpenPyXL**.
 
+> **Branch:** `create/invoice-mgmt`  
+> **Master Repository:** [Switch to main branch](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main)
+
 ---
 
 ## 📁 Repository Structure & Modules
 
 ```
 ├── shared/                             # 🌐 Centralized Core Framework & Test Data
-│   ├── config/                         # Central configuration & selectors
 │   ├── pages/                          # Shared BasePage, LoginPage, TfaPage
+│   ├── reporter/                       # HTML Reporter Plugin & Templates
 │   ├── test_data/                      # Centralized Excel workbooks & sample documents
 │   └── utils/                          # Logging, Excel readers, popup reporting
 │
 ├── swarajya-create/
+│   ├── invoice-management/             # 📄 Create Invoice Management Module
+│   │   ├── invoice_pages/              # Page Object Model Layer (InvoicePage, FormExecutor)
+│   │   ├── invoice_utils/              # Excel loaders & test case sync
+│   │   ├── tests/                      # Parametrized positive & negative test suites
+│   │   └── pytest.ini                  # Module-level configuration
+│   │
 │   ├── customer-management/            # 👥 Create Customer Management Module
 │   │   ├── customer_pages/             # Page Object Model Layer (CustomerPage, FormExecutor)
 │   │   ├── customer_utils/             # Excel loaders & test case sync
@@ -44,33 +53,21 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 
 ---
 
-## 🏃 Test Execution Guide
+## 🏃 Running Tests on this Branch
 
-### 1. Run Create Customer Management Tests
 ```bash
-pytest swarajya-create/customer-management/tests -v
-```
+# Run all Invoice Management tests in headless mode (default on this branch)
+pytest -v
 
-### 2. Run Create Vendor Management Tests
-```bash
-pytest swarajya-create/vendor-management/tests -v
-```
-
-### 3. Run Create Employee Management Tests
-```bash
-pytest swarajya-create/employee-management/tests -v
-```
-
-### 4. Run Employee & Manager Login Tests
-```bash
-pytest swarajya-login/emp-manager/tests -v
-```
-
-### 5. Browser Options & HTML Reports
-```bash
-# Run in headed mode
-pytest --headed
-
-# Run with HTML report output
+# Run with HTML report
 pytest --html=reports/latest_report.html --self-contained-html
+
+# Run positive flows only
+pytest swarajya-create/invoice-management/tests/test_invoice_positive_flows.py -v
+
+# Run negative flows only
+pytest swarajya-create/invoice-management/tests/test_invoice_negative_flows.py -v
+
+# Run in interactive headed mode
+pytest --headed
 ```
