@@ -122,8 +122,6 @@ def update_test_result(
         tc_id=tc_id,
         status=status,
         remarks=rem,
-        duration=dur,
-        module_key=MODULE_KEY,
         sheet_name=sheet_name or SHEET_NAME,
     )
 

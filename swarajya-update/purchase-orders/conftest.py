@@ -320,7 +320,14 @@ def pytest_runtest_makereport(item, call):
         auto_id = build_automation_id(tc_id) if tc_id != "UNKNOWN" else ""
         duration = getattr(report, "duration", 0.0)
 
-        if status == "PASS":
+        if hasattr(report, "wasxfail"):
+            status = "FAIL"
+            reason = getattr(report, "wasxfail", "") or "Application defect detected"
+            remarks = f"Defect: {reason}"[:240]
+            _metrics["failed"] += 1
+            _failures.append(f"{tc_id}: {remarks}")
+        elif report.passed:
+            status = "PASS"
             _metrics["passed"] += 1
             is_pos = "pos" in report.nodeid.lower() or "positive" in report.nodeid.lower()
             remarks = (
@@ -328,25 +335,28 @@ def pytest_runtest_makereport(item, call):
                 if is_pos
                 else "Validation successful: Form rejected invalid update input."
             )
-        elif status == "FAIL":
+        elif report.failed:
+            status = "FAIL"
             _metrics["failed"] += 1
             remarks = str(report.longrepr).splitlines()[-1].strip()[:240] if report.longrepr else "Test Assertion Error"
             _failures.append(f"{tc_id}: {remarks}")
         else:
+            status = "SKIPPED"
             _metrics["skipped"] += 1
             remarks = "Skipped: Scenario excluded or pre-requisite not met"
         _metrics["total"] += 1
 
-        # Capture 1-to-1 screenshot on PASS/FAIL
+        # Capture 1-to-1 screenshot on PASS/FAIL/DEFECT
         shot_path = None
-        if page and status in ("PASS", "FAIL"):
+        if page and (status in ("PASS", "FAIL") or hasattr(report, "wasxfail")):
             try:
                 label = tc_id if tc_id else re.sub(r"[^\w\-]", "_", item.name)[:50]
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                shot_filename = f"{status}_{label}__{ts}.png"
+                shot_prefix = "DEFECT" if hasattr(report, "wasxfail") else status
+                shot_filename = f"{shot_prefix}_{label}__{ts}.png"
                 shot_path = os.path.join(SCREENSHOTS_DIR, shot_filename)
                 page.screenshot(path=shot_path, timeout=5000)
-                log.info(f"Captured test screenshot ({status}): {shot_filename}")
+                log.info(f"Captured test screenshot ({shot_prefix}): {shot_filename}")
             except Exception as exc:
                 log.warning(f"Could not capture screenshot for {item.name}: {exc}")
                 shot_path = None
