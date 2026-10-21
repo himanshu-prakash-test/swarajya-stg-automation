@@ -1,60 +1,73 @@
-# 🚀 Swarajya Staging Automation - Create Invoice Management Module
+# 🚀 Swarajya Staging Automation Framework
+
+An enterprise-grade, data-driven test automation framework for the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), built with **Python 3.12+**, **Playwright**, **Pytest**, and **OpenPyXL**.
 
 > **Branch:** `create/invoice-mgmt`  
 > **Master Repository:** [Switch to main branch](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main)
 
-This branch contains strictly the **Create Invoice Management Module** along with the shared framework dependencies.
+---
 
-## 🏃 Running Tests on this Branch
-```bash
-# Run tests for this module
-pytest swarajya-create/invoice-management/tests -v
+## 📁 Repository Structure & Modules
 
-# Run with HTML report
-pytest swarajya-create/invoice-management/tests --html=report.html --self-contained-html
+```
+├── shared/                             # 🌐 Centralized Core Framework & Test Data
+│   ├── pages/                          # Shared BasePage, LoginPage, TfaPage
+│   ├── reporter/                       # HTML Reporter Plugin & Templates
+│   ├── test_data/                      # Centralized Excel workbooks & sample documents
+│   └── utils/                          # Logging, Excel readers, popup reporting
+│
+├── swarajya-create/
+│   ├── invoice-management/             # 📄 Create Invoice Management Module
+│   │   ├── invoice_pages/              # Page Object Model Layer (InvoicePage, FormExecutor)
+│   │   ├── invoice_utils/              # Excel loaders & test case sync
+│   │   ├── tests/                      # Parametrized positive & negative test suites
+│   │   └── pytest.ini                  # Module-level configuration
+│   │
+│   ├── customer-management/            # 👥 Create Customer Management Module
+│   │   ├── customer_pages/             # Page Object Model Layer (CustomerPage, FormExecutor)
+│   │   ├── customer_utils/             # Excel loaders & test case sync
+│   │   ├── tests/                      # Parametrized positive & negative test suites
+│   │   └── pytest.ini                  # Module-level configuration
+│   │
+│   ├── employee-management/            # 👤 Create Employee Management Module
+│   │   ├── emp_pages/                  # Page Object Model Layer (EmployeePage, FormExecutor)
+│   │   ├── emp_utils/                  # Excel loaders & test case sync
+│   │   ├── tests/                      # Parametrized positive & negative test suites
+│   │   └── pytest.ini                  # Module-level configuration
+│   │
+│   └── vendor-management/              # 🏢 Create Vendor Management Module
+│       ├── vendor_pages/               # Page Object Model Layer (VendorPage, FormExecutor)
+│       ├── vendor_utils/               # Excel loaders & test case sync
+│       ├── tests/                      # Parametrized positive & negative test suites
+│       └── pytest.ini                  # Module-level configuration
+│
+├── swarajya-login/
+│   └── emp-manager/                    # 🔐 Employee & Manager Authentication Module
+│       ├── tests/                      # Role-based positive & negative authentication flows
+│       └── pytest.ini                  # Module-level configuration
+│
+├── conftest.py                         # Root Pytest fixtures, sys.path & CLI options
+├── pytest.ini                          # Root testpaths, discovery & logging config
+└── requirements.txt                    # Project dependencies
 ```
 
 ---
 
-# 📄 Create Invoice Management Automation Module
-
-Automated test suite for Create Invoice workflows on the Swarajya platform.
-
-## 📁 Module Structure
-```
-invoice-management/
-├── conftest.py                      # Browser fixtures, makereport hooks, Excel updates, guarded popups
-├── pytest.ini                       # Testpaths, options, and marker configurations
-├── requirements.txt                 # Module dependencies
-├── invoice_pages/                   # Page Object Models
-│   ├── __init__.py
-│   ├── invoice_page.py              # Dashboard & creation form actions
-│   └── form_executor.py             # Form filling from dynamic Excel dataset
-├── invoice_utils/                   # Data utilities
-│   ├── __init__.py
-│   └── excel_reader.py              # Wrapper for shared.utils.excel_base
-├── tests/                           # Test suite
-│   ├── __init__.py
-│   ├── test_invoice_positive_flows.py  # 20 Data-driven positive test cases
-│   └── test_invoice_negative_flows.py  # 7 Data-driven negative test cases
-└── screenshots/                     # 1-to-1 automated run evidence
-```
-
-> **Strict Zero-Hardcoding Policy**: All credentials, base URLs, form inputs, test descriptions, and expected outcomes are dynamically fetched from `shared/test_data/Swarajya-test-cases.xlsx` and `Swarajya-test-data.xlsx` (Sheet: `createinvoice-mgmt`).
-
-## 🚀 Execution Commands
+## 🏃 Running Tests on this Branch
 
 ```bash
-# Run entire Invoice test suite in headless mode (CI/CD compatible)
-pytest swarajya-create/invoice-management/tests -v --headless
+# Run all Invoice Management tests in headless mode (default on this branch)
+pytest -v
 
-# Run only positive flows
-pytest swarajya-create/invoice-management/tests/test_invoice_positive_flows.py -v --headless
+# Run with HTML report
+pytest --html=reports/latest_report.html --self-contained-html
 
-# Run only negative flows
-pytest swarajya-create/invoice-management/tests/test_invoice_negative_flows.py -v --headless
+# Run positive flows only
+pytest swarajya-create/invoice-management/tests/test_invoice_positive_flows.py -v
+
+# Run negative flows only
+pytest swarajya-create/invoice-management/tests/test_invoice_negative_flows.py -v
 
 # Run in interactive headed mode
-pytest swarajya-create/invoice-management/tests -v --headed
+pytest --headed
 ```
-

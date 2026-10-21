@@ -133,6 +133,27 @@ def read_credentials(
         url_idx = next((i for i, h in enumerate(headers) if "url" in h), None)
         valid_idx = next((i for i, h in enumerate(headers) if "valid" in h), None)
 
+        if "role" not in headers and any("id" in h for h in headers) and any("pass" in h for h in headers):
+            if target_role in ("admin", "default", ""):
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    if not row or not any(row):
+                        continue
+                    if id_idx < len(row) and pwd_idx < len(row) and row[id_idx] and row[pwd_idx]:
+                        emp_id = row[id_idx]
+                        auth_code = row[auth_idx] if auth_idx is not None and auth_idx < len(row) else ""
+                        emp_id_str = str(int(emp_id)) if isinstance(emp_id, float) else str(emp_id).strip()
+                        auth_code_str = str(int(auth_code)) if isinstance(auth_code, float) else str(auth_code or "").strip()
+                        b_url = str(row[url_idx]).strip() if url_idx is not None and url_idx < len(row) and row[url_idx] else ""
+                        wb.close()
+                        return {
+                            "role": role,
+                            "employee_id": emp_id_str,
+                            "password": str(row[pwd_idx]).strip(),
+                            "auth_code": auth_code_str,
+                            "base_url": b_url or default_url,
+                            "is_valid": True,
+                        }
+
         for row in ws.iter_rows(min_row=2, values_only=True):
             if not row or not row[role_idx]:
                 continue
@@ -426,13 +447,17 @@ def get_test_data_by_id(
 
 
 def update_test_result(
-    arg1: str,
+    arg1: str = "",
     arg2: str = "",
     status_or_remarks: str = "",
     auto_id_or_sheet: Optional[str] = None,
     file_path: Optional[str] = None,
     remarks: str = "",
     sheet_name: Optional[str] = None,
+    tc_id: Optional[str] = None,
+    status: Optional[str] = None,
+    auto_id: Optional[str] = None,
+    result: Optional[str] = None,
 ):
     """
     Flexible universal Excel test result updater.
@@ -449,18 +474,14 @@ def update_test_result(
 
     try:
         # Determine caller convention
-        if arg1.strip().upper().startswith("TC_"):
-            tc_id = arg1.strip()
-            result_status = arg2 or status_or_remarks
-            rem = remarks or (status_or_remarks if status_or_remarks not in ("PASS", "FAIL", "SKIPPED", "BLOCKED") else "")
-            target_sheet = sheet_name or (auto_id_or_sheet if isinstance(auto_id_or_sheet, str) and not auto_id_or_sheet.startswith("AUT_") else None)
-            auto_id = ""
-        else:
-            target_sheet = arg1.strip()
-            tc_id = arg2.strip()
-            result_status = status_or_remarks
-            auto_id = auto_id_or_sheet or ""
-            rem = remarks
+        target_sheet = sheet_name or (arg1.strip() if arg1 and not arg1.strip().upper().startswith("TC_") else None)
+        resolved_tc_id = tc_id or (arg1.strip() if arg1 and arg1.strip().upper().startswith("TC_") else (arg2.strip() if arg2 else ""))
+        result_status = status or result or (status_or_remarks if status_or_remarks in ("PASS", "FAIL", "SKIPPED", "BLOCKED") else (arg2 if arg2 in ("PASS", "FAIL", "SKIPPED", "BLOCKED") else ""))
+        resolved_auto_id = auto_id or (auto_id_or_sheet if isinstance(auto_id_or_sheet, str) and auto_id_or_sheet.startswith("AUT_") else "")
+        rem = remarks or (status_or_remarks if status_or_remarks not in ("PASS", "FAIL", "SKIPPED", "BLOCKED") else "")
+
+        tc_id = resolved_tc_id
+        auto_id = resolved_auto_id
 
         wb = openpyxl.load_workbook(path)
         candidates = [target_sheet] if target_sheet else ["loginhr_admin", "loginemp-manager"]
