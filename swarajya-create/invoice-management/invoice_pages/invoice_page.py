@@ -35,13 +35,28 @@ class InvoicePage:
 
     def navigate_to_new_invoice(self) -> None:
         """Navigate directly or via 'New Invoice' button to the creation form."""
+        if "generateNewInvoice" in self.page.url and self.finalize_button.is_visible():
+            self.dismiss_intro_tour()
+            return
+
         self.navigate_to_invoice_dashboard()
         new_inv_btn = self.page.locator("button, a").filter(has_text="New Invoice").first
-        if new_inv_btn.is_visible(timeout=5_000):
-            new_inv_btn.click()
-            self.page.wait_for_url(lambda u: "generateNewInvoice" in u or "invoice" in u, timeout=10_000)
-        else:
+        try:
+            if new_inv_btn.is_visible(timeout=5_000):
+                new_inv_btn.click()
+                self.page.wait_for_url(lambda u: "generateNewInvoice" in u, timeout=10_000)
+        except Exception:
+            pass
+
+        if "generateNewInvoice" not in self.page.url:
             self.page.goto(f"{self.base_url}/generateNewInvoice", wait_until="domcontentloaded", timeout=20_000)
+
+        try:
+            self.page.wait_for_selector("button:has-text('Finalize Invoice'), input#invoiceFor, select[name='vendor']", timeout=15_000)
+            self.page.wait_for_timeout(800)
+        except Exception:
+            pass
+
         self.dismiss_intro_tour()
 
     def dismiss_intro_tour(self) -> None:
