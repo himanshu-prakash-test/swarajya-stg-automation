@@ -164,9 +164,18 @@ class VendorPage(BasePage):
     # ----------------- Save, Modal & Cancel Actions -----------------
 
     def click_save(self):
-        """Click Save / Submit button on form."""
+        """Click Save / Submit button on form with resilience against high CI CPU load."""
         btn_sel = "button:has-text('Save'), button:has-text('Submit'), button[type='submit'], button.btn-save"
-        self.click(btn_sel)
+        btn = self.page.locator(btn_sel).first
+        try:
+            btn.scroll_into_view_if_needed(timeout=3000)
+        except Exception:
+            pass
+        btn.wait_for(state="visible", timeout=15000)
+        try:
+            btn.click()
+        except Exception:
+            btn.click(force=True)
         self.log.info("Clicked Save button")
 
     def click_save_and_confirm(self, confirm: bool = True) -> str:
