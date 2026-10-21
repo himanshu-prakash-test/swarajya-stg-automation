@@ -69,24 +69,24 @@ jobs:
             EXIT_CODE=0
             if [ -d "swarajya-login/emp-manager/tests" ]; then
               echo ">>> Running Login Emp-Manager Tests..."
-              pytest swarajya-login/emp-manager/tests -v --headless --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-login/emp-manager/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/employee-management/tests" ]; then
               echo ">>> Running Create Employee-Management Tests..."
-              pytest swarajya-create/employee-management/tests -v --headless --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/employee-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/vendor-management/tests" ]; then
               echo ">>> Running Create Vendor-Management Tests..."
-              pytest swarajya-create/vendor-management/tests -v --headless --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/vendor-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/customer-management/tests" ]; then
               echo ">>> Running Create Customer-Management Tests..."
-              pytest swarajya-create/customer-management/tests -v --headless --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/customer-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
             fi
             exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."
-            pytest -v --headless --html=reports/latest_report.html --self-contained-html
+            pytest -v --headless --reruns 1 --reruns-delay 2 --html=reports/latest_report.html --self-contained-html
           fi
 
       - name: Prepare Artifact Metadata

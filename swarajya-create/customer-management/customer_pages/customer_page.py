@@ -559,12 +559,17 @@ class CustomerPage(BasePage):
                     except Exception:
                         yes_btn.click(force=True)
                     self.wait_for_dom_ready()
-                    # Wait for dialog to dismiss indicating backend API transaction finished
+                    # Wait for dialog to dismiss and auto-redirect to /customerDetails
                     try:
                         yes_btn.wait_for(state="hidden", timeout=8000)
                     except Exception:
                         pass
-                    self.page.wait_for_timeout(2000)
+                    try:
+                        self.page.wait_for_url(lambda u: "customerdetails" in u.lower(), timeout=8000)
+                    except Exception:
+                        pass
+                    self.wait_for_dom_ready()
+                    self.page.wait_for_timeout(1000)
                 else:
                     self.log.info("No confirmation dialog detected within 8s; proceeding.")
             else:
