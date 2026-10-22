@@ -92,10 +92,26 @@ jobs:
               echo ">>> Running Update Purchase-Orders Tests..."
               pytest swarajya-update/purchase-orders/tests -v --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
             fi
-            exit $EXIT_CODE
+            if [ -d "swarajya-update/customer-management/tests" ]; then
+              echo ">>> Running Update Customer-Management Tests..."
+              pytest swarajya-update/customer-management/tests -v --html=reports/update_customer_report.html --self-contained-html || EXIT_CODE=1
+            fi
+            if [ -d "swarajya-update/employee-management/tests" ]; then
+              echo ">>> Running Update Employee-Management Tests..."
+              pytest swarajya-update/employee-management/tests -v --html=reports/update_emp_report.html --self-contained-html || EXIT_CODE=1
+            fi
+            exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            if [ "${{ github.ref_name }}" = "update/emp_mgmt" ] && [ -d "swarajya-update/employee-management/tests" ]; then
+              pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "update/customer_mgmt" ] && [ -d "swarajya-update/customer-management/tests" ]; then
+              pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ -d "swarajya-update/employee-management/tests" ]; then
+              pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            else
+              pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            fi
           fi
 
       - name: Prepare Artifact Metadata
