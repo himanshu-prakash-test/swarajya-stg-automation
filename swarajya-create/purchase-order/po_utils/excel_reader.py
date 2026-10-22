@@ -1,72 +1,72 @@
 """
-Excel reader for Purchase Order Management (Create).
-Loads test cases from Swarajya-test-cases.xlsx [Sheet: createpurchase_order]
-and test data from Swarajya-test-data.xlsx [Sheet: createpurchase_order].
-Strictly zero hardcoded values.
+Excel Reader utility for Create Purchase Order module.
+Delegates strictly to shared/utils/excel_base.py to maintain single source of truth.
+ZERO hardcoding: all URLs, credentials, test descriptions, and data records are
+dynamically fetched from the shared Excel workbooks.
 """
 
-import os
-import sys
 from typing import Any, Dict, List, Optional
-
-_MODULE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_WS_ROOT = os.path.dirname(os.path.dirname(_MODULE_ROOT))
-for _p in (_WS_ROOT, _MODULE_ROOT):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
-
-from shared.utils.excel_loader import (
-    build_automation_id,
-    load_cases_and_data,
-    read_base_url,
-    read_credentials as _central_read_credentials,
-    update_test_result as _central_update_test_result,
+from shared.utils.excel_base import (
+    get_base_url as _shared_get_base_url,
+    read_credentials as _shared_read_credentials,
+    load_test_cases as _shared_load_test_cases,
+    load_test_data as _shared_load_test_data,
+    get_test_case_by_id as _shared_get_test_case_by_id,
+    get_test_data_by_id as _shared_get_test_data_by_id,
+    update_test_result as _shared_update_test_result,
+    build_automation_id as _shared_build_automation_id,
 )
-from shared.utils.logger import get_logger
 
-logger = get_logger("po_excel_reader")
-MODULE_KEY = "po"
 SHEET_NAME = "createpurchase_order"
 
 
-def get_test_cases_filepath() -> str:
-    """Return path to Swarajya-test-cases.xlsx."""
-    from shared.utils.paths import TEST_CASES_FILE
-    return TEST_CASES_FILE
+def get_base_url(sheet_name: str = SHEET_NAME) -> str:
+    """Fetch base staging URL dynamically from Excel sheet."""
+    return _shared_get_base_url(sheet_name=sheet_name)
 
 
-def read_credentials(role: str = "Admin") -> Dict[str, str]:
-    """Dynamically read credentials from Swarajya-test-data.xlsx banner/sheets or environment."""
-    return _central_read_credentials(role=role, sheet_name=SHEET_NAME)
+def read_credentials(role: str = "Admin", sheet_name: str = SHEET_NAME) -> Dict[str, str]:
+    """Fetch authentication credentials dynamically from Excel sheet."""
+    return _shared_read_credentials(role=role, sheet_name=sheet_name)
 
 
-def read_test_cases(sheet_name: str = "createpurchase_order") -> List[Dict[str, Any]]:
-    """Read test case rows merged with input test data from Swarajya-test-cases/data workbooks."""
-    filter_type = None
-    sn_upper = str(sheet_name).upper()
-    if "POS" in sn_upper:
-        filter_type = "POS"
-    elif "NEG" in sn_upper:
-        filter_type = "NEG"
-    cases = load_cases_and_data(MODULE_KEY, filter_type=filter_type)
-    for tc in cases:
-        if "_sheet" not in tc:
-            tc["_sheet"] = SHEET_NAME
-    return cases
+def load_test_cases(sheet_name: str = SHEET_NAME) -> List[Dict[str, Any]]:
+    """Fetch all test case rows for purchase order from Excel."""
+    return _shared_load_test_cases(sheet_name=sheet_name)
 
 
-def is_ui_case(tc: Dict[str, Any]) -> bool:
-    """Check if test case is an active UI test case."""
-    exec_type = str(tc.get("Execution Type", "UI")).strip().upper()
-    auto_status = str(tc.get("Automation Status", "Automated")).strip().lower()
-    return exec_type == "UI" and auto_status not in ("excluded", "not automated", "manual", "deferred")
+def load_test_data(sheet_name: str = SHEET_NAME) -> List[Dict[str, Any]]:
+    """Fetch all test data rows for purchase order from Excel."""
+    return _shared_load_test_data(sheet_name=sheet_name)
+
+
+def get_test_case_by_id(tc_id: str, sheet_name: str = SHEET_NAME) -> Optional[Dict[str, Any]]:
+    """Fetch metadata for a single test case ID."""
+    return _shared_get_test_case_by_id(tc_id, sheet_name=sheet_name)
+
+
+def get_test_data_by_id(tc_id: str, sheet_name: str = SHEET_NAME) -> Optional[Dict[str, Any]]:
+    """Fetch input dataset for a single test case ID."""
+    return _shared_get_test_data_by_id(tc_id, sheet_name=sheet_name)
 
 
 def update_test_result(
     tc_id: str,
     status: str,
-    error_message: Optional[str] = None,
-    execution_time: Optional[float] = None,
-) -> bool:
-    """Update test status in Swarajya-test-cases.xlsx."""
-    return _central_update_test_result(tc_id, status, error_message, SHEET_NAME)
+    remarks: str = "",
+    auto_id: str = "",
+    sheet_name: str = SHEET_NAME,
+) -> None:
+    """Update execution result (PASS/FAIL/SKIPPED) in Swarajya-test-cases.xlsx."""
+    _shared_update_test_result(
+        sheet_name,
+        tc_id,
+        status,
+        remarks=remarks,
+        auto_id_or_sheet=auto_id,
+    )
+
+
+def build_automation_id(tc_id: str) -> str:
+    """Generate normalized script ID like AUT_CPO_POS_01."""
+    return _shared_build_automation_id("CPO", tc_id)

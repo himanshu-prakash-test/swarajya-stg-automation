@@ -1,116 +1,45 @@
-# 📦 Swarajya Purchase Order Create Automation Suite
+# Create Purchase Order Automation Suite
 
-End-to-end automated test suite for **Purchase Order Creation & Management** in the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), covering purchase order creation, form field validations, customer mapping, currency & tax calculations, document uploads, and grid searches.
+Automated end-to-end regression and smoke test suites for Swarajya **Create Purchase Order** module, powered by Playwright and Pytest.
 
----
+## Overview
+- **Architecture**: Modular Page Object Model (`POPage`, `POFormExecutor`) mirroring `invoice-management`.
+- **Data Source**: Strictly data-driven from central shared Excel workbooks (`shared/test_data/Swarajya-test-cases.xlsx` & `shared/test_data/Swarajya-test-data.xlsx` [Sheet: `createpurchase_order`]).
+- **Zero Hardcoding**: Credentials, Base URL, input test data, descriptions, and validations are dynamically resolved.
+- **Dynamic Waits**: Playwright dynamic state waiting without static sleeps.
+- **Live Reporting**: Test results write directly to `Swarajya-test-cases.xlsx`, HTML reports generated under `reports/`, and 1-to-1 screenshots saved under `screenshots/`.
 
-## 🧭 Navigation Workflow
-
-The Purchase Order Create operation follows the portal path:
-1. **Authentication**: User logs in with valid credentials & OTP -> lands on [`/default`](https://swarajya-stg.corecotechnologies.com/default).
-2. **Invoice Reports**: Navigates from landing screen -> [`/invoiceReports`](https://swarajya-stg.corecotechnologies.com/invoiceReports).
-3. **Invoice Home**: Selects Invoice Home -> [`/invoicedashboard`](https://swarajya-stg.corecotechnologies.com/invoicedashboard).
-4. **Purchase Orders**: Opens Purchase Order listing directly -> [`/purchaseOrder`](https://swarajya-stg.corecotechnologies.com/purchaseOrder). *(Bypasses `/customerDetails`)*.
-5. **Add Purchase Order**: Clicks "Add Purchase Order" / "+ Purchase Order" button -> opens creation modal/form.
-
----
-
-## 📋 Form Fields Specification (Purchase Order)
-
-| Field Label | Control Name / Selector | Field Type | Requirement | Notes & Validations |
-| :--- | :--- | :--- | :---: | :--- |
-| **PO Date** | `date` | Date Picker / Text | **Mandatory** | Valid date in `YYYY-MM-DD` or `DD-MM-YYYY` format |
-| **PO Reference No** | `refNo` | Text Input | **Mandatory** | Unique PO reference / identifier number |
-| **Customer Name** | `poCustomer` | Mat-Select / Dropdown | **Mandatory** | Customer entity mapped from active customers |
-| **Authorized By** | `authorizedBy` | Text Input | **Mandatory** | Name of authorizing manager / executive |
-| **PO Details** | `poDetails` | Textarea | Optional | Scope, notes, or descriptions of the PO |
-| **Base Amount** | `poBaseAmount` | Numeric Input | **Mandatory** | Base amount before taxes |
-| **Tax Amount** | `poTaxAmount` | Numeric Input | Optional | Calculated or entered tax amount |
-| **Total Amount** | `poTotalAmount` | Numeric Input | **Mandatory** | Final total value of PO |
-| **Currency** | `poCurrency` | Mat-Select / Dropdown | **Mandatory** | Operational currency (INR, USD, EUR, etc.) |
-| **Status** | `poStatus` | Mat-Select / Dropdown | **Mandatory** | Status (Draft, Pending, Approved, etc.) |
-| **PO Document** | `po_document_url` | File Input (PDF) | Optional | Supporting PO document upload |
-
----
-
-## 🏛️ Directory Structure
-
+## Directory Structure
 ```
 swarajya-create/purchase-order/
-│
-├── po_pages/                            # Page Object Model & Execution Layer
-│   ├── __init__.py                      # Package exports (POPage, FormExecutor, LoginPage)
-│   ├── po_page.py                       # Purchase order listing, navigation, form controls, modals
-│   ├── form_executor.py                 # Data-driven test dispatcher & assertion engine
-│   └── login_page.py                    # 2FA-compliant authentication
-│
-├── po_utils/                            # Utilities & Data Parsers
-│   ├── __init__.py                      # Package exports
-│   └── excel_reader.py                  # Dynamic Excel parser for test cases & credentials
-│
-├── test_data/                           # Test Assets & Credentials
-│   ├── credentials.xlsx                 # Multi-role credentials (Admin, Manager, Employee)
-│   ├── sample_po.pdf                    # Sample PDF file for document upload tests
-│   └── (Your PO test cases .xlsx)       # Place your test cases Excel file here
-│
-├── tests/                               # Test Suites
+├── conftest.py               # Shared session fixtures, auth caching, reporting hooks
+├── pytest.ini                # Pytest configuration
+├── requirements.txt          # Python dependencies
+├── README.md                 # Module documentation
+├── po_pages/
 │   ├── __init__.py
-│   ├── test_po_login_flow.py            # Authentication and navigation traversal tests
-│   ├── test_po_positive_flows.py        # Data-driven positive test scenarios
-│   └── test_po_negative_flows.py        # Data-driven negative / validation test scenarios
-│
-├── screenshots/                         # Timestamped visual evidence (PASS/FAIL/SKIP)
-├── conftest.py                          # Session fixtures, hooks, evidence capture, reporter
-├── pytest.ini                           # Pytest configuration and markers
-├── requirements.txt                     # Dependencies
-└── README.md                            # Documentation
+│   ├── po_page.py            # Page Object Model for Purchase Order
+│   └── form_executor.py      # Dynamic form filling executor
+├── po_utils/
+│   ├── __init__.py
+│   └── excel_reader.py       # Excel delegation to shared.utils.excel_base
+├── screenshots/              # 1-to-1 captured execution screenshots
+└── tests/
+    ├── test_po_positive_flows.py  # 18 Positive test cases (TC_CPO_POS_01 - 18)
+    └── test_po_negative_flows.py  # 15 Negative test cases (TC_CPO_NEG_01 - 15)
 ```
 
----
-
-## 🚀 Running Tests
-
-Run from within `swarajya-create/purchase-order`:
-
+## Running Tests Locally
 ```bash
-# Run all tests headlessly
-pytest
-
-# Run in headed mode (visible browser)
-pytest --headed
-
-# Run specific suite
-pytest tests/test_po_login_flow.py
-pytest tests/test_po_positive_flows.py
-pytest tests/test_po_negative_flows.py
-
-# Run by marker
-pytest -m login
-pytest -m positive
-pytest -m negative
-```
-
-Run from the workspace root:
-
-```bash
+# Run all Create Purchase Order tests
 pytest swarajya-create/purchase-order/tests -v
+
+# Run positive tests only
+pytest swarajya-create/purchase-order/tests -m positive -v
+
+# Run negative tests only
+pytest swarajya-create/purchase-order/tests -m negative -v
+
+# Run headed
+pytest swarajya-create/purchase-order/tests --headed
 ```
-
----
-
-## 📝 Test Data Configuration
-
-Place your test cases Excel file into `test_data/` (e.g., `Create-Purchase-Order.xlsx` or `Purchase-Order.xlsx`).
-The reader automatically searches for sheets:
-- `Positive_Tests`
-- `Negative_Tests`
-
-Expected columns:
-- `Test Case ID` (e.g. `TC_PO_POS_01`, `TC_PO_NEG_01`)
-- `Scenario`
-- `Test Steps` or `Steps`
-- `Test Data` (Key-value formatted or bulleted list)
-- `Expected Result`
-- `Execution Type` (`UI`)
-- `Test Status` (Updated automatically upon execution)
-- `Remarks` (Updated automatically with timestamps and pass/fail reason)
