@@ -100,10 +100,16 @@ jobs:
               echo ">>> Running Update Employee-Management Tests..."
               pytest swarajya-update/employee-management/tests -v --html=reports/update_emp_report.html --self-contained-html || EXIT_CODE=1
             fi
+            if [ -d "swarajya-update/invoice-management/tests" ]; then
+              echo ">>> Running Update Invoice-Management Tests..."
+              pytest swarajya-update/invoice-management/tests -v --html=reports/update_invoice_report.html --self-contained-html || EXIT_CODE=1
+            fi
             exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            if [ "${{ github.ref_name }}" = "update/emp_mgmt" ] && [ -d "swarajya-update/employee-management/tests" ]; then
+            if [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
+              pytest swarajya-update/invoice-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "update/emp_mgmt" ] && [ -d "swarajya-update/employee-management/tests" ]; then
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/customer_mgmt" ] && [ -d "swarajya-update/customer-management/tests" ]; then
               pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
