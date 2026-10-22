@@ -1,8 +1,7 @@
 """Page Object for Customer Update Module."""
 
-import time
 from typing import Any, Dict, List, Optional
-from playwright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeout
+from playwright.sync_api import Locator, Page
 from shared.pages.base_page import BasePage
 from shared.utils.logger import get_logger
 
@@ -101,8 +100,8 @@ class CustomerUpdatePage(BasePage):
             "mat-select#mat-select-0",
         ],
         "is igst applicable?": [
-            "mat-checkbox[name='hasIgst']",
             "input[name='hasIgst']",
+            "mat-checkbox[name='hasIgst']",
             "mat-checkbox:has-text('IGST')",
             "mat-slide-toggle:has-text('IGST')",
         ],
@@ -215,7 +214,7 @@ class CustomerUpdatePage(BasePage):
     def __init__(self, page: Page):
         super().__init__(page)
 
-    # ----------------- Navigation -----------------
+    # ----------------- Dynamic Waits & Navigation -----------------
 
     def open_default_dashboard(self):
         """Step 1: Navigate to Default Landing screen (/default)."""
@@ -301,18 +300,26 @@ class CustomerUpdatePage(BasePage):
     # ----------------- Listing & Row Selection -----------------
 
     def search_customer(self, search_term: str):
-        """Filter customer grid by search term."""
+        """Filter customer grid dynamically by search term."""
         search_input = self.page.locator(
             "input[placeholder*='Search' i], input[type='search']"
         ).first
-        if search_input.is_visible(timeout=5000):
+        if search_input.is_visible(timeout=4000):
             search_input.fill(str(search_term))
+            search_input.dispatch_event("input")
             search_input.press("Enter")
             self.wait_for_dom_ready()
-            time.sleep(1)
+            try:
+                self.page.wait_for_load_state("networkidle", timeout=1500)
+            except Exception:
+                pass
 
     def get_customer_rows(self) -> List[Locator]:
         """Return all visible rows in customer table."""
+        try:
+            self.page.locator("table tbody tr, mat-table mat-row, .grid-row").first.wait_for(state="visible", timeout=6000)
+        except Exception:
+            pass
         return self.page.locator("table tbody tr, mat-table mat-row, .grid-row").all()
 
     def get_grid_row_count(self) -> int:
@@ -322,7 +329,7 @@ class CustomerUpdatePage(BasePage):
 
     def open_customer_edit_modal(self, customer_name_or_code: Optional[str] = None, row_index: int = 0):
         """
-        Step 5: Click the pencil / edit button on target customer row to open update form.
+        Step 5: Click pencil / edit button on target customer row to open update form.
         """
         self.dismiss_any_tutorial_or_dialog()
 
@@ -330,11 +337,12 @@ class CustomerUpdatePage(BasePage):
             search_input = self.page.locator("input[placeholder*='Search' i], input[type='search']").first
             if search_input.is_visible(timeout=1000) and search_input.input_value():
                 search_input.fill("")
+                search_input.dispatch_event("input")
                 search_input.press("Enter")
                 self.wait_for_dom_ready()
 
         try:
-            self.page.wait_for_selector("tbody tr td button, tbody tr", timeout=10000)
+            self.page.wait_for_selector("tbody tr td button, tbody tr", timeout=8000)
         except Exception:
             pass
 
@@ -364,12 +372,27 @@ class CustomerUpdatePage(BasePage):
             "button[mattooltip*='Edit' i], a[mattooltip*='Edit' i], button:has-text('edit'), button"
         ).first
 
-        edit_btn.scroll_into_view_if_needed()
-        edit_btn.click(force=True)
+        try:
+            edit_btn.scroll_into_view_if_needed(timeout=3000)
+        except Exception:
+            pass
+        try:
+            edit_btn.click(force=True, timeout=5000)
+        except Exception:
+            # Re-locate row and edit button if DOM detached during re-render
+            self.wait_for_dom_ready()
+            rows = self.page.locator("tbody tr, mat-row")
+            row = rows.first if rows.count() else None
+            if row:
+                edit_btn = row.locator(
+                    "button:has(mat-icon:has-text('edit')), button:has(i.icofont-edit), button.btn-link:has-text('edit'), "
+                    "button[mattooltip*='Edit' i], a[mattooltip*='Edit' i], button:has-text('edit'), button"
+                ).first
+                edit_btn.click(force=True)
 
         # Wait for form modal or edit page to be visible
         try:
-            self.page.wait_for_selector("form, mat-dialog-container, .modal-content", timeout=8000)
+            self.page.wait_for_selector("form, mat-dialog-container, .modal-content, mat-card", timeout=8000)
         except Exception:
             pass
         self.wait_for_dom_ready()
@@ -443,7 +466,7 @@ class CustomerUpdatePage(BasePage):
         return False
 
     def select_dropdown_option(self, field_name: str, option_text: str) -> bool:
-        """Select option from a mat-select dropdown."""
+        """Select option from a mat-select dropdown dynamically."""
         try:
             fn = field_name.lower().strip()
             opt_val = option_text.strip().strip("'\"")
@@ -480,26 +503,29 @@ class CustomerUpdatePage(BasePage):
 
             if select_el:
                 select_el.click()
-                self.page.wait_for_timeout(400)
+                try:
+                    self.page.wait_for_selector("mat-option, .mat-mdc-option, [role='option']", timeout=3000)
+                except Exception:
+                    pass
                 opt = self.page.locator(
                     f"mat-option:has-text('{opt_val}'), .mat-mdc-option:has-text('{opt_val}'), [role='option']:has-text('{opt_val}')"
                 ).first
                 if opt.is_visible(timeout=2500):
                     opt.click()
-                    self.page.wait_for_timeout(300)
+                    self.wait_for_dom_ready()
                     return True
                 else:
                     first_opt = self.page.locator("mat-option, .mat-mdc-option, [role='option']").first
                     if first_opt.is_visible(timeout=1500):
                         first_opt.click()
-                        self.page.wait_for_timeout(300)
+                        self.wait_for_dom_ready()
                         return True
         except Exception as exc:
             log.warning(f"select_dropdown_option error for {field_name}: {exc}")
         return False
 
     def get_field_value(self, field_name: str) -> str:
-        """Retrieve current value of a form field."""
+        """Retrieve current value of a form field dynamically."""
         key = str(field_name).strip().lower().lstrip("•-* ").strip()
         target_selectors = self.FIELD_SELECTORS.get(key, [f"input[formcontrolname='{key}']"])
         for sel in target_selectors:
@@ -507,7 +533,7 @@ class CustomerUpdatePage(BasePage):
             if loc.count() > 0 and loc.first.is_visible():
                 tag = loc.first.evaluate("e => e.tagName")
                 if tag in ["INPUT", "TEXTAREA"]:
-                    return loc.first.input_value()
+                    return loc.first.input_value().strip()
                 return loc.first.inner_text().strip()
         return ""
 
@@ -531,7 +557,7 @@ class CustomerUpdatePage(BasePage):
                 current = self.get_igst_switch_state()
                 if current != checked:
                     chk.click(force=True)
-                    self.page.wait_for_timeout(300)
+                    self.wait_for_dom_ready()
                 return True
         except Exception as exc:
             log.warning(f"Could not toggle IGST switch: {exc}")
@@ -566,18 +592,19 @@ class CustomerUpdatePage(BasePage):
             pass
         return False
 
-    def ensure_required_fields_filled(self):
-        """Ensure mandatory fields (Address Line 1, City, State, Payment Terms) are populated so update button enables."""
-        defaults = {
-            "address line 1": "Plot 55, MIDC Phase 2",
-            "city": "Mumbai",
-            "state": "Maharashtra",
-            "payment terms (days)": "30",
+    def ensure_required_fields_filled(self, baseline: Optional[Dict[str, Any]] = None):
+        """Ensure mandatory fields are populated dynamically from Excel baseline data if empty."""
+        b = baseline or {}
+        req_mapping = {
+            "address line 1": b.get("Address Line 1") or "Plot 55, MIDC Phase 2",
+            "city": b.get("City") or "Mumbai",
+            "state": b.get("State") or "Maharashtra",
+            "payment terms (days)": b.get("Payment Terms (Days)") or "30",
         }
-        for field, default_val in defaults.items():
+        for field, default_val in req_mapping.items():
             val = self.get_field_value(field)
             if not val or not val.strip():
-                self.fill_field(field, default_val)
+                self.fill_field(field, str(default_val))
 
     def is_edit_modal_open(self) -> bool:
         """Check whether Customer Edit modal / card is visible."""
@@ -588,7 +615,7 @@ class CustomerUpdatePage(BasePage):
 
     # ----------------- Submission & Actions -----------------
 
-    def save(self, confirm: bool = True) -> str:
+    def save(self, confirm: bool = True, baseline: Optional[Dict[str, Any]] = None) -> str:
         """Click Update / Save and confirm modal confirmation dialog if displayed."""
         save_btn = self.page.locator(
             "button:has-text('Update Customer'), button:has-text('Update'), button:has-text('Save'), button:has-text('Submit'), button[type='submit']"
@@ -597,12 +624,15 @@ class CustomerUpdatePage(BasePage):
             save_btn = self.page.locator("button:has-text('Update')").first
 
         save_btn.wait_for(state="visible", timeout=5000)
-        save_btn.scroll_into_view_if_needed()
+        try:
+            save_btn.scroll_into_view_if_needed(timeout=2000)
+        except Exception:
+            pass
 
-        # If button is disabled due to missing mandatory fields, ensure defaults are filled
+        # If button is disabled due to missing mandatory fields, ensure baseline is filled
         if save_btn.is_disabled() or "disabled" in (save_btn.get_attribute("class") or ""):
-            self.ensure_required_fields_filled()
-            self.page.wait_for_timeout(300)
+            self.ensure_required_fields_filled(baseline=baseline)
+            self.wait_for_dom_ready()
 
         if not (save_btn.is_disabled() or "disabled" in (save_btn.get_attribute("class") or "")):
             save_btn.click()
@@ -623,7 +653,6 @@ class CustomerUpdatePage(BasePage):
                     if yes_btn.is_visible():
                         yes_btn.click()
                         self.wait_for_dom_ready()
-                        time.sleep(1)
                 else:
                     no_btn = confirm_container.locator(
                         "button:has-text('No'), button:has-text('Cancel'), button:has-text('Dismiss'), a:has-text('No')"
@@ -644,21 +673,31 @@ class CustomerUpdatePage(BasePage):
         return self.get_toast_message(timeout=2000) or "Submitted"
 
     def cancel(self) -> bool:
-        """Click Cancel, Close or Discard button."""
-        cancel_btn = self.page.locator(
-            "mat-card.modal-card button:has-text('Close'), button:has-text('Close'), button.icon-btn-5, "
-            "button:has(mat-icon:has-text('close')), button:has-text('Cancel'), button:has-text('Discard')"
-        ).last
-        if cancel_btn.is_visible(timeout=3000):
-            cancel_btn.scroll_into_view_if_needed()
-            cancel_btn.click(force=True)
-            self.wait_for_dom_ready()
-            try:
-                self.page.locator(".modal-overlay, mat-card.modal-card").first.wait_for(state="hidden", timeout=3000)
-            except Exception:
-                pass
+        """Click Cancel, Close or Discard button dynamically."""
+        try:
+            cancel_btn = self.page.locator(
+                "mat-card.modal-card button:has-text('Close'), button:has-text('Close'), button.icon-btn-5, "
+                "button:has(mat-icon:has-text('close')), button:has-text('Cancel'), button:has-text('Discard')"
+            ).last
+            if cancel_btn.is_visible(timeout=3000):
+                try:
+                    cancel_btn.scroll_into_view_if_needed(timeout=2000)
+                except Exception:
+                    pass
+                cancel_btn.click(force=True)
+                self.wait_for_dom_ready()
+                try:
+                    self.page.locator(".modal-overlay, mat-card.modal-card").first.wait_for(state="hidden", timeout=3000)
+                except Exception:
+                    pass
+                return True
+        except Exception:
+            pass
+        try:
+            self.page.keyboard.press("Escape")
             return True
-        return False
+        except Exception:
+            return False
 
     def close_modal(self) -> bool:
         """Click top-right close icon or press Escape."""
@@ -696,7 +735,7 @@ class CustomerUpdatePage(BasePage):
             return True
         return False
 
-    def get_toast_message(self, timeout: int = 5000) -> str:
+    def get_toast_message(self, timeout: int = 4000) -> str:
         """Capture toast / snackbar notification text."""
         try:
             toast = self.page.locator(
@@ -710,16 +749,13 @@ class CustomerUpdatePage(BasePage):
 
     def success_message_visible(self, timeout: int = 4000) -> bool:
         """Verify successful update notification, modal closed, or redirection."""
-        # 1. Edit modal closed (submitted and saved)
         if not self.is_edit_modal_open():
             return True
 
-        # 2. Toast notification
         toast = self.get_toast_message(timeout=timeout)
         if toast and any(v in toast.lower() for v in ("success", "updated", "saved")):
             return True
 
-        # 3. URL is /customerDetails and no form errors
         if "customerdetails" in self.page.url.lower() and not self.has_form_errors():
             return True
 
