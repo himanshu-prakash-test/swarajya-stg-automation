@@ -1,52 +1,74 @@
-# 🚀 Swarajya Staging Automation - HR & Admin Authentication Module
+# 🚀 Swarajya Staging Automation Framework
 
-> **Branch:** `login/hr_admin`  
-> **Master Repository:** [Switch to main branch](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main)
+An enterprise-grade, data-driven test automation framework for the [Swarajya Staging Portal](https://swarajya-stg.corecotechnologies.com/), built with **Python 3.12+**, **Playwright**, **Pytest**, and **OpenPyXL**.
 
-This branch contains strictly the **HR & Admin Authentication Module** along with the shared framework dependencies.
+---
 
-## 🏃 Running Tests on this Branch
-```bash
-# Run tests for this module
-pytest swarajya-login/hr_admin/tests -v
+## 📁 Repository Structure & Modules
 
-# Run with HTML report
-pytest swarajya-login/hr_admin/tests --html=report.html --self-contained-html
+```
+├── shared/                             # 🌐 Centralized Core Framework & Test Data
+│   ├── pages/                          # Shared BasePage, LoginPage, TfaPage
+│   ├── reporter/                       # HTML Reporter Plugin & Templates
+│   ├── test_data/                      # Centralized Excel workbooks & sample documents
+│   └── utils/                          # Logging, Excel readers, popup reporting
+│
+├── swarajya-create/
+│   ├── invoice-management/             # 📄 Create Invoice Management Module (27 tests)
+│   ├── customer-management/            # 👥 Create Customer Management Module (44 tests)
+│   ├── employee-management/            # 👤 Create Employee Management Module (34 tests)
+│   └── vendor-management/              # 🏢 Create Vendor Management Module (42 tests)
+│
+├── swarajya-update/
+│   ├── purchase-orders/                # 📦 Update Purchase Orders Module (31 tests)
+│   │   ├── po_update_pages/            # Page Object Model Layer (POUpdatePage, FormExecutor)
+│   │   ├── po_update_utils/            # Centralized Excel Parsers & Writeback
+│   │   └── tests/                      # Parametrized positive & negative test suites
+│   ├── customer-management/            # 👥 Update Customer Management Module (51 tests)
+│   │   ├── customer_update_pages/      # POM Layer (CustomerUpdatePage, CustomerUpdateFormExecutor)
+│   │   ├── customer_update_utils/      # Excel Loader & Writeback
+│   │   └── tests/                      # Parametrized positive & negative test suites
+│   ├── employee-management/            # 👤 Update Employee Management Module (31 tests)
+│   │   ├── emp_update_pages/           # POM Layer (EmployeeUpdatePage, EmployeeUpdateFormExecutor)
+│   │   ├── emp_update_utils/           # Centralized Excel Parsers & Writeback
+│   │   └── tests/                      # Parametrized positive & negative test suites
+│   └── invoice-management/             # 🧾 Update Invoice Management Module (32 tests)
+│       ├── invoice_update_pages/       # POM Layer (InvoiceUpdatePage, InvoiceFormExecutor)
+│       ├── invoice_update_utils/       # Centralized Excel Parsers & Writeback
+│       └── tests/                      # Parametrized positive & negative test suites
+│
+├── swarajya-login/
+│   ├── emp-manager/                    # 🔐 Employee & Manager Authentication Module (24 tests)
+│   └── hr_admin/                       # 🔐 HR & Admin Authentication Module (39 tests)
+│
+├── conftest.py                         # Root Pytest fixtures, sys.path & CLI options
+├── pytest.ini                          # Root testpaths, discovery & logging config
+└── requirements.txt                    # Project dependencies
 ```
 
 ---
 
-# 🔐 HR & Admin Login Automation Module
+## 🏃 Running Tests
 
-Automated test suite for Admin and HR authentication workflows on the Swarajya platform.
-
-## 📁 Module Structure
-```
-hr_admin/
-├── conftest.py             # Fixtures, browser lifecycle, Excel reporting
-├── pytest.ini              # Module pytest configuration
-├── requirements.txt        # Sub-module dependencies
-├── tests/                  # Test suite
-│   ├── __init__.py
-│   ├── positive_flows.py   # 10 Data-driven positive test cases (strictly from Excel)
-│   └── negative_flows.py   # 29 Data-driven negative test cases (strictly from Excel)
-└── screenshots/            # Automated run screenshots
-```
-
-> **Note**: Shared page objects (`LoginPage`, `TfaPage`) and shared test data reader (`excel_base.py`) reside centrally in root `shared/`. All test data and test cases are strictly loaded from `shared/test_data/`.
-
-## 🚀 Execution
 ```bash
-# Run all HR & Admin login tests
-pytest swarajya-login/hr_admin/tests
+# Run HR & Admin login tests (39 tests)
+pytest swarajya-login/hr_admin/tests -v
 
-# Run only positive flows
-pytest swarajya-login/hr_admin/tests/positive_flows.py
+# Run with HTML report
+pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html
 
-# Run only negative flows
-pytest swarajya-login/hr_admin/tests/negative_flows.py
+# Run invoice update tests (32 tests)
+pytest swarajya-update/invoice-management/tests -v
 
-# Run in headed mode
-pytest swarajya-login/hr_admin/tests --headed
+# Run employee update tests (31 tests)
+pytest swarajya-update/employee-management/tests -v
+
+# Run customer update tests (51 tests)
+pytest swarajya-update/customer-management/tests -v
+
+# Run Purchase Order update tests (31 tests)
+pytest swarajya-update/purchase-orders/tests -v
+
+# Run in interactive headed mode
+pytest swarajya-login/hr_admin/tests -v --headed
 ```
-
