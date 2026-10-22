@@ -92,6 +92,10 @@ jobs:
               echo ">>> Running Create Invoice-Management Tests..."
               pytest swarajya-create/invoice-management/tests -v --html=reports/create_invoice_report.html --self-contained-html || EXIT_CODE=1
             fi
+            if [ -d "swarajya-create/purchase-order/tests" ]; then
+              echo ">>> Running Create Purchase-Order Tests..."
+              pytest swarajya-create/purchase-order/tests -v --html=reports/create_po_report.html --self-contained-html || EXIT_CODE=1
+            fi
             if [ -d "swarajya-update/purchase-orders/tests" ]; then
               echo ">>> Running Update Purchase-Orders Tests..."
               pytest swarajya-update/purchase-orders/tests -v --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
@@ -111,7 +115,9 @@ jobs:
             exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            if [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
+            if [ "${{ github.ref_name }}" = "create/purchase_order" ] && [ -d "swarajya-create/purchase-order/tests" ]; then
+              pytest swarajya-create/purchase-order/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
               pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
               pytest swarajya-update/invoice-management/tests -v --html=reports/latest_report.html --self-contained-html || true
