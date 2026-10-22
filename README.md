@@ -20,9 +20,13 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 │   └── vendor-management/              # 🏢 Create Vendor Management Module (42 tests)
 │
 ├── swarajya-update/
-│   └── purchase-orders/                # 📦 Update Purchase Orders Module (31 tests)
-│       ├── po_update_pages/            # Page Object Model Layer (POUpdatePage, FormExecutor)
-│       ├── po_update_utils/            # Centralized Excel Parsers & Writeback
+│   ├── purchase-orders/                # 📦 Update Purchase Orders Module (31 tests)
+│   │   ├── po_update_pages/            # Page Object Model Layer (POUpdatePage, FormExecutor)
+│   │   ├── po_update_utils/            # Centralized Excel Parsers & Writeback
+│   │   └── tests/                      # Parametrized positive & negative test suites
+│   └── customer-management/            # 👥 Update Customer Management Module (51 tests)
+│       ├── customer_update_pages/      # POM Layer (CustomerUpdatePage, CustomerUpdateFormExecutor)
+│       ├── customer_update_utils/      # Excel Loader & Writeback
 │       └── tests/                      # Parametrized positive & negative test suites
 │
 ├── swarajya-login/
@@ -38,6 +42,12 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 ## 🏃 Running Tests
 
 ```bash
+# Run customer update tests (51 tests)
+pytest swarajya-update/customer-management/tests -v
+
+# Run with HTML report
+pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html
+
 # Run all Purchase Order update tests (31 tests)
 pytest swarajya-update/purchase-orders/tests -v
 
@@ -45,11 +55,11 @@ pytest swarajya-update/purchase-orders/tests -v
 pytest swarajya-update/purchase-orders/tests -v --html=reports/latest_report.html --self-contained-html
 
 # Run positive flows only
-pytest swarajya-update/purchase-orders/tests/test_po_update_positive_flows.py -v
+pytest swarajya-update/customer-management/tests/test_customer_update_positive_flows.py -v
 
 # Run negative flows only
-pytest swarajya-update/purchase-orders/tests/test_po_update_negative_flows.py -v
+pytest swarajya-update/customer-management/tests/test_customer_update_negative_flows.py -v
 
 # Run in interactive headed mode
-pytest swarajya-update/purchase-orders/tests -v --headed
+pytest swarajya-update/customer-management/tests -v --headed
 ```

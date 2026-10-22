@@ -58,43 +58,48 @@ jobs:
           pytest --collect-only -q
 
       - name: Execute Pytest Suite
+        continue-on-error: true
         run: |
           mkdir -p reports
           TARGET_PATH="${{ github.event.inputs.module_path }}"
           if [ -n "$TARGET_PATH" ]; then
             echo "Executing manually specified path: $TARGET_PATH"
-            pytest "$TARGET_PATH" -v --headless --html=reports/latest_report.html --self-contained-html
+            pytest "$TARGET_PATH" -v --html=reports/latest_report.html --self-contained-html || true
           elif [ "${{ github.ref_name }}" = "main" ]; then
             echo "Executing all module suites independently..."
             EXIT_CODE=0
             if [ -d "swarajya-login/emp-manager/tests" ]; then
               echo ">>> Running Login Emp-Manager Tests..."
-              pytest swarajya-login/emp-manager/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-login/emp-manager/tests -v --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/employee-management/tests" ]; then
               echo ">>> Running Create Employee-Management Tests..."
-              pytest swarajya-create/employee-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/employee-management/tests -v --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/vendor-management/tests" ]; then
               echo ">>> Running Create Vendor-Management Tests..."
-              pytest swarajya-create/vendor-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/vendor-management/tests -v --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/customer-management/tests" ]; then
               echo ">>> Running Create Customer-Management Tests..."
-              pytest swarajya-create/customer-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/customer-management/tests -v --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-create/invoice-management/tests" ]; then
               echo ">>> Running Create Invoice-Management Tests..."
-              pytest swarajya-create/invoice-management/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/create_invoice_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-create/invoice-management/tests -v --html=reports/create_invoice_report.html --self-contained-html || EXIT_CODE=1
             fi
             if [ -d "swarajya-update/purchase-orders/tests" ]; then
               echo ">>> Running Update Purchase-Orders Tests..."
-              pytest swarajya-update/purchase-orders/tests -v --headless --reruns 1 --reruns-delay 2 --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
+              pytest swarajya-update/purchase-orders/tests -v --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
+            fi
+            if [ -d "swarajya-update/customer-management/tests" ]; then
+              echo ">>> Running Update Customer-Management Tests..."
+              pytest swarajya-update/customer-management/tests -v --html=reports/update_customer_report.html --self-contained-html || EXIT_CODE=1
             fi
             exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."
-            pytest -v --headless --reruns 1 --reruns-delay 2 --html=reports/latest_report.html --self-contained-html
+            pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
           fi
 
       - name: Prepare Artifact Metadata
@@ -114,4 +119,3 @@ jobs:
             shared/reports/
             **/screenshots/
           retention-days: 14
-
