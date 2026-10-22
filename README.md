@@ -213,7 +213,7 @@ pytest swarajya-login -v
 pytest -v --html=reports/full_report.html --self-contained-html
 
 # Run in interactive headed mode
-pytest swarajya-update/purchase-orders/tests -v --headed
+pytest swarajya-login/hr_admin/tests -v --headed
 ```
 
 ---

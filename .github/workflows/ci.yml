@@ -68,6 +68,10 @@ jobs:
           elif [ "${{ github.ref_name }}" = "main" ]; then
             echo "Executing all module suites independently..."
             EXIT_CODE=0
+            if [ -d "swarajya-login/hr_admin/tests" ]; then
+              echo ">>> Running Login HR-Admin Tests..."
+              pytest swarajya-login/hr_admin/tests -v --html=reports/login_hr_admin_report.html --self-contained-html || EXIT_CODE=1
+            fi
             if [ -d "swarajya-login/emp-manager/tests" ]; then
               echo ">>> Running Login Emp-Manager Tests..."
               pytest swarajya-login/emp-manager/tests -v --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
@@ -107,7 +111,9 @@ jobs:
             exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            if [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
+            if [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
+              pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
               pytest swarajya-update/invoice-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/emp_mgmt" ] && [ -d "swarajya-update/employee-management/tests" ]; then
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
