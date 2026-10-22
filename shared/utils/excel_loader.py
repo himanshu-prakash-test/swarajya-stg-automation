@@ -469,6 +469,7 @@ def update_test_result(
     status: str,
     remarks: Optional[str] = None,
     sheet_name: Optional[str] = None,
+    **kwargs,
 ) -> bool:
     """
     Update Test Status, Automation Status, Auto Script ID, and Remarks in Swarajya-test-cases.xlsx.
