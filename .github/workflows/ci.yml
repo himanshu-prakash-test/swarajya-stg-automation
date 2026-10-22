@@ -92,6 +92,10 @@ jobs:
               echo ">>> Running Update Purchase-Orders Tests..."
               pytest swarajya-update/purchase-orders/tests -v --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
             fi
+            if [ -d "swarajya-update/customer-management/tests" ]; then
+              echo ">>> Running Update Customer-Management Tests..."
+              pytest swarajya-update/customer-management/tests -v --html=reports/update_customer_report.html --self-contained-html || EXIT_CODE=1
+            fi
             exit $EXIT_CODE
           else
             echo "Executing default test suite configured for this branch..."
@@ -115,4 +119,3 @@ jobs:
             shared/reports/
             **/screenshots/
           retention-days: 14
-
