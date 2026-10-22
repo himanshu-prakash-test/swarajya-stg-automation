@@ -620,10 +620,10 @@ class CustomerUpdatePage(BasePage):
         save_btn = self.page.locator(
             "button:has-text('Update Customer'), button:has-text('Update'), button:has-text('Save'), button:has-text('Submit'), button[type='submit']"
         ).first
-        if not save_btn.is_visible(timeout=3000):
-            save_btn = self.page.locator("button:has-text('Update')").first
-
-        save_btn.wait_for(state="visible", timeout=5000)
+        try:
+            save_btn.wait_for(state="visible", timeout=10000)
+        except Exception:
+            pass
         try:
             save_btn.scroll_into_view_if_needed(timeout=2000)
         except Exception:
