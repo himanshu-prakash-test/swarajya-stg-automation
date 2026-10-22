@@ -24,9 +24,13 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 │   │   ├── po_update_pages/            # Page Object Model Layer (POUpdatePage, FormExecutor)
 │   │   ├── po_update_utils/            # Centralized Excel Parsers & Writeback
 │   │   └── tests/                      # Parametrized positive & negative test suites
-│   └── customer-management/            # 👥 Update Customer Management Module (51 tests)
-│       ├── customer_update_pages/      # POM Layer (CustomerUpdatePage, CustomerUpdateFormExecutor)
-│       ├── customer_update_utils/      # Excel Loader & Writeback
+│   ├── customer-management/            # 👥 Update Customer Management Module (51 tests)
+│   │   ├── customer_update_pages/      # POM Layer (CustomerUpdatePage, CustomerUpdateFormExecutor)
+│   │   ├── customer_update_utils/      # Excel Loader & Writeback
+│   │   └── tests/                      # Parametrized positive & negative test suites
+│   └── employee-management/            # 👤 Update Employee Management Module (31 tests)
+│       ├── emp_update_pages/           # POM Layer (EmployeeUpdatePage, EmployeeUpdateFormExecutor)
+│       ├── emp_update_utils/           # Centralized Excel Parsers & Writeback
 │       └── tests/                      # Parametrized positive & negative test suites
 │
 ├── swarajya-login/
@@ -42,24 +46,24 @@ An enterprise-grade, data-driven test automation framework for the [Swarajya Sta
 ## 🏃 Running Tests
 
 ```bash
+# Run employee update tests (31 tests)
+pytest swarajya-update/employee-management/tests -v
+
+# Run with HTML report
+pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html
+
 # Run customer update tests (51 tests)
 pytest swarajya-update/customer-management/tests -v
 
-# Run with HTML report
-pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html
-
-# Run all Purchase Order update tests (31 tests)
+# Run Purchase Order update tests (31 tests)
 pytest swarajya-update/purchase-orders/tests -v
 
-# Run with HTML report
-pytest swarajya-update/purchase-orders/tests -v --html=reports/latest_report.html --self-contained-html
-
 # Run positive flows only
-pytest swarajya-update/customer-management/tests/test_customer_update_positive_flows.py -v
+pytest swarajya-update/employee-management/tests/test_emp_update_positive_flows.py -v
 
 # Run negative flows only
-pytest swarajya-update/customer-management/tests/test_customer_update_negative_flows.py -v
+pytest swarajya-update/employee-management/tests/test_emp_update_negative_flows.py -v
 
 # Run in interactive headed mode
-pytest swarajya-update/customer-management/tests -v --headed
+pytest swarajya-update/employee-management/tests -v --headed
 ```
