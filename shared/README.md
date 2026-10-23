@@ -42,4 +42,6 @@ shared/
 3. **Universal Live Writeback**:
    - Test execution results (`PASS`, `FAIL`, `SKIP`) and execution timestamps are automatically written back to the respective module sheets in `Swarajya-test-cases.xlsx`.
 4. **CI/CD Integration**:
-   - Automated GitHub Actions execution with isolated test runners, sanitized artifact names, and targeted change-detection for rapid feedback.
+   - Automated GitHub Actions execution with isolated test runners, sanitized artifact names, and targeted change-detection for rapid feedback (~5 min runtime).
+5. **Continuous Verification Status**:
+   - Monitored and validated under GitHub Actions CI/CD Pipeline. Runs core verification suite (`swarajya-update/employee-management/tests`) on shared updates with automated artifact capture.
