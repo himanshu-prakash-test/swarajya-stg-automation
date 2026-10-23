@@ -119,6 +119,9 @@ jobs:
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/customer_mgmt" ] && [ -d "swarajya-update/customer-management/tests" ]; then
               pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "shared" ] && [ -d "swarajya-update/employee-management/tests" ]; then
+              echo ">>> Running Shared Framework Verification Tests..."
+              pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ -d "swarajya-update/employee-management/tests" ]; then
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             else
