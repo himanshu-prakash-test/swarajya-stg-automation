@@ -10,6 +10,7 @@ Aligned with `swarajya-create/invoice-management` and framework standards:
 - **Form Executor**: Dynamic field mapping and population via `ConsultantFormExecutor`.
 - **Live Excel Reporting**: Automatically updates the `Test Status` and `Remarks / Defect Observed` columns in `Swarajya-test-cases.xlsx`.
 - **Artifacts**: 1-to-1 screenshots saved in `screenshots/` and HTML reports with execution summaries.
+- **CI/CD Integration**: Fully integrated into GitHub Actions with automated headless testing, dynamic artifact sanitization, and full positive/negative suite regression coverage.
 
 ## Directory Structure
 
