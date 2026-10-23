@@ -487,16 +487,24 @@ class FormExecutor:
         return data
 
     def _fill_vendor_fields(self, data: Dict[str, str]):
-        failed_fields = []
-        for field, value in data.items():
-            clean_field = re.sub(r"[\*:]", "", str(field)).strip()
-            if clean_field.lower() in METADATA_KEYS or clean_field.lower().startswith("col_"):
-                continue
-            success = self.vendor.fill_field(clean_field, value)
-            if not success:
-                failed_fields.append(clean_field)
-        if failed_fields:
-            log.warning(f"Failed to fill fields: {failed_fields}")
+        for attempt in range(1, 3):
+            failed_fields = []
+            for field, value in data.items():
+                clean_field = re.sub(r"[\*:]", "", str(field)).strip()
+                if clean_field.lower() in METADATA_KEYS or clean_field.lower().startswith("col_"):
+                    continue
+                success = self.vendor.fill_field(clean_field, value)
+                if not success:
+                    failed_fields.append(clean_field)
             critical_fields = {f for f in failed_fields if f.lower() in ("vendor name", "name", "country")}
-            if critical_fields:
+            if not critical_fields:
+                if failed_fields:
+                    log.warning(f"Non-critical fields failed to fill: {failed_fields}")
+                return
+            if attempt == 1:
+                log.warning(f"Attempt 1 failed to fill critical fields {critical_fields}. Re-navigating to /addvendor and retrying...")
+                self.vendor.open_create_vendor_form()
+                self.page.wait_for_timeout(1000)
+            else:
+                log.warning(f"Failed to fill critical fields after {attempt} attempts: {failed_fields}")
                 raise AssertionError(f"Could not fill critical form fields: {critical_fields}. Test data cannot be applied.")

@@ -16,21 +16,35 @@ class VendorPage(BasePage):
 
     def open_vendor_list(self):
         """Navigate to Vendor Management list page."""
-        self.goto("/vendordetails")
-        self.wait_for_dom_ready()
-        try:
-            self.page.locator("input[placeholder*='Search'], button:has-text('New Vendor'), table").first.wait_for(state="visible", timeout=8000)
-        except Exception:
-            pass
+        for attempt in range(1, 3):
+            if "vendordetails" not in self.page.url.lower():
+                self.goto("/vendordetails")
+            self.wait_for_dom_ready()
+            try:
+                self.page.locator(
+                    "input[placeholder*='Search'], button:has-text('New Vendor'), button:has-text('Add Vendor'), table, mat-row"
+                ).first.wait_for(state="visible", timeout=12000)
+                return
+            except Exception:
+                self.log.warning(f"open_vendor_list attempt {attempt} timed out waiting for table. Retrying navigation...")
+                self.goto("/vendordetails")
+                self.wait_for_dom_ready()
 
     def open_create_vendor_form(self):
         """Open the Create / Add Vendor form."""
-        self.goto("/addvendor")
-        self.wait_for_dom_ready()
-        try:
-            self.page.locator("input[name='vendor_name'], input#mat-input-0, button:has-text('Save')").first.wait_for(state="visible", timeout=8000)
-        except Exception:
-            pass
+        for attempt in range(1, 3):
+            if "addvendor" not in self.page.url.lower():
+                self.goto("/addvendor")
+            self.wait_for_dom_ready()
+            try:
+                self.page.locator(
+                    "input[name='vendor_name'], input#mat-input-0, button:has-text('Save'), button:has-text('Submit')"
+                ).first.wait_for(state="visible", timeout=12000)
+                return
+            except Exception:
+                self.log.warning(f"open_create_vendor_form attempt {attempt} timed out waiting for form inputs. Retrying navigation...")
+                self.goto("/addvendor")
+                self.wait_for_dom_ready()
 
     # ----------------- Form Field Interactions -----------------
 
@@ -93,7 +107,7 @@ class VendorPage(BasePage):
 
         try:
             el = self.page.locator(sel).first
-            el.wait_for(state="visible", timeout=3000)
+            el.wait_for(state="visible", timeout=10000)
             try:
                 el.fill(str(value))
             except Exception:
@@ -123,14 +137,14 @@ class VendorPage(BasePage):
         """Select country from Angular mat-select dropdown."""
         try:
             mat_select = self.page.locator("mat-select").first
-            mat_select.wait_for(state="visible", timeout=3000)
+            mat_select.wait_for(state="visible", timeout=10000)
             mat_select.click()
             self.page.wait_for_timeout(300)
             
             # Match option in dropdown overlay
             opt = self.page.locator(f"mat-option:has-text('{country_name}'), .mat-mdc-option:has-text('{country_name}')").first
             try:
-                opt.wait_for(state="visible", timeout=1500)
+                opt.wait_for(state="visible", timeout=4000)
                 opt.click()
                 self.log.info(f"Selected country: '{country_name}'")
                 return True
@@ -139,7 +153,7 @@ class VendorPage(BasePage):
             
             # Default to first option (e.g. India) if exact country not listed
             first_opt = self.page.locator("mat-option, .mat-mdc-option").first
-            if first_opt.is_visible(timeout=1000):
+            if first_opt.is_visible(timeout=2000):
                 first_opt.click()
                 self.log.info("Selected default country option")
                 return True
@@ -151,7 +165,7 @@ class VendorPage(BasePage):
         """Toggle Active checkbox."""
         try:
             chk = self.page.locator("mat-checkbox:has-text('Active'), input[name='isActive']").first
-            chk.wait_for(state="visible", timeout=3000)
+            chk.wait_for(state="visible", timeout=8000)
             input_chk = self.page.locator("input[name='isActive']").first
             is_checked = input_chk.is_checked() if input_chk.count() else "mat-mdc-checkbox-checked" in (chk.get_attribute("class") or "")
             if is_checked != checked:

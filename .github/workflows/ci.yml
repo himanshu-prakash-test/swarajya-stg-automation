@@ -107,10 +107,20 @@ jobs:
             exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            if { [ "${{ github.ref_name }}" = "create/consultant_mgmt" ] || [ "${{ github.ref_name }}" = "create/consultant-mgmt" ]; } && [ -d "swarajya-create/consultant-management/tests" ]; then
+            if { [ "${{ github.ref_name }}" = "create/vendor-mgmt" ] || [ "${{ github.ref_name }}" = "create/vendor_mgmt" ]; } && [ -d "swarajya-create/vendor-management/tests" ]; then
+              pytest swarajya-create/vendor-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif { [ "${{ github.ref_name }}" = "create/consultant_mgmt" ] || [ "${{ github.ref_name }}" = "create/consultant-mgmt" ]; } && [ -d "swarajya-create/consultant-management/tests" ]; then
               pytest swarajya-create/consultant-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif { [ "${{ github.ref_name }}" = "create/purchase_order" ] || [ "${{ github.ref_name }}" = "create/purchase-order" ]; } && [ -d "swarajya-create/purchase-order/tests" ]; then
               pytest swarajya-create/purchase-order/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif { [ "${{ github.ref_name }}" = "create/customer-mgmt" ] || [ "${{ github.ref_name }}" = "create/customer_mgmt" ]; } && [ -d "swarajya-create/customer-management/tests" ]; then
+              pytest swarajya-create/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif { [ "${{ github.ref_name }}" = "create/invoice-mgmt" ] || [ "${{ github.ref_name }}" = "create/invoice_mgmt" ]; } && [ -d "swarajya-create/invoice-management/tests" ]; then
+              pytest swarajya-create/invoice-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif { [ "${{ github.ref_name }}" = "create/emp-mgmt" ] || [ "${{ github.ref_name }}" = "create/emp_mgmt" ]; } && [ -d "swarajya-create/employee-management/tests" ]; then
+              pytest swarajya-create/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif [ "${{ github.ref_name }}" = "login/emp-manager" ] && [ -d "swarajya-login/emp-manager/tests" ]; then
+              pytest swarajya-login/emp-manager/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
               pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
@@ -119,6 +129,8 @@ jobs:
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/customer_mgmt" ] && [ -d "swarajya-update/customer-management/tests" ]; then
               pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
+            elif { [ "${{ github.ref_name }}" = "update/purchase-order" ] || [ "${{ github.ref_name }}" = "update/purchase_order" ]; } && [ -d "swarajya-update/purchase-orders/tests" ]; then
+              pytest swarajya-update/purchase-orders/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "shared" ] && [ -d "swarajya-update/employee-management/tests" ]; then
               echo ">>> Running Shared Framework Verification Tests..."
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
