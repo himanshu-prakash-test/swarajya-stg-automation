@@ -127,7 +127,7 @@ jobs:
               pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
               pytest swarajya-update/invoice-management/tests -v --html=reports/latest_report.html --self-contained-html || true
-            elif [ "${{ github.ref_name }}" = "update/emp_mgmt" ] && [ -d "swarajya-update/employee-management/tests" ]; then
+            elif { [ "${{ github.ref_name }}" = "update/emp_mgmt" ] || [ "${{ github.ref_name }}" = "update/emp-mgmt" ]; } && [ -d "swarajya-update/employee-management/tests" ]; then
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "update/customer_mgmt" ] && [ -d "swarajya-update/customer-management/tests" ]; then
               pytest swarajya-update/customer-management/tests -v --html=reports/latest_report.html --self-contained-html || true
