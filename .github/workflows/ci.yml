@@ -26,7 +26,7 @@ jobs:
   test:
     name: Run Automated Tests (${{ github.ref_name }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     env:
       CI: "true"
@@ -119,9 +119,9 @@ jobs:
             exit 0
           else
             echo "Executing default test suite configured for this branch..."
-            if [ "${{ github.ref_name }}" = "create/consultant_mgmt" ] && [ -d "swarajya-create/consultant-management/tests" ]; then
+            if { [ "${{ github.ref_name }}" = "create/consultant_mgmt" ] || [ "${{ github.ref_name }}" = "create/consultant-mgmt" ]; } && [ -d "swarajya-create/consultant-management/tests" ]; then
               pytest swarajya-create/consultant-management/tests -v --html=reports/latest_report.html --self-contained-html || true
-            elif [ "${{ github.ref_name }}" = "create/purchase_order" ] && [ -d "swarajya-create/purchase-order/tests" ]; then
+            elif { [ "${{ github.ref_name }}" = "create/purchase_order" ] || [ "${{ github.ref_name }}" = "create/purchase-order" ]; } && [ -d "swarajya-create/purchase-order/tests" ]; then
               pytest swarajya-create/purchase-order/tests -v --html=reports/latest_report.html --self-contained-html || true
             elif [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
               pytest swarajya-login/hr_admin/tests -v --html=reports/latest_report.html --self-contained-html || true

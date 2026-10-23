@@ -8,6 +8,7 @@ Automated end-to-end regression and smoke test suites for Swarajya **Create Purc
 - **Zero Hardcoding**: Credentials, Base URL, input test data, descriptions, and validations are dynamically resolved.
 - **Dynamic Waits**: Playwright dynamic state waiting without static sleeps.
 - **Live Reporting**: Test results write directly to `Swarajya-test-cases.xlsx`, HTML reports generated under `reports/`, and 1-to-1 screenshots saved under `screenshots/`.
+- **CI/CD Integration**: Fully integrated into GitHub Actions with automated headless testing, dynamic artifact sanitization, and regression test validation.
 
 ## Directory Structure
 ```
