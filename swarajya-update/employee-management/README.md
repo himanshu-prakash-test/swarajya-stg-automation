@@ -52,7 +52,7 @@ The Employee Update operation follows a standard lifecycle path from the portal 
 - **HTML Report Generation**: Finalized into `shared/reports/employee_update_*.html`.
 - **Desktop Execution Summary Popup**: Displays interactive results summary without unsolicited browser popups.
 - **1-to-1 Evidence Screenshots**: Automatically captures visual evidence on PASS and FAIL into `screenshots/` using `{STATUS}_{TC_ID}__{TIMESTAMP}.png`.
-- **CI/CD Integration**: Fully integrated into GitHub Actions CI/CD pipeline with dynamic artifact sanitization and full positive/negative regression coverage.
+- **CI/CD Integration**: Fully integrated into GitHub Actions CI/CD pipeline with dynamic artifact sanitization, targeted module change detection, and full positive/negative regression coverage.
 
 ---
 

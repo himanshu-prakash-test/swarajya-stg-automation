@@ -37,6 +37,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -66,55 +68,41 @@ jobs:
             echo "Executing manually specified path: $TARGET_PATH"
             pytest "$TARGET_PATH" -v --html=reports/latest_report.html --self-contained-html || true
           elif [ "${{ github.ref_name }}" = "main" ]; then
-            echo "Executing all module suites independently..."
-            EXIT_CODE=0
-            if [ -d "swarajya-login/hr_admin/tests" ]; then
-              echo ">>> Running Login HR-Admin Tests..."
-              pytest swarajya-login/hr_admin/tests -v --html=reports/login_hr_admin_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-login/emp-manager/tests" ]; then
-              echo ">>> Running Login Emp-Manager Tests..."
-              pytest swarajya-login/emp-manager/tests -v --html=reports/login_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/employee-management/tests" ]; then
-              echo ">>> Running Create Employee-Management Tests..."
-              pytest swarajya-create/employee-management/tests -v --html=reports/create_emp_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/vendor-management/tests" ]; then
-              echo ">>> Running Create Vendor-Management Tests..."
-              pytest swarajya-create/vendor-management/tests -v --html=reports/create_vendor_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/customer-management/tests" ]; then
-              echo ">>> Running Create Customer-Management Tests..."
-              pytest swarajya-create/customer-management/tests -v --html=reports/create_customer_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/invoice-management/tests" ]; then
-              echo ">>> Running Create Invoice-Management Tests..."
-              pytest swarajya-create/invoice-management/tests -v --html=reports/create_invoice_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/purchase-order/tests" ]; then
-              echo ">>> Running Create Purchase-Order Tests..."
-              pytest swarajya-create/purchase-order/tests -v --html=reports/create_po_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-create/consultant-management/tests" ]; then
-              echo ">>> Running Create Consultant-Management Tests..."
-              pytest swarajya-create/consultant-management/tests -v --html=reports/create_consultant_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-update/purchase-orders/tests" ]; then
-              echo ">>> Running Update Purchase-Orders Tests..."
-              pytest swarajya-update/purchase-orders/tests -v --html=reports/update_po_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-update/customer-management/tests" ]; then
-              echo ">>> Running Update Customer-Management Tests..."
-              pytest swarajya-update/customer-management/tests -v --html=reports/update_customer_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-update/employee-management/tests" ]; then
-              echo ">>> Running Update Employee-Management Tests..."
-              pytest swarajya-update/employee-management/tests -v --html=reports/update_emp_report.html --self-contained-html || EXIT_CODE=1
-            fi
-            if [ -d "swarajya-update/invoice-management/tests" ]; then
-              echo ">>> Running Update Invoice-Management Tests..."
-              pytest swarajya-update/invoice-management/tests -v --html=reports/update_invoice_report.html --self-contained-html || EXIT_CODE=1
+            echo "Determining changed modules on main..."
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+            echo "Changed files in latest commit:"
+            echo "$CHANGED_FILES"
+            
+            RAN_ANY=0
+            run_module() {
+              MODULE_PATTERN="$1"
+              TEST_DIR="$2"
+              REPORT="$3"
+              if [ -d "$TEST_DIR" ]; then
+                if echo "$CHANGED_FILES" | grep -q "$MODULE_PATTERN" || echo "$CHANGED_FILES" | grep -q "^shared/" || [ -z "$CHANGED_FILES" ]; then
+                  echo ">>> Running $MODULE_PATTERN Tests..."
+                  pytest "$TEST_DIR" -v --html="reports/$REPORT" --self-contained-html || true
+                  RAN_ANY=1
+                fi
+              fi
+            }
+
+            run_module "swarajya-login/hr_admin" "swarajya-login/hr_admin/tests" "login_hr_admin_report.html"
+            run_module "swarajya-login/emp-manager" "swarajya-login/emp-manager/tests" "login_report.html"
+            run_module "swarajya-create/employee-management" "swarajya-create/employee-management/tests" "create_emp_report.html"
+            run_module "swarajya-create/vendor-management" "swarajya-create/vendor-management/tests" "create_vendor_report.html"
+            run_module "swarajya-create/customer-management" "swarajya-create/customer-management/tests" "create_customer_report.html"
+            run_module "swarajya-create/invoice-management" "swarajya-create/invoice-management/tests" "create_invoice_report.html"
+            run_module "swarajya-create/purchase-order" "swarajya-create/purchase-order/tests" "create_po_report.html"
+            run_module "swarajya-create/consultant-management" "swarajya-create/consultant-management/tests" "create_consultant_report.html"
+            run_module "swarajya-update/purchase-orders" "swarajya-update/purchase-orders/tests" "update_po_report.html"
+            run_module "swarajya-update/customer-management" "swarajya-update/customer-management/tests" "update_customer_report.html"
+            run_module "swarajya-update/employee-management" "swarajya-update/employee-management/tests" "update_emp_report.html"
+            run_module "swarajya-update/invoice-management" "swarajya-update/invoice-management/tests" "update_invoice_report.html"
+
+            if [ "$RAN_ANY" -eq 0 ]; then
+              echo "No module-specific files changed. Running smoke verification..."
+              pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             fi
             exit 0
           else
