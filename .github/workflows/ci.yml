@@ -79,7 +79,7 @@ jobs:
               TEST_DIR="$2"
               REPORT="$3"
               if [ -d "$TEST_DIR" ]; then
-                if echo "$CHANGED_FILES" | grep -q "$MODULE_PATTERN" || echo "$CHANGED_FILES" | grep -q "^shared/" || [ -z "$CHANGED_FILES" ]; then
+                if echo "$CHANGED_FILES" | grep -q "$MODULE_PATTERN"; then
                   echo ">>> Running $MODULE_PATTERN Tests..."
                   pytest "$TEST_DIR" -v --html="reports/$REPORT" --self-contained-html || true
                   RAN_ANY=1
@@ -101,7 +101,7 @@ jobs:
             run_module "swarajya-update/invoice-management" "swarajya-update/invoice-management/tests" "update_invoice_report.html"
 
             if [ "$RAN_ANY" -eq 0 ]; then
-              echo "No module-specific files changed. Running smoke verification..."
+              echo "No module-specific files changed. Running core verification suite..."
               pytest swarajya-update/employee-management/tests -v --html=reports/latest_report.html --self-contained-html || true
             fi
             exit 0
