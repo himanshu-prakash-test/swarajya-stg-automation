@@ -144,7 +144,7 @@ jobs:
               TEST_DIR="$2"
               REPORT="$3"
               if [ -d "$TEST_DIR" ]; then
-                CODE_CHANGED=$(echo "$CHANGED_FILES" | grep "^$MODULE_PATTERN" | grep -v "README.md" || true)
+                CODE_CHANGED=$(echo "$CHANGED_FILES" | grep "^$MODULE_PATTERN" | grep -v "README.md" | grep -v "__init__.py" || true)
                 if [ -n "$CODE_CHANGED" ]; then
                   echo "Found code changes in $MODULE_PATTERN:"
                   echo "$CODE_CHANGED"

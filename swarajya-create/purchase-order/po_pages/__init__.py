@@ -1,1 +1,1 @@
-"""PO Pages package initialization."""
+"""swarajya-create.purchase-order.po_pages package for Swarajya Automation."""

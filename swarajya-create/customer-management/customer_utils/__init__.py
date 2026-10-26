@@ -1,3 +1,5 @@
+"""swarajya-create.customer-management.customer_utils package for Swarajya Automation."""
+
 from .excel_reader import (
     read_credentials,
     read_test_cases,

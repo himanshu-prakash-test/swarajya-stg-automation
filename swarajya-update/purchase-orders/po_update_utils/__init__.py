@@ -1,4 +1,4 @@
-"""Utilities for Purchase Order Update module."""
+"""swarajya-update.purchase-orders.po_update_utils package for Swarajya Automation."""
 
 from .excel_reader import (
     build_automation_id,
