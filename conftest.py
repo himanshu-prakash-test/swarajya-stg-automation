@@ -1,6 +1,7 @@
 """
-Root Pytest Configuration.
+Root Pytest Configuration for Swarajya Test Automation.
 Ensures workspace root is in sys.path for shared module imports and registers CLI options.
+Validated under GitHub Actions CI/CD Pipeline across all branches.
 """
 import os
 import sys

@@ -144,7 +144,10 @@ jobs:
               TEST_DIR="$2"
               REPORT="$3"
               if [ -d "$TEST_DIR" ]; then
-                if echo "$CHANGED_FILES" | grep -q "$MODULE_PATTERN"; then
+                CODE_CHANGED=$(echo "$CHANGED_FILES" | grep "^$MODULE_PATTERN" | grep -v "README.md" || true)
+                if [ -n "$CODE_CHANGED" ]; then
+                  echo "Found code changes in $MODULE_PATTERN:"
+                  echo "$CODE_CHANGED"
                   run_test "$TEST_DIR" "$REPORT"
                   RAN_ANY=1
                 fi

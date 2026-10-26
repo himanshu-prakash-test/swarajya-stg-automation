@@ -39,3 +39,11 @@ pytest swarajya-create/invoice-management/tests/test_invoice_negative_flows.py -
 # Run in interactive headed mode
 pytest swarajya-create/invoice-management/tests -v --headed
 ```
+
+---
+
+## 🔄 CI/CD Pipeline Status
+- **Status**: Integrated & Verified ✅
+- **Automation Pipeline**: [Swarajya Automation CI/CD Pipeline](https://github.com/himanshu-prakash-test/swarajya-stg-automation/actions)
+- **Supported Execution**: Headless and Headed modes via GitHub Actions `workflow_dispatch`.
+

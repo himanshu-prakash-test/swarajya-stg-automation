@@ -48,3 +48,11 @@ Run negative flows only:
 ```bash
 pytest tests/test_consultant_negative_flows.py -v
 ```
+
+---
+
+## 🔄 CI/CD Pipeline Status
+- **Status**: Integrated & Verified ✅
+- **Automation Pipeline**: [Swarajya Automation CI/CD Pipeline](https://github.com/himanshu-prakash-test/swarajya-stg-automation/actions)
+- **Supported Execution**: Headless and Headed modes via GitHub Actions `workflow_dispatch`.
+

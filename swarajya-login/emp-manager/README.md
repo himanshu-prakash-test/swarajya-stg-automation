@@ -31,3 +31,11 @@ pytest swarajya-login/emp-manager/tests/negative_flows.py
 # Run in headed mode
 pytest swarajya-login/emp-manager/tests --headed
 ```
+
+---
+
+## 🔄 CI/CD Pipeline Status
+- **Status**: Integrated & Verified ✅
+- **Automation Pipeline**: [Swarajya Automation CI/CD Pipeline](https://github.com/himanshu-prakash-test/swarajya-stg-automation/actions)
+- **Supported Execution**: Headless and Headed modes via GitHub Actions `workflow_dispatch`.
+

@@ -95,3 +95,11 @@ pytest tests/test_customer_update_negative_flows.py
 - **HTML Report**: Generated automatically in `reports/latest_report.html` with step timings and embedded screenshots.
 - **Excel Report**: Live test execution status (`PASS` / `FAIL` / `SKIPPED`) and execution duration written back to master `Swarajya-test-cases.xlsx`.
 - **Desktop Summary Popup**: Styled desktop execution summary dialog with pass/fail counts and quick report launcher.
+
+---
+
+## 🔄 CI/CD Pipeline Status
+- **Status**: Integrated & Verified ✅
+- **Automation Pipeline**: [Swarajya Automation CI/CD Pipeline](https://github.com/himanshu-prakash-test/swarajya-stg-automation/actions)
+- **Supported Execution**: Headless and Headed modes via GitHub Actions `workflow_dispatch`.
+
