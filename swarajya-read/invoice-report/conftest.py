@@ -57,24 +57,45 @@ _html_reporter.reporter.set_environment(browser="API Client (REST/HTTP)", mode="
 
 def pytest_addoption(parser):
     """Register custom CLI options for API test execution."""
-    parser.addoption(
-        "--api-url",
-        action="store",
-        default=None,
-        help="Base URL for invoice report API endpoints (overrides Excel).",
-    )
-    parser.addoption(
-        "--bearer-token",
-        action="store",
-        default=None,
-        help="Custom Bearer token for API authentication.",
-    )
-    parser.addoption(
-        "--popup",
-        action="store_true",
-        default=False,
-        help="Force display desktop summary popup even in CI.",
-    )
+    existing = set()
+    for grp in getattr(parser, "_groups", []):
+        for opt in getattr(grp, "options", []):
+            existing.update(getattr(opt, "_short_opts", []))
+            existing.update(getattr(opt, "_long_opts", []))
+    for opt in getattr(getattr(parser, "_anonymous", None), "options", []):
+        existing.update(getattr(opt, "_short_opts", []))
+        existing.update(getattr(opt, "_long_opts", []))
+
+    if "--api-url" not in existing:
+        try:
+            parser.addoption(
+                "--api-url",
+                action="store",
+                default=None,
+                help="Base URL for invoice report API endpoints (overrides Excel).",
+            )
+        except ValueError:
+            pass
+    if "--bearer-token" not in existing:
+        try:
+            parser.addoption(
+                "--bearer-token",
+                action="store",
+                default=None,
+                help="Custom Bearer token for API authentication.",
+            )
+        except ValueError:
+            pass
+    if "--popup" not in existing:
+        try:
+            parser.addoption(
+                "--popup",
+                action="store_true",
+                default=False,
+                help="Force display desktop summary popup even in CI.",
+            )
+        except ValueError:
+            pass
 
 
 @pytest.fixture(scope="session")
