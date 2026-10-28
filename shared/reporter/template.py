@@ -705,6 +705,120 @@ REPORT_HTML_TEMPLATE = """<!DOCTYPE html>
       max-height: 360px;
     }
 
+    /* Scenario & Test Description Box */
+    .description-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .description-header {
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .description-content {
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-main);
+      white-space: pre-wrap;
+    }
+
+    /* Execution Parameters & API Specs Box */
+    .params-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .params-header {
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .params-table-wrapper {
+      padding: 6px 14px;
+      overflow-x: auto;
+    }
+    .params-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .params-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: top;
+    }
+    .params-table tr:last-child td {
+      border-bottom: none;
+    }
+    .param-key {
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 200px;
+      white-space: nowrap;
+    }
+    .param-val code {
+      font-family: var(--font-mono);
+      background: rgba(0,0,0,0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #a5f3fc;
+      word-break: break-all;
+    }
+
+    /* Captured Console Output & Execution Logs Box */
+    .console-box {
+      background: #0b0d14;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .console-header {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #34d399;
+    }
+    .console-content {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      padding: 14px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 400px;
+    }
+
     /* Screenshot Gallery */
     .screenshot-area {
       margin-top: 14px;
@@ -1145,6 +1259,53 @@ REPORT_HTML_TEMPLATE = """<!DOCTYPE html>
           </div>
           {% endif %}
 
+          <!-- Scenario Specification & Steps -->
+          {% if test.description %}
+          <div class="description-box">
+            <div class="description-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Scenario Specification &amp; Verification Details</span>
+            </div>
+            <div class="description-content">{{ test.description }}</div>
+          </div>
+          {% endif %}
+
+          <!-- Execution Parameters & Endpoint Specs -->
+          {% if test.parameters %}
+          <div class="params-box">
+            <div class="params-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span>Execution Parameters &amp; Endpoint Definition</span>
+            </div>
+            <div class="params-table-wrapper">
+              <table class="params-table">
+                <tbody>
+                  {% for k, v in test.parameters.items() %}
+                  <tr>
+                    <td class="param-key">{{ k }}</td>
+                    <td class="param-val"><code>{{ v }}</code></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Captured Console Logs & Live Execution Stream -->
+          {% if test.stdout %}
+          <div class="console-box">
+            <div class="console-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                <span>Captured Console Output &amp; Live Execution Logs</span>
+              </div>
+              <button class="copy-btn" onclick="copyConsole(this)">Copy Logs</button>
+            </div>
+            <pre class="console-content">{{ test.stdout }}</pre>
+          </div>
+          {% endif %}
+
           <!-- Failure Stacktrace -->
           {% if test.stacktrace %}
           <div class="stacktrace-box">
@@ -1291,6 +1452,14 @@ REPORT_HTML_TEMPLATE = """<!DOCTYPE html>
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeLightbox();
     });
+
+    function copyConsole(btn) {
+      const box = btn.closest('.console-box');
+      if (box) {
+        const content = box.querySelector('.console-content');
+        if (content) copyText(btn, content.innerText);
+      }
+    }
 
     function copyTrace(btn) {
       const box = btn.closest('.stacktrace-box');

@@ -1,13 +1,4 @@
-"""
-Pytest configuration and fixtures for Employee & Manager Login Automation.
 
-Strictly adheres to framework standards:
-- Dynamic test data and test case loading from shared Excel workbooks
-- 1-to-1 screenshot capture for every test execution
-- Live updates to Swarajya-test-cases.xlsx [Sheet: loginemp-manager]
-- HTML report generation with full suite statistics
-- macOS & Windows native summary popups
-"""
 
 import os
 import re

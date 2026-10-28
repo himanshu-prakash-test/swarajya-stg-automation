@@ -12,8 +12,11 @@ log = get_logger("SharedExcelBase")
 _UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
 _SHARED_DIR = os.path.dirname(_UTILS_DIR)
 TEST_DATA_DIR = os.path.join(_SHARED_DIR, "test_data")
-TEST_DATA_FILE = os.path.join(TEST_DATA_DIR, "Swarajya-test-data.xlsx")
-TEST_CASES_FILE = os.path.join(TEST_DATA_DIR, "Swarajya-test-cases.xlsx")
+try:
+    from shared.utils.paths import TEST_DATA_FILE, TEST_CASES_FILE
+except ImportError:
+    TEST_DATA_FILE = os.path.join(TEST_DATA_DIR, "Swarajya-test-data.xlsx")
+    TEST_CASES_FILE = os.path.join(TEST_DATA_DIR, "Swarajya-test-cases.xlsx")
 
 # Result cell styling
 _PASS_FILL = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")

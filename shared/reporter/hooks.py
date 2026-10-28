@@ -6,7 +6,7 @@ Connects pytest test lifecycle events to the HTML reporting engine.
 import os
 import re
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .html_reporter import PlaywrightHTMLReporter
 from .models import TestCaseResult
@@ -26,9 +26,9 @@ def _extract_tc_id(item) -> str:
                 return str(param_val["Test Case ID"])
 
     # 3. From test name regex
-    match = re.search(r"(TC_[A-Z0-9_]+)", item.name)
+    match = re.search(r"(TC[-_][A-Za-z0-9\-_]+)", item.name, re.IGNORECASE)
     if match:
-        return match.group(1)
+        return match.group(1).upper().replace("_", "-")
 
     return "UNKNOWN"
 
@@ -36,6 +36,8 @@ def _extract_tc_id(item) -> str:
 def _extract_module_name(nodeid: str) -> str:
     """Determine friendly module name from nodeid path."""
     n = nodeid.lower()
+    if "invoice-report" in n or "invoice_report" in n:
+        return "Invoice Report"
     if "employee-management" in n:
         return "Employee Management"
     if "vendor-management" in n:
@@ -91,6 +93,9 @@ class PytestReporterPlugin:
         auto_id: str = "",
         screenshot_path: Optional[str] = None,
         duration: Optional[float] = None,
+        description: Optional[str] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+        stdout: Optional[str] = None,
     ):
         """Record a test execution from a pytest hook."""
         if report.nodeid in self.recorded_nodeids:
@@ -107,8 +112,28 @@ class PytestReporterPlugin:
             if m.name not in ("tc_id", "parametrize", "usefixtures")
         ]
 
-        # Extract docstring if present
-        description = item.obj.__doc__.strip() if getattr(item, "obj", None) and item.obj.__doc__ else ""
+        # Extract docstring if present and not provided
+        if not description:
+            description = item.obj.__doc__.strip() if getattr(item, "obj", None) and item.obj.__doc__ else ""
+
+        # Extract parameters if not provided
+        if parameters is None and hasattr(item, "callspec"):
+            parameters = {}
+            for k, v in item.callspec.params.items():
+                if isinstance(v, dict):
+                    for subk, subv in v.items():
+                        if subv is not None and str(subv).strip() != "":
+                            parameters[str(subk)] = str(subv)
+                else:
+                    parameters[str(k)] = str(v)
+
+        # Extract captured stdout / logs if not provided
+        if stdout is None and hasattr(report, "sections"):
+            sec_lines = []
+            for sec_name, sec_content in report.sections:
+                if sec_content and sec_content.strip():
+                    sec_lines.append(f"[{sec_name}]\n{sec_content.strip()}")
+            stdout = "\n\n".join(sec_lines) if sec_lines else ""
 
         # Test duration
         dur = duration if duration is not None else getattr(report, "duration", 0.0)
@@ -120,13 +145,15 @@ class PytestReporterPlugin:
             status=status,
             duration=dur,
             module_name=module_name,
-            description=description,
+            description=description or "",
             error_message=error_msg,
             stacktrace=stacktrace,
             screenshot_path=screenshot_path,
             remarks=remarks,
             auto_id=auto_id,
             markers=markers,
+            parameters=parameters or {},
+            stdout=stdout or "",
         )
         self.reporter.add_result(result)
 

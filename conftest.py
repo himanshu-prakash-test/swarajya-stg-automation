@@ -36,3 +36,8 @@ def pytest_addoption(parser):
             parser.addoption("--slowmo", action="store", default=0, type=int, help="Slowdown Playwright actions (ms).")
         except ValueError:
             pass
+    if "--popup" not in existing:
+        try:
+            parser.addoption("--popup", action="store_true", default=False, help="Display desktop summary popup.")
+        except ValueError:
+            pass

@@ -325,6 +325,7 @@ class POUpdatePage(BasePage):
         return False
 
     def get_uploaded_document_text(self) -> str:
+        
         """Return the text inside the PO Document section."""
         doc_section = self.page.locator("form").filter(has_text="PO Document")
         return doc_section.inner_text().strip() if doc_section.count() else ""

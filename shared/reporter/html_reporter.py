@@ -176,11 +176,17 @@ class PlaywrightHTMLReporter:
             coreco_logo_base64=_get_coreco_logo_base64(),
         )
 
-        # Write to single, clean latest_report.html
+        # Write to single, clean latest_report.html and optional module-specific html
         os.makedirs(self.output_dir, exist_ok=True)
         report_path = os.path.join(self.output_dir, "latest_report.html")
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(html_content)
+
+        if filename_prefix:
+            specific_path = os.path.join(self.output_dir, f"{filename_prefix}.html")
+            with open(specific_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            return specific_path
 
         return report_path
 
