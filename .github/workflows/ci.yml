@@ -8,6 +8,7 @@ name: Swarajya Automation CI/CD Pipeline
       - 'login/**'
       - 'create/**'
       - 'update/**'
+      - 'read/**'
   pull_request:
     branches:
       - main
@@ -125,6 +126,7 @@ jobs:
             run_test "swarajya-update/customer-management/tests" "update_customer_report.html"
             run_test "swarajya-update/employee-management/tests" "update_emp_report.html"
             run_test "swarajya-update/invoice-management/tests" "update_invoice_report.html"
+            run_test "swarajya-read/invoice-report/tests" "read_invoice_report.html"
           }
 
           if [ -n "$TARGET_PATH" ]; then
@@ -163,6 +165,7 @@ jobs:
             check_and_run "swarajya-update/customer-management" "swarajya-update/customer-management/tests" "update_customer_report.html"
             check_and_run "swarajya-update/employee-management" "swarajya-update/employee-management/tests" "update_emp_report.html"
             check_and_run "swarajya-update/invoice-management" "swarajya-update/invoice-management/tests" "update_invoice_report.html"
+            check_and_run "swarajya-read/invoice-report" "swarajya-read/invoice-report/tests" "read_invoice_report.html"
 
             if [ "$RAN_ANY" -eq 0 ]; then
               echo "No module-specific files changed. Running core verification suite..."
@@ -186,6 +189,8 @@ jobs:
               run_test "swarajya-login/emp-manager/tests" "login_report.html"
             elif [ "${{ github.ref_name }}" = "login/hr_admin" ] && [ -d "swarajya-login/hr_admin/tests" ]; then
               run_test "swarajya-login/hr_admin/tests" "login_hr_admin_report.html"
+            elif { [ "${{ github.ref_name }}" = "read/invoice-report" ] || [ "${{ github.ref_name }}" = "read/invoice_report" ] || [ "${{ github.ref_name }}" = "read/invoice-reports" ]; } && [ -d "swarajya-read/invoice-report/tests" ]; then
+              run_test "swarajya-read/invoice-report/tests" "read_invoice_report.html"
             elif [ "${{ github.ref_name }}" = "update/invoice_mgmt" ] && [ -d "swarajya-update/invoice-management/tests" ]; then
               run_test "swarajya-update/invoice-management/tests" "update_invoice_report.html"
             elif { [ "${{ github.ref_name }}" = "update/emp_mgmt" ] || [ "${{ github.ref_name }}" = "update/emp-mgmt" ]; } && [ -d "swarajya-update/employee-management/tests" ]; then

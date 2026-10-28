@@ -1,4 +1,3 @@
-"""Test suite verifying login and navigation workflow for Customer Update module."""
 
 import pytest
 from shared.pages.login_page import LoginPage

@@ -50,7 +50,9 @@ else:
     elif os.path.exists(direct_cases):
         TEST_CASES_FILE = direct_cases
     else:
-        TEST_CASES_FILE = os.path.join(TEST_CASES_DIR, "Swarajya-test-cases.xlsx")
+        import glob
+        _found = sorted(glob.glob(os.path.join(SHARED_TEST_DATA_DIR, "Swarajya-test-cases*.xlsx")), key=os.path.getmtime, reverse=True)
+        TEST_CASES_FILE = _found[0] if _found else os.path.join(TEST_CASES_DIR, "Swarajya-test-cases.xlsx")
 
 LOGIN_TEST_CASES_FILE = TEST_CASES_FILE
 
@@ -66,7 +68,9 @@ else:
     elif os.path.exists(direct_data):
         TEST_DATA_FILE = direct_data
     else:
-        TEST_DATA_FILE = os.path.join(TEST_DATA_DIR, "Swarajya-test-data.xlsx")
+        import glob
+        _found = sorted(glob.glob(os.path.join(SHARED_TEST_DATA_DIR, "Swarajya-test-data*.xlsx")), key=os.path.getmtime, reverse=True)
+        TEST_DATA_FILE = _found[0] if _found else os.path.join(TEST_DATA_DIR, "Swarajya-test-data.xlsx")
 
 # ── Credentials ──────────────────────────────────────────────────
 _direct_creds = os.path.join(SHARED_TEST_DATA_DIR, "credentials.xlsx")

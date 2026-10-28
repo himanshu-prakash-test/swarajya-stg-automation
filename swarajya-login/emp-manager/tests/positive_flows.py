@@ -1,16 +1,4 @@
-"""
-Test Suite: Employee & Manager Positive Authentication Flows.
 
-Strictly data-driven from shared Excel workbooks:
-- Test Data:  shared/test_data/Swarajya-test-data.xlsx  [Sheet: login/emp-manager]
-- Test Cases: shared/test_data/Swarajya-test-cases.xlsx [Sheet: login/emp-manager]
-
-STRICT ZERO-HARDCODING POLICY:
-- All roles, credentials (Employee_ID, Password, Auth_Code), and Base URLs are fetched
-  dynamically from the Excel test data sheet.
-- All test descriptions, test steps, expected results, and assertions are fetched
-  dynamically from the Excel test cases sheet.
-"""
 
 import os
 import re
