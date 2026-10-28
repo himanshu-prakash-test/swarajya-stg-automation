@@ -96,6 +96,37 @@ def pytest_addoption(parser):
             )
         except ValueError:
             pass
+    if "--headed" not in existing:
+        try:
+            parser.addoption(
+                "--headed",
+                action="store_true",
+                default=False,
+                help="Run browser in headed mode.",
+            )
+        except ValueError:
+            pass
+    if "--headless" not in existing:
+        try:
+            parser.addoption(
+                "--headless",
+                action="store_true",
+                default=False,
+                help="Run browser headless.",
+            )
+        except ValueError:
+            pass
+    if "--slowmo" not in existing:
+        try:
+            parser.addoption(
+                "--slowmo",
+                action="store",
+                default=0,
+                type=int,
+                help="Slowdown Playwright actions (ms).",
+            )
+        except ValueError:
+            pass
 
 
 @pytest.fixture(scope="session")
