@@ -29,9 +29,9 @@ This repository follows a strict **Isolated Branch Architecture** to guarantee z
 
 ---
 
-### 👤 Himanshu's Branches ("My Branches")
+### 👤 Himanshu's Modules & Branch Responsibilities
 
-Himanshu owns the core architecture, employee/manager authentication, full creation lifecycle for Employees, Vendors, Customers, and Invoices, as well as the Purchase Order update suite.
+Himanshu owns the core framework architecture, employee/manager authentication, full creation lifecycle for Employees, Vendors, Customers, and Invoices, as well as the Purchase Order update suite.
 
 | Branch | Module Scope | Key Automated Scenarios & Highlights | Test Count | Status |
 | :--- | :--- | :--- | :---: | :---: |
@@ -44,7 +44,7 @@ Himanshu owns the core architecture, employee/manager authentication, full creat
 
 ---
 
-### 👤 Mrugank's Branches ("Mrugank Branch")
+### 👤 Mrugank's Modules & Branch Responsibilities
 
 Mrugank owns HR & Admin authentication, consultant onboarding, purchase order creation, and update workflows for Employees, Customers, and Invoices.
 
@@ -59,50 +59,203 @@ Mrugank owns HR & Admin authentication, consultant onboarding, purchase order cr
 
 ---
 
-## 🏛️ Repository Architecture
+## 🏛️ Comprehensive Framework Architecture
+
+The framework is architected according to strict **Layered Separation of Concerns**, ensuring high modularity, maximum code reusability, and clean separation between test definitions, business page logic, and data infrastructure.
 
 ```
 swarajya-stg-automation/
-├── .github/
+│
+├── .github/                                 # 🤖 CI/CD Orchestration Layer
 │   └── workflows/
-│       └── ci.yml                      # Unified GitHub Actions CI/CD pipeline
+│       └── ci.yml                          # Multi-stage GitHub Actions CI/CD matrix pipeline
 │
-├── shared/                             # 🌐 Centralized Core Framework & Test Data
-│   ├── pages/                          # BasePage, LoginPage, TfaPage
-│   ├── reporter/                       # HTML Reporter, Tkinter Execution Popup
-│   ├── test_data/                      # Master Workbooks:
-│   │   ├── Swarajya-test-cases.xlsx    # Execution tracking & test case definitions (12 sheets)
-│   │   ├── Swarajya-test-data.xlsx     # Data-driven inputs, credentials & payloads (12 sheets)
-│   │   └── sample_po.pdf               # Mock upload document for PO creation
-│   └── utils/                          # Excel Loader, Dynamic Paths, Logging, Reporter Bridge
+├── shared/                                 # 🌐 Centralized Core Framework & Infrastructure
+│   ├── config/                             # Global configuration, timeouts & constant definitions
+│   │   ├── constants.py                    # Universal timeouts, URLs, standard roles, and regex patterns
+│   │   └── __init__.py
+│   │
+│   ├── pages/                              # Core Page Object Model (POM) foundation
+│   │   ├── base_page.py                    # Base Playwright actions, dynamic waits, dropdown selectors, screenshot hooks
+│   │   ├── login_page.py                   # Centralized authentication page object with credential injection
+│   │   ├── auth_setup_page.py              # Authenticated session generator and storage state exporter
+│   │   ├── tfa_page.py                     # Two-Factor Authentication (2FA) verification page object
+│   │   └── __init__.py
+│   │
+│   ├── reporter/                           # Custom reporting engine & visualization
+│   │   ├── html_reporter.py                # Standalone HTML report generator with embedded analytics
+│   │   ├── template.py                     # Modern responsive HTML5/CSS3 template definitions
+│   │   ├── models.py                       # Data models for test case execution, timings, and status
+│   │   ├── hooks.py                        # Pytest execution hooks (`pytest_runtest_makereport`)
+│   │   ├── assets/
+│   │   │   └── coreco_logo.png             # Corporate logo embedded in HTML reports
+│   │   └── __init__.py
+│   │
+│   ├── test_data/                          # Universal Single Source of Truth (Zero Duplication)
+│   │   ├── Swarajya-test-cases.xlsx        # Master test cases workbook (12 sheets, statuses, run history)
+│   │   ├── Swarajya-test-data.xlsx         # Master test data repository (12 sheets, input payloads, credentials)
+│   │   ├── sample_po.pdf                   # Standard PDF artifact for Purchase Order file upload tests
+│   │   └── auth_state_swarajya-stg_corecotechnologies_com.json # Cached browser session state
+│   │
+│   └── utils/                              # Universal helper utilities & common services
+│       ├── excel_base.py                   # Base workbook loader & bi-directional execution result writer
+│       ├── excel_loader.py                 # High-performance OpenPyXL dynamic loader & cell parser
+│       ├── logger.py                       # Unified console and rotating file logger with timestamps
+│       ├── paths.py                        # Cross-platform path resolver for root, data, reports, and screenshots
+│       ├── popup.py                        # Desktop execution summary popup modal (Tkinter)
+│       └── __init__.py
 │
-├── swarajya-create/                    # 📋 Master Create Operations Suite
-│   ├── customer-management/            # 👥 Customer Onboarding (Himanshu)
-│   ├── employee-management/            # 👤 Employee Onboarding (Himanshu)
-│   ├── invoice-management/             # 🧾 Invoice Creation (Himanshu)
-│   ├── vendor-management/              # 🏢 Vendor Onboarding (Himanshu)
-│   ├── consultant-management/          # 💼 Consultant Profile Creation (Mrugank)
-│   ├── purchase-order/                 # 📦 Purchase Order Creation (Mrugank)
-│   ├── pytest.ini                      # Create suite Pytest configuration
-│   └── README.md                       # Create operations documentation
+├── swarajya-create/                        # 📋 Master Create Operations Suite
+│   ├── customer-management/                # 👥 Customer Onboarding Module (Himanshu)
+│   │   ├── customer_pages/                 # BasePage, LoginPage, CustomerPage, FormExecutor
+│   │   ├── customer_utils/                 # Excel Reader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive, Negative & Login customer creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Customer module documentation
+│   │
+│   ├── employee-management/                # 👤 Employee Onboarding Module (Himanshu)
+│   │   ├── emp_pages/                      # BasePage, LoginPage, EmployeePage, FormExecutor
+│   │   ├── emp_utils/                      # Excel Reader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive, Negative & Login employee creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Employee module documentation
+│   │
+│   ├── invoice-management/                 # 🧾 Invoice Creation Module (Himanshu)
+│   │   ├── invoice_pages/                  # BasePage, LoginPage, InvoicePage, FormExecutor
+│   │   ├── invoice_utils/                  # Excel Reader, Logger, Calculation helpers
+│   │   ├── tests/                          # Positive, Negative & Login invoice creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Invoice module documentation
+│   │
+│   ├── vendor-management/                  # 🏢 Vendor Onboarding Module (Himanshu)
+│   │   ├── vendor_pages/                   # BasePage, LoginPage, VendorPage, FormExecutor
+│   │   ├── vendor_utils/                   # Excel Reader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive, Negative & Login vendor creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Vendor module documentation
+│   │
+│   ├── consultant-management/              # 💼 Consultant Profile Creation Module (Mrugank)
+│   │   ├── consultant_pages/               # BasePage, LoginPage, ConsultantPage, FormExecutor
+│   │   ├── consultant_utils/               # Excel Reader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive & Negative consultant creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Consultant module documentation
+│   │
+│   ├── purchase-order/                     # 📦 Purchase Order Creation Module (Mrugank)
+│   │   ├── po_pages/                       # BasePage, LoginPage, POPage, FormExecutor
+│   │   ├── po_utils/                       # Excel Reader, PDF file upload helper
+│   │   ├── tests/                          # Positive & Negative PO creation suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # PO creation module documentation
+│   │
+│   ├── pytest.ini                          # Root Create operations pytest configuration
+│   └── README.md                           # Create operations overview & guidelines
 │
-├── swarajya-update/                    # 🔄 Master Update Operations Suite
-│   ├── customer-management/            # 👥 Customer Record Updates (Mrugank - Merged)
-│   ├── employee-management/            # 👤 Employee Record Updates (Mrugank - Merged)
-│   ├── invoice-management/             # 🧾 Invoice Editing & Recalculation (Mrugank - Merged)
-│   ├── purchase-orders/                # 📑 Purchase Order Modification (Himanshu - Merged)
-│   ├── pytest.ini                      # Update suite Pytest configuration
-│   └── README.md                       # Update operations documentation
+├── swarajya-update/                        # 🔄 Master Update Operations Suite
+│   ├── purchase-orders/                    # 📑 Purchase Order Modification Module (Himanshu)
+│   │   ├── po_update_pages/                # BasePage, LoginPage, POUpdatePage, FormExecutor
+│   │   ├── po_update_utils/                # Centralized Excel Parsers, Logger, Status Updater
+│   │   ├── tests/                          # Positive, Negative & Navigation PO update suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   ├── requirements.txt                # Sub-module specific dependencies
+│   │   └── README.md                       # PO update operations manual
+│   │
+│   ├── customer-management/                # 👥 Customer Record Updates Module (Mrugank)
+│   │   ├── customer_update_pages/          # CustomerUpdatePage, FormExecutor, LoginPage
+│   │   ├── customer_update_utils/          # Excel Loader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive, Negative & Navigation customer update suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Customer update operations manual
+│   │
+│   ├── employee-management/                # 👤 Employee Record Updates Module (Mrugank)
+│   │   ├── emp_update_pages/               # EmployeeUpdatePage, FormExecutor, LoginPage
+│   │   ├── emp_update_utils/               # Excel Loader, Logger, Popup integrations
+│   │   ├── tests/                          # Positive, Negative & Navigation employee update suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Employee update operations manual
+│   │
+│   ├── invoice-management/                 # 🧾 Invoice Editing & Recalculation Module (Mrugank)
+│   │   ├── invoice_update_pages/           # InvoiceUpdatePage, FormExecutor, LoginPage
+│   │   ├── invoice_update_utils/           # Excel Loader, Line-Item Recalculation Helpers
+│   │   ├── tests/                          # Positive, Negative & Navigation invoice update suites
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   └── README.md                       # Invoice update operations manual
+│   │
+│   ├── pytest.ini                          # Root Update operations pytest configuration
+│   └── README.md                           # Update operations overview & guidelines
 │
-├── swarajya-login/                     # 🔐 Master Authentication Suite
-│   ├── emp-manager/                    # 👤 Employee & Manager Authentication (Himanshu - Merged)
-│   ├── hr_admin/                       # 🛡️ HR & Super-Admin Authentication (Mrugank)
-│   ├── pytest.ini                      # Login suite Pytest configuration
-│   └── README.md                       # Authentication operations documentation
+├── swarajya-login/                         # 🔐 Master Authentication & Access Control Suite
+│   ├── emp-manager/                        # 👤 Employee & Manager Authentication (Himanshu)
+│   │   ├── tests/                          # Positive & Negative dual-role authentication flows
+│   │   ├── conftest.py                     # Employee & Manager lifecycle hooks & fixtures
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   ├── requirements.txt                # Sub-module dependencies
+│   │   └── README.md                       # Employee & Manager login documentation
+│   │
+│   ├── hr_admin/                           # 🛡️ HR & Super-Admin Authentication (Mrugank)
+│   │   ├── tests/                          # Positive & Negative admin authentication & 2FA flows
+│   │   ├── conftest.py                     # HR & Admin lifecycle hooks & fixtures
+│   │   ├── pytest.ini                      # Sub-module test runner configuration
+│   │   ├── requirements.txt                # Sub-module dependencies
+│   │   └── README.md                       # HR & Admin login documentation
+│   │
+│   ├── pytest.ini                          # Root Login operations pytest configuration
+│   └── README.md                           # Authentication operations overview
 │
-├── conftest.py                         # Root Pytest fixtures, sys.path resolution & CLI flags
-├── pytest.ini                          # Root test runner configuration & markers
-└── requirements.txt                    # Project dependencies
+├── conftest.py                             # Root Pytest fixtures, sys.path resolution & CLI options
+├── pytest.ini                              # Master test discovery, markers, and logging config
+└── requirements.txt                        # Global pinned production dependencies
+```
+
+---
+
+### 🔄 Architectural Data & Execution Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Execution Trigger Layer                               │
+│  GitHub Actions CI/CD Pipeline  │  Local CLI (`pytest`)  │  VS Code Runner   │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Configuration & Resolution Layer                         │
+│  Root `conftest.py`  │  CLI Flags (`--headless`, `--env`)  │  Sys Path Hooks │
+│  Dynamic Env Vars (`SWARAJYA_BASE_URL`, `SWARAJYA_EMPLOYEE_ID`, `HEADLESS`)  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Data-Driven Repository Layer                             │
+│  `shared/test_data/Swarajya-test-data.xlsx`   ──► Test Payloads & Credentials│
+│  `shared/test_data/Swarajya-test-cases.xlsx`  ──► Test Definitions & Step IDs│
+│  `shared/test_data/sample_po.pdf`             ──► Binary Upload Fixture     │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Page Object Model (POM) Layer                         │
+│  `shared.pages.base_page.BasePage` ──► Dynamic Waits, Locators, Dialogs     │
+│  `shared.pages.login_page.LoginPage` ──► Storage State Reuse (`auth_state`) │
+│  Module Pages: `CustomerPage`, `EmployeePage`, `InvoicePage`, `POPage`, ... │
+│  Form Executors: Encapsulated Form Submissions & Input Synchronization      │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     Target Application Under Test (AUT)                     │
+│            Swarajya Staging Portal: `https://swarajya-stg...`               │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Telemetry, Reporting & Audit Layer                       │
+│  • Bi-Directional Master Excel Writeback (`Swarajya-test-cases.xlsx`)       │
+│  • Custom Standalone HTML Report (`reports/latest_report.html`)              │
+│  • 1-to-1 Screenshot Audit (`{STATUS}_{TC_ID}__{TIMESTAMP}.png`)            │
+│  • Real-Time Desktop Summary Popup (`shared.utils.popup.ExecutionSummary`)   │
+│  • GitHub Actions Artifact Archive (`swarajya-test-artifacts-*`)            │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

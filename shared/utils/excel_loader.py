@@ -82,6 +82,15 @@ MODULE_SHEET_MAP = {
     "updatecustomer_mgmt": ("updatecustomer_mgmt", "updatecustomer_mgmt"),
     "update_po": ("updatepurchase-order", "updatepurchase-order"),
     "updatepurchase-order": ("updatepurchase-order", "updatepurchase-order"),
+    # Read modules
+    "read_invoice_report": ("readinvoice-reports", "readinvoice-report"),
+    "readinvoice-reports": ("readinvoice-reports", "readinvoice-report"),
+    "readinvoice-report": ("readinvoice-reports", "readinvoice-report"),
+    "invoice-report": ("readinvoice-reports", "readinvoice-report"),
+    "invoice-reports": ("readinvoice-reports", "readinvoice-report"),
+    "read/invoice-report": ("readinvoice-reports", "readinvoice-report"),
+    "read/invoice_report": ("readinvoice-reports", "readinvoice-report"),
+    "readcustomer_insights": ("readcustomer_insights", "readcustomer_insights"),
 }
 
 
