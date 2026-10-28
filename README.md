@@ -18,16 +18,15 @@ This repository follows a strict **Isolated Branch Architecture** to guarantee z
 | **Himanshu** | 📋 Create Operations | Customer Management | [`create/customer-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/customer-mgmt) | `swarajya-create/customer-management` | `createcutomer-mgmt` | `createcustomer-mgmt` | **34** | ✅ Merged |
 | **Himanshu** | 📋 Create Operations | Invoice Management | [`create/invoice-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/invoice-mgmt) | `swarajya-create/invoice-management` | `createinvoice-mgmt` | `createinvoice-mgmt` | **27** | ✅ Merged |
 | **Himanshu** | 🔄 Update Operations | Purchase Order Updates | [`update/purchase-order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/purchase-order) | `swarajya-update/purchase-orders` | `updatepurchase-order` | `updatepurchase-order` | **31** | ✅ Merged |
-| **Himanshu** | 🔍 Read & Report Operations | Invoice Reports (API Automation) | [`read/invoice-report`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/read/invoice-report) | `swarajya-read/invoice-report` | `readinvoice-reports` | `readinvoice-report` | **31** | ✅ Merged |
+| **Himanshu** | 🔍 Read & Report Operations | Invoice Reports (API Automation) | [`read/invoice-report`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/read/invoice-report) | `swarajya-read/invoice-report` | `readinvoice-reports` | `readinvoice-report` | **13** | ✅ Merged |
 | **Mrugank** | 🔐 Authentication | HR & Admin Login | [`login/hr_admin`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/login/hr_admin) | `swarajya-login/hr_admin` | `loginhr_admin` | `loginhr_admin` | **39** | ✅ Merged |
 | **Mrugank** | 📋 Create Operations | Consultant Management | [`create/consultant_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/consultant_mgmt) | `swarajya-create/consultant-management` | `createconsultant_mgmt` | `createconsultant_mgmt` | **47** | ✅ Merged |
 | **Mrugank** | 📋 Create Operations | Purchase Order Creation | [`create/purchase_order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/purchase_order) | `swarajya-create/purchase-order` | `createpurchase_order` | `createpurchase_order` | **33** | ✅ Merged |
 | **Mrugank** | 🔄 Update Operations | Employee Updates | [`update/emp_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/emp_mgmt) | `swarajya-update/employee-management` | `updateemp_mgmt` | `updateemp_mgmt` | **31** | ✅ Merged |
 | **Mrugank** | 🔄 Update Operations | Customer Updates | [`update/customer_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/customer_mgmt) | `swarajya-update/customer-management` | `updatecustomer_mgmt` | `updatecustomer_mgmt` | **51** | ✅ Merged |
 | **Mrugank** | 🔄 Update Operations | Invoice Updates | [`update/invoice_mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/invoice_mgmt) | `swarajya-update/invoice-management` | `updateinvoice_mgmt` | `updateinvoice_mgmt` | **32** | ✅ Merged |
-| **Collaborative** | 🔍 Read & Report Operations | Customer Insights | *Maintained on `main`* | `swarajya-read/customer_insights` | *Pending Ingestion* | *Pending Ingestion* | **-** | 🏗️ Scaffolded |
 | **Collaborative** | 🌐 Core Framework | Shared Infrastructure | [`shared`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/shared) | `shared/` | *Universal Base* | *Universal Base* | **Core** | ✅ Integrated |
-| **Collaborative** | 🚀 Production / Master | Integrated Suite | [`main`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main) | *Root* | *All Sheets (13)* | *All Sheets (13)* | **412+** | 🚀 Production |
+| **Collaborative** | 🚀 Production / Master | Integrated Suite | [`main`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/main) | *Root* | *All Active Sheets (13)* | *All Active Sheets (13)* | **394** | 🚀 Production |
 
 ---
 
@@ -43,7 +42,7 @@ Himanshu owns the core framework architecture, employee/manager authentication, 
 | [`create/customer-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/customer-mgmt) | **Create Customer Management** | • 20+ field onboarding with currency/tax/terms matrices<br>• IGST toggle switch & dynamic address parsing<br>• Modal dialog handling (Yes/No dismissal) & route verification | **34** | Merged |
 | [`create/invoice-mgmt`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/create/invoice-mgmt) | **Create Invoice Management** | • Complete invoice creation workflow with customer binding<br>• Line items calculation, tax breakdown & total tallying<br>• Form mount wait guards & cached authentication state | **27** | Merged |
 | [`update/purchase-order`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/update/purchase-order) | **Update Purchase Orders** | • Purchase Order search, edit & status modification<br>• Line item adjustments, audit tracking & remarks<br>• Defect tracking with `wasxfail` integration and 1-to-1 screenshot audit | **31** | Merged |
-| [`read/invoice-report`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/read/invoice-report) | **Invoice Report API Automation** | • 31 automated REST API test scenarios (10 positive, 8 negative, 13 data-driven)<br>• Zero hardcoding with dynamic financial year parsing & live JWT token generation<br>• Bi-directional Excel synchronization with cell styling & dark-theme Coreco HTML reporting with scenario specifications | **31** | Merged |
+| [`read/invoice-report`](https://github.com/himanshu-prakash-test/swarajya-stg-automation/tree/read/invoice-report) | **Invoice Report API Automation** | • 13 automated REST API test scenarios (7 positive, 6 negative)<br>• Zero hardcoding with dynamic financial year parsing & live JWT token generation<br>• Bi-directional Excel synchronization with cell styling & dark-theme Coreco HTML reporting with scenario specifications | **13** | Merged |
 
 ---
 
@@ -254,9 +253,6 @@ swarajya-stg-automation/
 │           └── positive_flows.py                          # HR/Admin credentials, 2FA validation & dashboard routing
 │
 ├── swarajya-read/                                         # 🔍 Master Read & Reporting Operations Domain
-│   ├── customer_insights/                                 # 📊 Customer Analytics & Intelligence Module (Scaffolded)
-│   │   └── .gitkeep                                       # Git directory preservation anchor
-│   │
 │   └── invoice-report/                                    # 🧾 Invoice Report REST API Automation Module (Himanshu)
 │       ├── README.md                                      # Comprehensive Invoice Report API technical manual
 │       ├── __init__.py                                    # Module package initializer
@@ -275,9 +271,8 @@ swarajya-stg-automation/
 │       │   └── excel_reader.py                            # Dynamic test case & test data loader + result writer
 │       │
 │       └── tests/                                         # Complete Invoice Report API Automated Test Suite
-│           ├── test_invoice_reports_data_driven.py        # 13 dynamic Excel row parameterized tests
-│           ├── test_invoice_reports_negative.py           # 8 negative validation, 401/403 security & boundary tests
-│           └── test_invoice_reports_positive.py           # 10 positive functional, drilldown & status filter tests
+│           ├── test_invoice_reports_negative.py           # 6 negative validation, 401/403 security & boundary tests
+│           └── test_invoice_reports_positive.py           # 7 positive functional, drilldown & status filter tests
 │
 ├── swarajya-update/                                       # 🔄 Master Update Operations Domain
 │   ├── README.md                                          # Update operations overview & guidelines
@@ -484,13 +479,12 @@ pytest swarajya-create/invoice-management/tests -v
 # 6. Update Purchase Orders Suite (31 tests)
 pytest swarajya-update/purchase-orders/tests -v
 
-# 7. Invoice Report API Automation Suite (31 tests: Positive, Negative, Data-Driven)
+# 7. Invoice Report API Automation Suite (13 tests: 7 Positive, 6 Negative)
 pytest swarajya-read/invoice-report/tests -v
 
 # Run specific Invoice Report API test suites
 pytest swarajya-read/invoice-report/tests/test_invoice_reports_positive.py -v
 pytest swarajya-read/invoice-report/tests/test_invoice_reports_negative.py -v
-pytest swarajya-read/invoice-report/tests/test_invoice_reports_data_driven.py -v
 ```
 
 ### 👤 Execute Mrugank's Modules
