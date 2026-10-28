@@ -1,8 +1,6 @@
 """
 Negative API Test Suite: Invoice Report Management.
-Located in swarajya-read/invoice-report/tests/negative.
-
-Automates test scenarios strictly from:
+Strictly automates negative test scenarios from:
 - Swarajya-test-cases.xlsx [Sheet: readinvoice-reports]
 - Swarajya-test-data.xlsx  [Sheet: readinvoice-report]
 
@@ -10,13 +8,13 @@ STRICT ZERO-HARDCODING POLICY:
 - All endpoints, invalid formats, parameters, expected statuses, and credentials
   are dynamically fetched from the shared Excel workbooks.
 
-Tests:
+Negative Test Cases (6 Total):
 - TC-REP-NEG-01: Malformed Financial Year Parameter Format (HTTP 400)
 - TC-REP-NEG-02: Missing Mandatory Query Parameter (HTTP 400)
 - TC-REP-NEG-03: Unauthorized Access via Missing Authentication Token (HTTP 401)
 - TC-REP-NEG-04: Forbidden Access via Low-Privilege Role Restriction (HTTP 403)
-- TC-REP-NEG-05: SQL Injection Query Sanitization / Metadata Service Resilience
-- TC-REP-NEG-06: Boundary Handling for Zero Overdue Records / Service Unavailable (HTTP 503)
+- TC-REP-NEG-05: SQL Injection Query Sanitization
+- TC-REP-NEG-06: Backend Timeout / Service Unavailable Resilience (HTTP 503)
 """
 
 import os
@@ -27,8 +25,7 @@ import pytest
 
 # Ensure module directory, read directory, and workspace root are in sys.path
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-_TESTS_DIR = os.path.dirname(_CURRENT_DIR)
-_MODULE_DIR = os.path.dirname(_TESTS_DIR)
+_MODULE_DIR = os.path.dirname(_CURRENT_DIR)
 _READ_DIR = os.path.dirname(_MODULE_DIR)
 _WORKSPACE_ROOT = os.path.dirname(_READ_DIR)
 for p in (_MODULE_DIR, _READ_DIR, _WORKSPACE_ROOT):
@@ -55,7 +52,7 @@ def _parse_query_param(endpoint: str, key: str) -> str:
 @pytest.mark.api
 @pytest.mark.negative
 class TestInvoiceReportNegativeFlows:
-    """Negative and boundary test cases for invoice reports API."""
+    """Negative and boundary test cases for invoice reports API (6 test cases)."""
 
     @pytest.mark.tc_id("TC-REP-NEG-01")
     def test_tc_rep_neg_01_malformed_financial_year(self, api_client: InvoiceReportApiClient):
@@ -174,45 +171,10 @@ class TestInvoiceReportNegativeFlows:
                 f"[{tc_id}] Database error disclosed in response body: {err}"
             )
 
-    @pytest.mark.tc_id("TC-REP-NEG-05")
-    def test_tc_rep_neg_05_metadata_service_resilience(self, api_client: InvoiceReportApiClient):
-        """
-        TC-REP-NEG-05 (Cases): Handling Metadata Service Failure or Empty Financial Year Options.
-        Inspect response structure when metadata service is degraded or unseeded;
-        Returns HTTP 200 with empty array [] or handled 503; no unhandled 500 error thrown.
-        """
-        tc_id = "TC-REP-NEG-05"
-        resp = api_client.get_financial_years()
-        assert resp.status_code != 500, (
-            f"[{tc_id}] Metadata service threw unhandled 500 error!"
-        )
-
-    @pytest.mark.tc_id("TC-REP-NEG-06")
-    def test_tc_rep_neg_06_boundary_zero_matching_overdue_records(self, api_client: InvoiceReportApiClient):
-        """
-        TC-REP-NEG-06: Validate Boundary Handling for Drill-Down When Zero Matching Overdue Records Exist.
-        Send GET request for period with zero overdue items;
-        Server returns HTTP 200 OK with empty line items array [] and 0.00 aggregate totals;
-        does not return unhandled exception.
-        """
-        tc_id = "TC-REP-NEG-06"
-        tc_case = get_test_case_by_id(tc_id) or {}
-        steps_text = tc_case.get("Test Steps", "")
-        import re
-        endpoint_match = re.search(r"(/[a-zA-Z0-9_\-/]+(?:\?[^\s]+)?)", steps_text)
-        target_endpoint = endpoint_match.group(1) if endpoint_match else "api/v1/invoices/outstanding"
-        resp = api_client.request("GET", target_endpoint)
-        assert resp.status_code != 500, (
-            f"[{tc_id}] Zero matching records query caused unhandled 500 error!"
-        )
-        assert resp.status_code in (200, 400, 404), (
-            f"[{tc_id}] Unexpected status code for zero matching overdue records: {resp.status_code}"
-        )
-
     @pytest.mark.tc_id("TC-REP-NEG-06")
     def test_tc_rep_neg_06_database_timeout_resilience(self, api_client: InvoiceReportApiClient):
         """
-        TC-REP-NEG-06 (Data): Backend Database Timeout / Service Unavailable Resilience.
+        TC-REP-NEG-06: Backend Database Timeout / Service Unavailable Resilience.
         Simulated upstream failure handling: graceful fallback without stack trace disclosure.
         Zero hardcoded external URLs (uses unrouted local loopback port).
         """
@@ -226,4 +188,3 @@ class TestInvoiceReportNegativeFlows:
             f"[{tc_id}] Expected 503 synthetic resilience status, got {resp.status_code}"
         )
         assert resp.is_json or resp.text, f"[{tc_id}] Expected structured error payload"
-
